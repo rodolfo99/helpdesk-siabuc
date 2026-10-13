@@ -1,4 +1,17 @@
-# Validación de la versión 1.2.0
+# Validación de la versión 1.3.0
+
+## Entrega Windows/Linux · 13 de octubre de 2026
+
+- 35 pruebas Python de operación aprobadas, incluidas cinco nuevas para rutas, respaldo binario y ramas Windows simuladas; comando `python3 -m unittest discover -s tests/ops`.
+- 13 pruebas Python de configuración Postfix aprobadas; comando `python3 -m unittest discover -s tests/smtp`.
+- Compilación Maven `package` satisfactoria con Java 17: `backend/target/siabuc-helpdesk-1.3.0.jar`. No se activó el perfil postgres-it ni se repitieron las pruebas Java de integración de versiones anteriores. El primer intento offline no pudo resolver el POM padre; se completó usando la conexión configurada para Maven.
+- Angular 1.3.0 compiló para producción mediante `npm run build`: 349.06 kB antes de compresión. No se repitieron las pruebas de navegador.
+- El ZIP se comprueba por CRC y SHA-256 de cada entrada del manifiesto, excluyendo datos, contraseñas, cachés y binarios de compilación.
+- No se ejecutaron CMD, Docker Desktop, Compose completo ni una restauración real en Windows. Las pruebas de ramas Windows usan simulaciones en Linux; no equivalen a validación real en Windows.
+- El usuario confirmó SMTP local funcionando en su instalación y Gmail fallido. Se conserva esa distinción; no se atribuye ese resultado a una prueba propia ni se da por resuelta la causa del fallo de Gmail.
+
+## Evidencia histórica: versión 1.2.0
+
 
 Fecha: 13 de octubre de 2026 UTC. Esta entrega añade Postfix saliente en Docker y remitente con IP local configurable. No cambia el esquema V1/V2/V3 ni las operaciones de casos, saldos o pagos.
 

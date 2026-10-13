@@ -1,6 +1,6 @@
 # Respaldo y restauración de SIABUC Helpdesk
 
-Guía para la versión 1.2.0. Los scripts `respaldar.sh` y `restaurar.sh` operan sobre la base PostgreSQL del servicio Docker `db`, utilizando los valores de conexión de `.env`.
+Guía para la versión 1.3.0. En Windows utilice `respaldar.bat` y `restaurar.bat` con los mismos argumentos; consulte [WINDOWS.md](WINDOWS.md). Los scripts `respaldar.sh` y `restaurar.sh` operan sobre la base PostgreSQL del servicio Docker `db`, utilizando los valores de conexión de `.env`.
 
 ## 1. Preparar el entorno
 

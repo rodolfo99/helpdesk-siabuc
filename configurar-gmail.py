@@ -49,6 +49,8 @@ def docker_prefix():
     if subprocess.run(['docker', 'info'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
         prefix = ['docker']
     else:
+        if manage.IS_WINDOWS:
+            raise RuntimeError('Inicie Docker Desktop con contenedores Linux y compruebe docker info. En Windows no se usa sudo.')
         if not shutil.which('sudo'):
             raise RuntimeError('No se puede acceder a Docker y sudo no está disponible.')
         print('Se necesita acceso a Docker; sudo puede pedir su contraseña del equipo.')
@@ -86,7 +88,7 @@ def main():
     manage.validate_smtp_server(candidate)
     print('Comprobando TLS y autenticación; no se envía un correo de prueba…')
     apply(updates, original)
-    print('Configuración guardada en .env con permisos 600. PostgreSQL y puertos conservados.')
+    print('Configuración guardada en .env. PostgreSQL y puertos conservados. Use permisos privados (600 en Linux; ACL en Windows).')
     if args.solo_configurar:
         print('Pendiente: recrear smtp y backend para aplicar los cambios. Consulte docs/GMAIL-UCOL.md.')
         return
