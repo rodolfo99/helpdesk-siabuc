@@ -2,7 +2,7 @@
 
 Desde 1.4 también están disponibles [clasificación, ficha técnica y SLA](CLASIFICACION-SLA.md), [adjuntos y recorrido del caso](HELPDESK-1.4.md), [campana y alertas de saldo](AVISOS-INTERNOS.md), [cronómetro y agenda](CRONOMETRO-AGENDA.md) y [reportes Excel/PDF](REPORTES.md). Estas guías complementan los flujos y permisos siguientes.
 
-Desde 1.5, el usuario **Cobranza** dispone de [pólizas, abonos y acreditación de horas](POLIZAS-COBRANZA.md) y [reportes financieros](REPORTES-COBRANZA.md). Administración conserva la supervisión y la autorización para anular pagos.
+Desde 1.5, el usuario **Cobranza** dispone de [pólizas, abonos y acreditación de horas](POLIZAS-COBRANZA.md), [comprobantes de pago](COMPROBANTES-PAGO.md) y [reportes financieros](REPORTES-COBRANZA.md). Administración conserva la supervisión y la autorización para anular pagos.
 
 ## Acceso y cuentas
 
@@ -24,8 +24,13 @@ La sesión termina tras 30 minutos de inactividad del servidor o al cerrar sesi�
 | Editar, asignar, cerrar/reabrir casos | Sí | No | No |
 | Anular atención | Sí | No | No |
 | Registrar y consultar pagos | Sí | No | Sí |
+| Gestionar pólizas e historial financiero | Sí | No | Sí |
+| Adjuntar y descargar comprobantes de pago | Sí | No | Sí |
+| Consultar/exportar reportes financieros | Sí | No | Sí |
+| Consultar/exportar reportes técnicos | Sí | No | No |
 | Anular pagos | Sí | No | No |
-| Auditoría y notificaciones | Sí | No | No |
+| Auditoría y cola/configuración de correo | Sí | No | No |
+| Campana de avisos propios | Casos según asignación; saldos institucionales | Casos y saldos de su institución | Avisos de saldo |
 | Cambiar su propia contraseña | Sí | Sí | Sí |
 
 Los permisos se verifican en Spring en cada operación. Ocultar un botón en Angular no es el control de acceso. Varios usuarios de una misma institución comparten sus saldos y el historial institucional; no existe aislamiento individual por usuario dentro de esa institución.
@@ -41,6 +46,8 @@ Para cada canal se distinguen:
 - **Disponible:** asignado menos utilizado.
 
 Ejemplo: asignado de correo 10 h = 600 min; una atención de 1 h 25 min utiliza 85 min; quedan 515 min = 8 h 35 min. Remoto no cambia. Para añadir otras 5 h al presupuesto, cambie el **total asignado a 15 h**, no a 5 h. No se permite reducir el presupuesto por debajo de lo ya utilizado.
+
+Ese ajuste manual es independiente de los pagos. Si las horas se adquieren mediante Cobranza, registre el pago con sus minutos y deje que el sistema los acredite: no aumente también el presupuesto manualmente por la misma compra.
 
 El consumo inicial de una institución nueva es cero. Si necesita incorporar consumo histórico, registre casos y atenciones con una descripción que indique que son antecedentes migrados. Los registros conservan la fecha real de captura; esta versión no permite falsificar ni retroceder fechas.
 
@@ -90,13 +97,33 @@ La pantalla **Auditoría** permite al administrador revisar quién realizó camb
 
 ## Cobranza y acreditación por pagos
 
-En **Cobranza**, `ADMIN` y `BILLING` pueden consultar pagos y registrar dinero recibido de una institución activa. Capture referencia, importe positivo con máximo dos decimales, moneda de tres letras (por ejemplo `MXN`), fecha, método, descripción y minutos comprados de correo/remoto. Al menos un canal debe recibir minutos. La referencia es única por institución, sin distinguir mayúsculas o espacios extremos, incluso si posteriormente se anula el pago.
+En **Pagos**, `ADMIN` y `BILLING` pueden consultar pagos y registrar dinero recibido de una institución activa. Capture referencia, importe con máximo dos decimales, fecha, método, descripción y minutos por acreditar en correo/remoto. Los registros nuevos utilizan **MXN**; se conservan las monedas de pagos anteriores. Los métodos disponibles son transferencia, depósito, efectivo, tarjeta de crédito, tarjeta de débito, cheque y otro. La referencia es única por institución, sin distinguir mayúsculas o espacios extremos, incluso si posteriormente se anula el pago.
+
+Desde **Pólizas**, puede registrar el contrato de una institución, su vigencia, importe y minutos de cada canal. Crear la póliza no acredita tiempo; su vencimiento es informativo y no retira saldo automáticamente. Al registrar el pago, seleccione esa póliza o deje la opción **Sin póliza** para una compra directa.
+
+| Movimiento | Importe recibido | Tiempo acreditado |
+| --- | --- | --- |
+| Compra directa sin póliza | Positivo | Al menos un canal positivo |
+| Pago con póliza | Positivo | Puede acreditar minutos o dejarlos en cero como abono monetario |
+| Liberación de horas pendientes de una póliza ya liquidada | Cero | Al menos un canal positivo, dentro del tiempo contratado pendiente |
+
+Los pagos vigentes acumulados no pueden exceder el importe ni los minutos contratados de la póliza. Los minutos pendientes de acreditar son distintos del saldo institucional disponible para atender casos.
 
 Al guardar, el pago y el aumento de tiempo asignado se confirman en una misma transacción. No cambia lo ya consumido. Por ejemplo: si quedan 20 min de correo y registra un pago que compra 120 min, el disponible pasa a 140 min. El importe monetario no se convierte automáticamente a minutos: el administrativo captura los minutos autorizados según las condiciones comerciales.
 
 Un identificador de solicitud evita acreditar dos veces al reintentar una misma operación; además, una referencia ya registrada no se acepta en otro pago de esa institución. Si recibe un error de comunicación, consulte los pagos antes de iniciar otra captura con una referencia distinta.
 
 Sólo `ADMIN` puede **anular** un pago, indicando el motivo. Debe quedar disponible todo el tiempo acreditado por ese pago, en ambos canales, para retirarlo. Si parte de esa capacidad ya no está disponible, la anulación se rechaza sin modificar el pago ni los saldos. La anulación se permite una sola vez y conserva autor, fecha, importes y motivo. No devuelve dinero mediante un banco: registra una corrección administrativa.
+
+Si una póliza tiene acreditaciones de importe cero respaldadas por su liquidación, no puede anularse un pago monetario que la deje sin liquidar antes de anular esas acreditaciones. Cada anulación requiere saldo suficiente. Consulte [Pólizas y cobranza](POLIZAS-COBRANZA.md) para edición, cancelación, parcialidades y ejemplos completos.
+
+### Comprobantes e informes financieros
+
+Abra el detalle de un pago, pulse **Seleccionar comprobante** y después **Adjuntar comprobante**. Se permiten PDF, PNG y JPG/JPEG: hasta 10 MiB por archivo, 10 archivos y 50 MiB por pago. Se conservan nombre, autor, fecha, tamaño y huella SHA-256; los archivos se descargan con sesión autorizada. No hay sustitución ni borrado: para corregir evidencia se adjunta otro archivo.
+
+Adjuntar un comprobante no cambia importes ni minutos, no repite el pago y no genera correo. También se admite en pagos anulados o de instituciones inactivas. Sólo `ADMIN` y `BILLING` acceden a la evidencia financiera; el cliente no puede consultar estos archivos. Consulte [Comprobantes de pago](COMPROBANTES-PAGO.md).
+
+En **Reportes de cobranza**, filtre institución, póliza, método, moneda, estado y periodo. Consulte totales por institución y generales, historial y exportaciones Excel/PDF. Las monedas no se mezclan; los pagos se filtran por su fecha de pago. La situación actual de las pólizas considera todo su histórico y se muestra aparte del periodo. Consulte [Reportes de cobranza](REPORTES-COBRANZA.md). Los reportes técnicos de casos y consumos siguen siendo exclusivos de `ADMIN`.
 
 Los ajustes manuales de presupuesto siguen disponibles para `ADMIN` y no crean un pago ficticio. Para una recarga respaldada por dinero recibido, utilice Cobranza. El módulo no es una pasarela de cobro ni emite CFDI/factura fiscal.
 
