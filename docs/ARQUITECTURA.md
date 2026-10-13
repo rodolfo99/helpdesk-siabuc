@@ -88,3 +88,17 @@ La agenda serializa decisiones de solapamiento por administrativo con bloqueo `F
 Los informes se consultan con transacción de sólo lectura y aislamiento REPEATABLE READ; el conjunto de cada solicitud usa una instantánea consistente. La consulta y la descarga son solicitudes distintas, de modo que pueden reflejar cambios posteriores. Apache POI genera XLSX con celdas de texto para descripciones; PDFBox genera PDF sin recursos externos. Los filtros usan parámetros SQL y las salidas se limitan explícitamente.
 
 Los clientes Angular consultan componentes separados para seguimiento, ficha/SLA, adjuntos y agenda. La campana se actualiza periódicamente y no depende de un envío SMTP exitoso. Las rutas nuevas están protegidas tanto por Spring Security como por comprobaciones de rol/propiedad en servicios. Los detalles operativos y límites figuran en [Funciones Helpdesk 1.4](HELPDESK-1.4.md).
+
+
+## Pólizas y cobranza desde 1.5
+
+V9 agrega `support_policies`, `policy_history` y el vínculo opcional `payments.policy_id`. Una clave foránea compuesta exige que póliza y pago pertenezcan a la misma institución; los pagos vinculados deben usar MXN. La migración conserva las filas antiguas, sin inventar contratos ni modificar monedas, importes o acreditaciones.
+
+La póliza describe lo contratado; crearla no toca las bolsas institucionales. Un pago bloquea institución y póliza, verifica acumulados vigentes y registra el movimiento financiero, la acreditación, el historial y los avisos en una transacción. La clave de solicitud de pago protege frente a reintentos y también compara el vínculo de póliza. Los objetivos contratados no se pueden editar después de cualquier pago, aun anulado. La anulación autorizada conserva la evidencia y retira minutos sólo si el saldo institucional lo permite.
+
+Los saldos financieros se derivan de pagos vigentes; no se mantienen contadores monetarios independientes que puedan desincronizarse. Se usan `BigDecimal` y columnas NUMERIC con dos decimales. Los reportes separan monedas históricas y calculan importes en Spring; una solicitud de reporte usa una instantánea REPEATABLE READ. Los periodos de cobro y la situación actual de pólizas se presentan separadamente.
+
+Las rutas financieras permiten BILLING/ADMIN antes de la regla general que restringe reportes técnicos a ADMIN. Los servicios vuelven a comprobar permisos. Los registros de pagos y pólizas son informativos de operaciones recibidas; no se integró una pasarela bancaria ni facturación fiscal.
+
+
+V10 incorpora `payment_attachments`: archivos BYTEA asociados a pagos, con UUID de carga, digest y metadatos. Sus permisos son financieros (BILLING/ADMIN), independientes de los adjuntos de casos. Las cuotas se verifican bajo bloqueo del pago, respetando el orden institución → póliza → pago. La carga no acredita ni retira minutos, y el respaldo PostgreSQL incluye los bytes. El historial financiero agrega ATTACH_PAYMENT_PROOF; los avisos SMTP existentes no transportan estos archivos.

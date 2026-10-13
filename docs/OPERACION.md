@@ -55,7 +55,7 @@ npm run build
 npm test
 ```
 
-Artefactos: `backend/target/siabuc-helpdesk-1.4.0.jar` y `frontend/dist/helpdesk/browser/`. `npm ci` utiliza el archivo `package-lock.json` entregado. No sustituya `npm ci` por actualizaciones de dependencias durante una instalación reproducible.
+Artefactos: `backend/target/siabuc-helpdesk-1.5.0.jar` y `frontend/dist/helpdesk/browser/`. `npm ci` utiliza el archivo `package-lock.json` entregado. No sustituya `npm ci` por actualizaciones de dependencias durante una instalación reproducible.
 
 `mvn package` compila también las clases de prueba y ejecuta pruebas unitarias si existen. Los archivos `*IT.java` se ejecutan únicamente con el perfil `postgres-it`. Una compilación satisfactoria no significa por sí sola que se ejecutaron esas pruebas de integración.
 
@@ -110,7 +110,7 @@ from scripts.manage import ROOT, config
 env = os.environ.copy()
 env.update(config())
 env.update(DB_HOST="127.0.0.1", SERVER_ADDRESS="127.0.0.1")
-subprocess.run(["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.4.0.jar")], env=env, check=True)
+subprocess.run(["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.5.0.jar")], env=env, check=True)
 PY
 ```
 

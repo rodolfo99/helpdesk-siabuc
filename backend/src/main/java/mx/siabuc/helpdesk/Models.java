@@ -8,7 +8,7 @@ import java.util.List;
 public final class Models {
     private Models() {}
     public enum Role { ADMIN, USER, BILLING }
-    public enum PaymentMethod { TRANSFER, CASH, CARD, OTHER }
+    public enum PaymentMethod { TRANSFER, DEPOSIT, CASH, CREDIT_CARD, DEBIT_CARD, CHECK, OTHER, CARD }
     public enum Channel { EMAIL, REMOTE }
     public enum CaseStatus { OPEN, CLOSED }
     public record User(long id, String username, String displayName, Role role, Long institutionId, boolean active, String email) {}
@@ -35,8 +35,9 @@ public final class Models {
     public record VoidInput(String reason) {}
     public record PasswordInput(String currentPassword, String newPassword) {}
     public record PaymentInput(String requestId, Long institutionId, String reference, BigDecimal amount, String currency,
-        LocalDate paidOn, PaymentMethod method, Long emailMinutes, Long remoteMinutes, String notes) {}
+        LocalDate paidOn, PaymentMethod method, Long emailMinutes, Long remoteMinutes, String notes, Long policyId) {}
     public record Payment(long id, String requestId, long institutionId, String institutionName, String reference,
         BigDecimal amount, String currency, LocalDate paidOn, PaymentMethod method, long emailMinutes, long remoteMinutes,
-        String notes, String createdBy, Instant createdAt, boolean voided, String voidReason, String voidedBy, Instant voidedAt) {}
+        String notes, String createdBy, Instant createdAt, boolean voided, String voidReason, String voidedBy, Instant voidedAt,
+        Long policyId, String policyFolio) {}
 }

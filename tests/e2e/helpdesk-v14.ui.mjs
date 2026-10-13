@@ -50,6 +50,7 @@ async function open({role='ADMIN',inbox=true,files=[],sessions=[session],width=1
    if(path==='/api/balance-alert-settings/1'){state.balance={...state.balance,...body};return reply(state.balance);}
    failures.push('Unexpected mutation '+method+' '+path);return reply({message:'Unexpected mutation'},400);
   }
+  if(path==='/api/policies')return reply([]);
   if(path==='/api/auth/csrf')return reply({token:'qa'});
   if(path==='/api/auth/me')return reply({...admin,role,institutionId:role==='USER'?1:null});
   if(path==='/api/institutions')return reply([institution]);if(path==='/api/users')return reply([admin]);if(path==='/api/payments')return reply([]);

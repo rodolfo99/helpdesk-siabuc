@@ -2,6 +2,8 @@
 
 Desde 1.4 también están disponibles [clasificación, ficha técnica y SLA](CLASIFICACION-SLA.md), [adjuntos y recorrido del caso](HELPDESK-1.4.md), [campana y alertas de saldo](AVISOS-INTERNOS.md), [cronómetro y agenda](CRONOMETRO-AGENDA.md) y [reportes Excel/PDF](REPORTES.md). Estas guías complementan los flujos y permisos siguientes.
 
+Desde 1.5, el usuario **Cobranza** dispone de [pólizas, abonos y acreditación de horas](POLIZAS-COBRANZA.md) y [reportes financieros](REPORTES-COBRANZA.md). Administración conserva la supervisión y la autorización para anular pagos.
+
 ## Acceso y cuentas
 
 La aplicación abre en la pantalla de inicio de sesión. El administrador inicial se configura mediante `.env`; las cuentas posteriores se crean desde **Usuarios**. Las contraseñas deben tener al menos 12 caracteres y no exceder 72 bytes UTF-8, límite de BCrypt. Una contraseña con caracteres acentuados o emojis puede ocupar más bytes que caracteres.

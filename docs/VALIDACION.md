@@ -1,5 +1,22 @@
 # Validación de SIABUC Helpdesk
 
+## Versión 1.5.0 · 13 de octubre de 2026
+
+- **104 pruebas Java de integración y 5 unitarias aprobadas**, sin fallos, errores ni omisiones en la ejecución final completa. Java 17 / Maven 3.9.9, perfil `postgres-it`; JAR `siabuc-helpdesk-1.5.0.jar` generado.
+- Cobertura financiera: permisos ADMIN/BILLING/USER, pólizas e historial, parcialidades MXN, acreditación por canal, límites contractuales, idempotencia, anulación y protección de horas consumidas. Se comprueba el rollback conjunto de pago, saldo, historial y outbox mediante un fallo controlado de prueba después de generar el aviso.
+- Comprobantes: PDF/PNG/JPEG, firmas y cuotas, descarga autenticada, aislamiento de permisos, idempotencia, auditoría e historial sin modificar dinero ni minutos. Los reportes validan filtros, totales por moneda, datos históricos, XLSX real y PDF multipágina.
+- Spring/JDBC/sesiones/CSRF reales sobre PGlite efímero con SQL exacto V1–V10 y una conexión. Flyway desactivado únicamente en el ensayo. Esto **no acredita PostgreSQL 17 nativo, ejecución real de Flyway ni contención entre varias conexiones**; se conserva abajo la limitación del entorno identificada en 1.4.
+- `tests/migrations/upgrade-v15.mjs`: **454 comprobaciones aprobadas** sobre SQL V1–V10. Conserva datos de 16 tablas anteriores a V9 y 18 anteriores a V10, pagos históricos MXN/USD/CARD, anulaciones, saldos, secuencias y evidencia binaria; comprueba restricciones y relaciones nuevas.
+- **61 escenarios Chromium con API simulada aprobados:** 18 de cobranza, 16 de funciones 1.4, 17 de historial/toma de casos y 10 de pausa de correo. Capturas de escritorio/móvil revisadas, incluido formulario de pago a 390 px y comprobantes.
+- **13 recorridos de navegador contra Angular → Spring → base de datos reales aprobados, sin interceptar la API y sin errores JavaScript.** Cubren póliza sin crédito inicial, pagos/acreditación, idempotencia, comprobante PDF con descarga exacta y rechazo al cliente, reportes XLSX/PDF, saldo utilizable por el cliente, caso/adjunto/perfil técnico, cronómetro persistente con cargo único, agenda y campana/saldo bajo con correo pausado. La base sigue siendo PGlite de pruebas, no PostgreSQL 17 nativo.
+- **48 pruebas Python y 6 pruebas de lógica del cliente aprobadas.** Angular producción compilado: 520.14 kB iniciales, transferencia estimada de 117.13 kB. Sin cambios de dependencias.
+- SMTP JavaMail probado sólo en loopback; sin correos externos. Docker, Windows, Compose completo y respaldo/restauración Docker reales **no ejecutados**. Las simulaciones de argumentos Windows no acreditan ejecución nativa de `.bat`.
+- Fuentes empaquetadas con manifiesto SHA-256 y verificación CRC, scripts `.sh` ejecutables y `.bat` CRLF. El paquete excluye `.env`, datos, dependencias descargadas y artefactos de QA.
+
+Las instrucciones reproducibles están en [pruebas de navegador](../tests/e2e/README.md), la cabecera de `tests/migrations/upgrade-v15.mjs` y el procedimiento PostgreSQL del final de este documento. Consulte también [actualización 1.5](VERSION-1.5.md).
+
+---
+
 ## Versión 1.4.0 · 13 de octubre de 2026
 
 - **81 pruebas Java de integración distintas aprobadas y 5 unitarias de calendario**, sin fallos finales ni omisiones. Ejecución completa: 79 IT + 5 unitarias; después de añadir dos escenarios de concurrencia se ejecutaron las 9 IT de cronómetro/agenda y las 5 unitarias. Java 17 / Maven 3.9.9; JAR 1.4.0 generado.

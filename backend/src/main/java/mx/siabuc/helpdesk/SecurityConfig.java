@@ -58,6 +58,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/csrf", "/api/auth/login", "/api/health", "/error").permitAll()
                 .requestMatchers("/api/users", "/api/users/**", "/api/audit", "/api/notifications", "/api/notifications/**").hasRole("ADMIN")
+                .requestMatchers("/api/policies", "/api/policies/**", "/api/reports/billing", "/api/reports/billing.xlsx", "/api/reports/billing.pdf").hasAnyRole("ADMIN", "BILLING")
+                .requestMatchers("/api/payments/*/attachments", "/api/payment-attachments/**").hasAnyRole("ADMIN", "BILLING")
                 .requestMatchers("/api/reports/**", "/api/support-settings", "/api/balance-alert-settings", "/api/balance-alert-settings/**", "/api/timers/**").hasRole("ADMIN")
                 .requestMatchers("/api/attachments/**", "/api/remote-sessions/**", "/api/case-profiles").hasAnyRole("ADMIN", "USER")
                 .requestMatchers("/api/cases", "/api/cases/**").hasAnyRole("ADMIN", "USER")

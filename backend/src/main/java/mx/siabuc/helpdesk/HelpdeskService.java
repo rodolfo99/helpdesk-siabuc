@@ -24,16 +24,17 @@ public class HelpdeskService {
     private final NotificationService notifications;
     private final CaseProfileService profiles;
     private final PortalEventService portalEvents;
+    private final PolicyService policies;
     private final String bootstrapUsername;
     private final String bootstrapPassword;
     private final String bootstrapEmail;
     public HelpdeskService(JdbcTemplate db, PasswordEncoder passwords, NotificationService notifications,
-            CaseProfileService profiles, PortalEventService portalEvents,
+            CaseProfileService profiles, PortalEventService portalEvents, PolicyService policies,
             @Value("${app.admin-username}") String bootstrapUsername,
             @Value("${app.admin-password}") String bootstrapPassword,
             @Value("${app.admin-email:}") String bootstrapEmail) {
         this.db = db; this.passwords = passwords; this.notifications = notifications;
-        this.profiles = profiles; this.portalEvents = portalEvents;
+        this.profiles = profiles; this.portalEvents = portalEvents; this.policies = policies;
         this.bootstrapUsername = bootstrapUsername; this.bootstrapPassword = bootstrapPassword;
         this.bootstrapEmail = bootstrapEmail;
     }
@@ -58,17 +59,18 @@ public class HelpdeskService {
         r.getString("description"), r.getString("channel") == null ? null : Channel.valueOf(r.getString("channel")),
         r.getLong("minutes"), r.getBoolean("internal"), r.getString("creator"), r.getTimestamp("created_at").toInstant(),
         r.getBoolean("voided"), r.getString("void_reason"));
-    private static final String PAYMENT_SELECT = """
-        SELECT p.*,i.name AS institution_name,u.username AS creator,v.username AS voider
+    static final String PAYMENT_SELECT = """
+        SELECT p.*,i.name AS institution_name,u.username AS creator,v.username AS voider,s.folio AS policy_folio
         FROM payments p JOIN institutions i ON i.id=p.institution_id JOIN app_users u ON u.id=p.created_by
-        LEFT JOIN app_users v ON v.id=p.voided_by
+        LEFT JOIN app_users v ON v.id=p.voided_by LEFT JOIN support_policies s ON s.id=p.policy_id
         """;
-    private static final RowMapper<Payment> PAYMENT = (r, n) -> new Payment(r.getLong("id"), r.getString("request_id"),
+    static final RowMapper<Payment> PAYMENT = (r, n) -> new Payment(r.getLong("id"), r.getString("request_id"),
         r.getLong("institution_id"), r.getString("institution_name"), r.getString("reference"), r.getBigDecimal("amount"),
         r.getString("currency"), r.getDate("paid_on").toLocalDate(), PaymentMethod.valueOf(r.getString("method")),
         r.getLong("email_minutes"), r.getLong("remote_minutes"), r.getString("notes"), r.getString("creator"),
         r.getTimestamp("created_at").toInstant(), r.getBoolean("voided"), r.getString("void_reason"), r.getString("voider"),
-        r.getTimestamp("voided_at") == null ? null : r.getTimestamp("voided_at").toInstant());
+        r.getTimestamp("voided_at") == null ? null : r.getTimestamp("voided_at").toInstant(),
+        r.getObject("policy_id", Long.class), r.getString("policy_folio"));
 
     @Transactional
     public void bootstrapAdmin() {
@@ -371,6 +373,8 @@ public class HelpdeskService {
             return previous;
         }
         requireActive(institution);
+        if (!"MXN".equals(input.currency())) throw ApiException.bad("Los nuevos pagos y acreditaciones se registran en pesos mexicanos (MXN). Los registros históricos conservan su moneda.");
+        policies.validateInstallment(input);
         if (institution.emailAllocatedMinutes() > MAX_MINUTES - input.emailMinutes()
                 || institution.remoteAllocatedMinutes() > MAX_MINUTES - input.remoteMinutes())
             throw ApiException.conflict("La acreditación excede el máximo permitido de minutos asignados.");
@@ -378,26 +382,32 @@ public class HelpdeskService {
                 Long.class, institution.id(), clean(input.reference())) > 0)
             throw ApiException.conflict("La referencia de pago ya existe para esta institución, incluso si fue anulada.");
         Long id = db.queryForObject("""
-            INSERT INTO payments(request_id,institution_id,reference,amount,currency,paid_on,method,email_minutes,remote_minutes,notes,created_by)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?) RETURNING id
+            INSERT INTO payments(request_id,institution_id,reference,amount,currency,paid_on,method,email_minutes,remote_minutes,notes,created_by,policy_id)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id
             """, Long.class, requestId, institution.id(), clean(input.reference()), input.amount(), input.currency(),
-            java.sql.Date.valueOf(input.paidOn()), input.method().name(), input.emailMinutes(), input.remoteMinutes(), clean(input.notes()), actor.id());
+            java.sql.Date.valueOf(input.paidOn()), input.method().name(), input.emailMinutes(), input.remoteMinutes(), clean(input.notes()), actor.id(), input.policyId());
         db.update("UPDATE institutions SET email_allocated_minutes=email_allocated_minutes+?,remote_allocated_minutes=remote_allocated_minutes+?,updated_at=NOW() WHERE id=?",
             input.emailMinutes(), input.remoteMinutes(), institution.id());
         portalEvents.checkBalance(institution.id());
         audit(actor.username(), "CREATE_PAYMENT", "PAYMENT", id, "Institución=" + institution.id() + "; referencia=" + clean(input.reference())
             + "; importe=" + input.amount().toPlainString() + " " + input.currency() + "; correo=" + input.emailMinutes() + "; remoto=" + input.remoteMinutes());
-        notifications.paymentEvent(id, "CREATE_PAYMENT", "Pago recibido y minutos acreditados. " + clean(input.notes()), actor.username());
-        return payment(id);
+        Payment recorded = payment(id);
+        policies.paymentEvent(recorded, actor, false, null);
+        String movement = input.amount().signum() == 0 ? "Acreditación de minutos de una póliza previamente liquidada. "
+            : input.emailMinutes() == 0 && input.remoteMinutes() == 0 ? "Abono recibido sin nueva acreditación de minutos. " : "Pago recibido y minutos acreditados. ";
+        notifications.paymentEvent(id, "CREATE_PAYMENT", movement + clean(input.notes()), actor.username());
+        return recorded;
     }
     @Transactional
     public Payment voidPayment(long id, VoidInput input) {
         User actor = admin(); required(input.reason(), "Motivo de anulación", 10000);
         Payment initial = payment(id);
         Institution institution = institution(initial.institutionId(), true);
+        if (initial.policyId() != null) policies.lockForAccounting(initial.policyId(), institution.id());
         db.queryForObject("SELECT id FROM payments WHERE id=? FOR UPDATE", Long.class, id);
         Payment payment = payment(id);
         if (payment.voided()) throw ApiException.conflict("Este pago ya fue anulado.");
+        policies.validatePaymentVoid(payment);
         if (institution.emailRemainingMinutes() < payment.emailMinutes() || institution.remoteRemainingMinutes() < payment.remoteMinutes())
             throw ApiException.conflict("No quedan suficientes minutos disponibles en ambos canales para retirar toda la acreditación del pago.");
         db.update("UPDATE institutions SET email_allocated_minutes=email_allocated_minutes-?,remote_allocated_minutes=remote_allocated_minutes-?,updated_at=NOW() WHERE id=?",
@@ -406,8 +416,10 @@ public class HelpdeskService {
         db.update("UPDATE payments SET voided=TRUE,void_reason=?,voided_by=?,voided_at=NOW() WHERE id=?", clean(input.reason()), actor.id(), id);
         audit(actor.username(), "VOID_PAYMENT", "PAYMENT", id, "Anulación; correo retirado=" + payment.emailMinutes() + "; remoto retirado="
             + payment.remoteMinutes() + "; motivo=" + clean(input.reason()));
+        Payment voided = payment(id);
+        policies.paymentEvent(voided, actor, true, input.reason());
         notifications.paymentEvent(id, "VOID_PAYMENT", "Pago anulado; minutos acreditados retirados. Motivo: " + clean(input.reason()), actor.username());
-        return payment(id);
+        return voided;
     }
     private Payment payment(long id) {
         List<Payment> rows = db.query(PAYMENT_SELECT + " WHERE p.id=?", PAYMENT, id);
@@ -421,20 +433,23 @@ public class HelpdeskService {
         if (!request.toString().equalsIgnoreCase(i.requestId())) throw ApiException.bad("El UUID debe tener su formato completo de 36 caracteres.");
         if (i.institutionId() == null || i.institutionId() <= 0) throw ApiException.bad("Indique la institución del pago.");
         required(i.reference(), "Referencia de pago", 100); required(i.notes(), "Descripción del pago", 10000);
-        if (i.amount() == null || i.amount().signum() <= 0 || i.amount().compareTo(new BigDecimal("999999999.99")) > 0 || i.amount().scale() > 2)
-            throw ApiException.bad("El importe debe ser positivo, no exceder 999999999.99 y tener como máximo dos decimales.");
+        if (i.policyId() != null && i.policyId() <= 0) throw ApiException.bad("Identificador de póliza inválido.");
+        if (i.amount() == null || i.amount().signum() < 0 || (i.policyId() == null && i.amount().signum() == 0)
+                || i.amount().compareTo(new BigDecimal("999999999.99")) > 0 || i.amount().scale() > 2)
+            throw ApiException.bad("El importe debe ser positivo (cero sólo para acreditar una póliza ya liquidada), no exceder 999999999.99 y tener como máximo dos decimales.");
         if (i.currency() == null || !i.currency().matches("[A-Z]{3}")) throw ApiException.bad("La moneda debe tener tres letras mayúsculas, por ejemplo MXN.");
         if (i.paidOn() == null || i.method() == null) throw ApiException.bad("Indique la fecha y el método del pago.");
         if (i.paidOn().getYear() < 1 || i.paidOn().getYear() > 9999) throw ApiException.bad("La fecha del pago debe tener un año entre 0001 y 9999.");
         minutes(i.emailMinutes()); minutes(i.remoteMinutes());
-        if (i.emailMinutes() == 0 && i.remoteMinutes() == 0) throw ApiException.bad("El pago debe acreditar minutos en al menos un canal.");
+        if (i.emailMinutes() == 0 && i.remoteMinutes() == 0 && (i.policyId() == null || i.amount().signum() == 0))
+            throw ApiException.bad("Indique minutos por acreditar; una póliza también permite un abono monetario positivo sin minutos.");
         return request;
     }
     private boolean samePayment(Payment p, PaymentInput i) {
         return p.institutionId() == i.institutionId() && p.reference().equals(clean(i.reference()))
             && p.amount().compareTo(i.amount()) == 0 && p.currency().equals(i.currency()) && p.paidOn().equals(i.paidOn())
             && p.method() == i.method() && p.emailMinutes() == i.emailMinutes() && p.remoteMinutes() == i.remoteMinutes()
-            && p.notes().equals(clean(i.notes()));
+            && p.notes().equals(clean(i.notes())) && Objects.equals(p.policyId(), i.policyId());
     }
 
     private void validateAdminAssignment(Long id) {
