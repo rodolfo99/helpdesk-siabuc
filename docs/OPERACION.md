@@ -1,6 +1,6 @@
 # Instalación, compilación y operación
 
-Los scripts entregados están pensados para Bash en Linux. En Windows utilice WSL2 con integración Docker. El desarrollo nativo requiere JDK 17+, Maven 3.9, Node.js 24 LTS y npm; el despliegue Docker instala esas herramientas dentro de sus imágenes y sólo requiere Docker Compose y Python 3.10+ en el anfitrión.
+En Linux se usan los scripts Bash `.sh`. En Windows se usan los `.bat` desde CMD o PowerShell con Docker Desktop y contenedores Linux; consulte [WINDOWS.md](WINDOWS.md). El modo de desarrollo con Java y Node fuera de contenedores se ejecuta en Linux o dentro de WSL2. El desarrollo nativo requiere JDK 17+, Maven 3.9, Node.js 24 LTS y npm; el despliegue Docker instala esas herramientas dentro de sus imágenes y sólo requiere Docker Compose y Python 3.10+ en el anfitrión.
 
 ## Instalación y primer arranque
 
@@ -55,7 +55,7 @@ npm run build
 npm test
 ```
 
-Artefactos: `backend/target/siabuc-helpdesk-1.2.0.jar` y `frontend/dist/helpdesk/browser/`. `npm ci` utiliza el archivo `package-lock.json` entregado. No sustituya `npm ci` por actualizaciones de dependencias durante una instalación reproducible.
+Artefactos: `backend/target/siabuc-helpdesk-1.3.0.jar` y `frontend/dist/helpdesk/browser/`. `npm ci` utiliza el archivo `package-lock.json` entregado. No sustituya `npm ci` por actualizaciones de dependencias durante una instalación reproducible.
 
 `mvn package` compila también las clases de prueba y ejecuta pruebas unitarias si existen. Los archivos `*IT.java` se ejecutan únicamente con el perfil `postgres-it`. Una compilación satisfactoria no significa por sí sola que se ejecutaron esas pruebas de integración.
 
@@ -110,7 +110,7 @@ from scripts.manage import ROOT, config
 env = os.environ.copy()
 env.update(config())
 env.update(DB_HOST="127.0.0.1", SERVER_ADDRESS="127.0.0.1")
-subprocess.run(["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.2.0.jar")], env=env, check=True)
+subprocess.run(["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.3.0.jar")], env=env, check=True)
 PY
 ```
 

@@ -21,6 +21,8 @@ import time
 import urllib.error
 import urllib.request
 
+IS_WINDOWS = os.name == "nt"
+
 ROOT = Path(__file__).resolve().parents[1]
 ENV_FILE = ROOT / ".env"
 RUNTIME = ROOT / ".runtime"
@@ -214,7 +216,7 @@ def config(create: bool = False, prompt_db_password: bool = False, prompt_mail: 
         with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
             handle.write("# Configuración local. No compartir ni subir al repositorio.\n")
             handle.writelines(f"{key}={env_value(value)}\n" for key, value in values.items())
-        print("Configuración creada en .env con contraseñas aleatorias y permisos 600.", flush=True)
+        print("Configuración creada en .env con contraseñas aleatorias. Proteja el archivo con los permisos de su usuario (600 en Linux; ACL en Windows).", flush=True)
     os.chmod(ENV_FILE, 0o600)
     # Never activate mail or replace providers on an existing 1.0/1.1 installation.
     values = dict(DEFAULTS)
@@ -493,6 +495,10 @@ def docker_ready(values: dict[str, str]) -> None:
     try:
         compose(values, "version", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         run(["docker", "info"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if IS_WINDOWS:
+            engine = run(["docker", "info", "--format", "{{.OSType}}"], capture_output=True, text=True).stdout.strip()
+            if engine != "linux":
+                fail("Docker Desktop debe utilizar contenedores Linux. Seleccione Switch to Linux containers.")
     except subprocess.CalledProcessError:
         fail("Docker Engine o el complemento Docker Compose no está disponible para este usuario.")
 
@@ -503,6 +509,8 @@ def credentials(values: dict[str, str]) -> None:
 
 
 def native_requirements() -> None:
+    if IS_WINDOWS:
+        fail("En Windows use compilar.bat e iniciar.bat con Docker Desktop; para desarrollo nativo utilice los scripts .sh dentro de WSL2.")
     require("java", "mvn", "node", "npm")
     version = run(["node", "-p", "process.versions.node"], capture_output=True, text=True).stdout.strip()
     if int(version.split(".")[0]) < 24:
@@ -518,7 +526,7 @@ def build_native() -> None:
     run(["mvn", "-B", "-ntp", "package"], cwd=ROOT / "backend")
     run(["npm", "ci"], cwd=ROOT / "frontend")
     run(["npm", "run", "build"], cwd=ROOT / "frontend")
-    print("Compilación terminada: backend/target/siabuc-helpdesk-1.2.0.jar y frontend/dist/helpdesk/browser/.")
+    print("Compilación terminada: backend/target/siabuc-helpdesk-1.3.0.jar y frontend/dist/helpdesk/browser/.")
 
 
 def wait_http(url: str, process: subprocess.Popen, log_path: Path, timeout: int = 180) -> None:
@@ -575,7 +583,7 @@ def development(values: dict[str, str]) -> None:
     previous_sigterm = signal.signal(signal.SIGTERM, interrupted)
     try:
         commands = [
-            (["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.2.0.jar")],
+            (["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.3.0.jar")],
              ROOT / "backend", RUNTIME / "backend.log", f"http://127.0.0.1:{values['SERVER_PORT']}/api/health"),
             (["npm", "start", "--", "--host", "127.0.0.1", "--port", values["FRONTEND_PORT"]],
              ROOT / "frontend", RUNTIME / "frontend.log", f"http://127.0.0.1:{values['FRONTEND_PORT']}/"),
@@ -623,7 +631,7 @@ def backup(values: dict[str, str], output: str | None) -> None:
         fail("El archivo destino ya existe. Elija otro nombre para conservar la copia anterior.")
     created = False
     try:
-        descriptor = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        descriptor = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0), 0o600)
         created = True
         with os.fdopen(descriptor, "wb") as handle:
             compose(values, "exec", "-T", "db", "pg_dump", "-U", values["DB_USER"],
@@ -668,7 +676,7 @@ def restore(values: dict[str, str], filename: str, confirmed: bool) -> None:
     except subprocess.CalledProcessError:
         fail("Falló la restauración transaccional. Spring, Angular y Postfix siguen detenidos; revise el error antes de reiniciar.")
     print("Restauración terminada. Se conservarán las cuentas y contraseñas del respaldo.")
-    print("Ejecute ./iniciar.sh para iniciar todos los servicios, o ./iniciar-dev.sh para desarrollo.")
+    print("Ejecute iniciar.bat para iniciar todos los servicios." if IS_WINDOWS else "Ejecute ./iniciar.sh para iniciar todos los servicios, o ./iniciar-dev.sh para desarrollo.")
 
 
 def backup_filename(value: str) -> str:

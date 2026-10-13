@@ -56,3 +56,9 @@ Si no existe la opción de contraseña de aplicación, solicite a UCOL un relay 
 - Contraseñas de aplicación: https://support.google.com/mail/answer/185833?hl=es
 
 Pruebas automatizadas con SMTP/Docker simulados: `python3 -m unittest discover -s tests/ops -p 'test_gmail.py'`. No se ha probado con credenciales reales de UCOL ni ejecutado Docker en el entorno de desarrollo de este cambio.
+
+## Windows y estado de validación real
+
+En Windows use `configurar-gmail.bat` desde CMD o PowerShell, sin sudo, con Docker Desktop iniciado. Consulte [WINDOWS.md](WINDOWS.md). Los permisos 600 descritos para Linux no establecen una ACL privada en NTFS; proteja la carpeta desde Seguridad de Windows.
+
+El 13 de octubre de 2026 el usuario confirmó que el SMTP local funcionó y que la configuración con Gmail no funcionó. No se ha identificado aquí la causa de ese fallo ni se presenta Gmail como validado en su instalación. Mantenga la configuración local que ya funciona; ejecutar el configurador de Gmail es opcional.
