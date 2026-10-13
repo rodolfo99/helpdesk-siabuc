@@ -1,6 +1,6 @@
-# Contrato de integración (v1.2)
+# Contrato de integración (v1.5)
 
-Base `/api`. Fechas ISO 8601 UTC. Identificadores numéricos. Unidad de soporte: minutos enteros (no flotantes). Roles `ADMIN`, `USER` y `BILLING`; canales `EMAIL` y `REMOTE`; estados `OPEN` y `CLOSED`.
+Base `/api`. Instantes ISO 8601 UTC; fechas civiles de pagos y pólizas `YYYY-MM-DD`, sin conversión de zona horaria. Identificadores numéricos. Unidad de soporte: minutos enteros (no flotantes). Roles `ADMIN`, `USER` y `BILLING`; canales `EMAIL` y `REMOTE`; estados `OPEN` y `CLOSED`.
 
 Autenticación: sesión HttpOnly, cookie de CSRF `XSRF-TOKEN`, cabecera `X-XSRF-TOKEN`. Angular usa proxy mismo origen. GET `/auth/csrf` inicializa cookie y retorna `{token}`; llamar antes de login y después de login/logout. POST `/auth/login` usa formulario URL encoded `username`, `password`, devuelve 200. POST `/auth/logout` devuelve 204. GET `/auth/me` devuelve User. PUT `/auth/password` JSON `{currentPassword,newPassword}`.
 
@@ -42,7 +42,7 @@ Listados de instituciones, usuarios y casos completos; interfaz filtra búsqueda
 
 ## Pagos y acreditación
 
-`BILLING` puede consultar instituciones sin notas privadas y registrar/consultar pagos. No accede a casos, usuarios, auditoría, notificaciones ni modificaciones institucionales. Puede cambiar su propia contraseña.
+`BILLING` puede consultar instituciones sin notas privadas, gestionar pólizas, registrar/consultar pagos, adjuntar comprobantes y consultar reportes financieros. No accede a casos, administración de usuarios, auditoría, cola/configuración de correo ni modificaciones institucionales. Puede cambiar su propia contraseña y consultar sus avisos internos de saldo mediante `/inbox`.
 
 - GET `/payments` ADMIN/BILLING: lista completa de pagos, incluidos anulados, orden descendente de id.
 - POST `/payments` ADMIN/BILLING: registra un pago recibido y acredita sus minutos en una única transacción; HTTP 201.
@@ -54,6 +54,7 @@ Entrada de pago:
 {
   "requestId": "45104c2a-c447-4cac-b9c3-405d6e1d5683",
   "institutionId": 1,
+  "policyId": null,
   "reference": "TRANSFERENCIA-0001",
   "amount": 250.00,
   "currency": "MXN",
@@ -65,7 +66,9 @@ Entrada de pago:
 }
 ```
 
-Respuesta: campos de entrada más `{id,institutionName,createdBy,createdAt,voided,voidReason,voidedBy,voidedAt}`. Importe positivo, máximo `999999999.99` y dos decimales; moneda de tres letras mayúsculas. Métodos `TRANSFER`, `CASH`, `CARD`, `OTHER`. Debe acreditar al menos un minuto; cada bolsa mantiene el máximo de mil millones de minutos asignados. Notas y referencia obligatorias. Fecha civil `YYYY-MM-DD`, sin conversión de zona horaria.
+Respuesta: campos de entrada más `{id,institutionName,policyFolio,createdBy,createdAt,voided,voidReason,voidedBy,voidedAt}`. `policyId` es opcional; `null` indica compra directa. Importe máximo `999999999.99` con hasta dos decimales; los movimientos nuevos deben usar `MXN`. Métodos `TRANSFER`, `DEPOSIT`, `CASH`, `CREDIT_CARD`, `DEBIT_CARD`, `CHECK`, `OTHER`; `CARD` sigue aceptado por compatibilidad. Los registros anteriores conservan moneda y método.
+
+Sin póliza se requieren importe y algún canal positivos. Con póliza se permite un abono positivo sin minutos; una acreditación con importe cero exige póliza ya liquidada y minutos pendientes. No se permite un movimiento totalmente en cero ni superar los importes/minutos contratados vigentes. Cada bolsa institucional mantiene el máximo de mil millones de minutos asignados. Notas y referencia obligatorias. Consulte [Pólizas y cobranza 1.5](#pólizas-y-cobranza-15) para límites e historial.
 
 `requestId` es UUID persistente durante reintentos de la misma operación: repetir el mismo contenido devuelve el pago previo (también HTTP 201) sin acreditar ni notificar otra vez. Reutilizarlo con contenido diferente da 409. La referencia no puede repetirse en la misma institución, ignorando mayúsculas y espacios exteriores, incluso después de una anulación. No hay edición ni borrado del registro: anular y registrar una corrección con otra referencia. No se realizan cargos bancarios ni se genera factura fiscal.
 
@@ -103,7 +106,7 @@ Un caso cerrado, una institución inactiva o un responsable diferente ya asignad
 
 ## Extensiones 1.4
 
-Todas las rutas siguientes usan el prefijo `/api`, sesión y CSRF en las escrituras. USER sólo accede a su institución; los IDs ajenos devuelven 404. BILLING no accede a casos, adjuntos, cronómetro, agenda ni reportes. Los avisos propios de saldo sí están disponibles para Cobranza.
+Todas las rutas siguientes usan el prefijo `/api`, sesión y CSRF en las escrituras. USER sólo accede a su institución; los IDs ajenos devuelven 404. BILLING no accede a casos, adjuntos de soporte, cronómetro, agenda ni reportes técnicos. Los avisos propios de saldo sí están disponibles para Cobranza; sus reportes financieros y comprobantes usan las rutas 1.5 descritas más adelante.
 
 | Método y ruta | Uso / rol |
 | --- | --- |
@@ -140,7 +143,7 @@ Los informes devuelven 400 si exceden 366 días, 5,000 filas combinadas o sus l�
 
 ## Pólizas y cobranza 1.5
 
-BILLING y ADMIN pueden gestionar pólizas y consultar reportes financieros. USER recibe 403. El acceso financiero no concede acceso a casos, notas internas, adjuntos ni reportes técnicos. Todas las escrituras conservan sesión y CSRF.
+BILLING y ADMIN pueden gestionar pólizas y consultar reportes financieros. USER recibe 403. El acceso financiero no concede a BILLING acceso a casos, notas internas, adjuntos de soporte ni reportes técnicos. Todas las escrituras conservan sesión y CSRF.
 
 | Método y ruta (prefijo `/api`) | Resultado |
 | --- | --- |

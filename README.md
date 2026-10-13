@@ -2,11 +2,19 @@
 
 Sistema de atención técnica con servidor **Spring Boot 3.5.16 / Java 17**, cliente **Angular 21.2.25** y base de datos **PostgreSQL 17**. Conserva instituciones, usuarios, casos, pagos, actualizaciones descriptivas y auditoría. El tiempo por correo y por escritorio remoto se administra en **dos bolsas independientes de minutos enteros**.
 
-Para configurar Gmail institucional `@ucol.mx` como salida de Postfix, use `bash configurar-gmail.sh`. Consulte [Gmail UCOL](docs/GMAIL-UCOL.md) para crear la contraseña de aplicación y verificar la entrega.
+**Versión 1.5:** pólizas, pagos en pesos, acreditación de horas, comprobantes y reportes de cobranza. Incluye las funciones de soporte de 1.4: clasificación, prioridades, SLA, adjuntos, campana, cronómetro, agenda y reportes técnicos.
 
-**Windows:** incluye scripts `.bat` para Docker Desktop con contenedores Linux. Consulte [Instalación en Windows](docs/WINDOWS.md). No necesita instalar Java, Maven ni Node en Windows.
+**Linux y Windows:** scripts `.sh` y `.bat` para configurar, compilar, iniciar, detener, respaldar y restaurar. Con Docker se requieren Python 3.10+ y Docker Compose; en Windows, Docker Desktop con contenedores Linux. Java, Maven y Node se ejecutan dentro de las imágenes.
 
-Consulte las [novedades e instalación de 1.5](docs/VERSION-1.5.md), la guía de [pólizas y cobranza](docs/POLIZAS-COBRANZA.md), el [manual de las funciones de soporte](docs/HELPDESK-1.4.md) y el [control administrativo de envío de correo](docs/DESACTIVAR-CORREO.md).
+| Necesito… | Guía |
+| --- | --- |
+| Instalar o actualizar conservando mis datos | [Versión 1.5](docs/VERSION-1.5.md) · [Windows](docs/WINDOWS.md) · [Operación Linux/Docker](docs/OPERACION.md) |
+| Atender casos, usar adjuntos, cronómetro y agenda | [Manual de uso](docs/MANUAL-USUARIO.md) · [Funciones de soporte](docs/HELPDESK-1.4.md) |
+| Registrar pólizas, pagos y horas adquiridas | [Pólizas y cobranza](docs/POLIZAS-COBRANZA.md) |
+| Adjuntar un recibo o una transferencia | [Comprobantes de pago](docs/COMPROBANTES-PAGO.md) |
+| Consultar consumos o ingresos y exportarlos | [Reportes técnicos](docs/REPORTES.md) · [Reportes de cobranza](docs/REPORTES-COBRANZA.md) |
+| Configurar o pausar los avisos por correo | [SMTP interno](docs/SMTP-INTERNO.md) · [Pausa de envío](docs/DESACTIVAR-CORREO.md) |
+| Respaldar, restaurar o conocer las pruebas | [Respaldo y restauración](docs/RESPALDO-RESTAURACION.md) · [Validación y límites](docs/VALIDACION.md) |
 
 ## Funciones incluidas
 
@@ -40,7 +48,17 @@ Consulte las [novedades e instalación de 1.5](docs/VERSION-1.5.md), la guía de
 
 **Alcance:** registra la atención por correo y las sesiones remotas y envía avisos cuando se configura SMTP. No lee correos entrantes ni abre conexiones de escritorio remoto. Los minutos se confirman manualmente o con ayuda del cronómetro. Los pagos registran dinero recibido y acreditan minutos: no procesan cargos bancarios ni emiten facturas fiscales. Es una aplicación independiente de SIABUC.
 
-Si ya instaló 1.0/1.1, conserve `.env`, los volúmenes y las migraciones existentes. Consulte [Migración de datos](docs/MIGRACION-1.1.md) y [SMTP interno](docs/SMTP-INTERNO.md#actualizar-una-instalación-anterior). Un `.env` anterior conserva su conexión de correo; adoptar Postfix se hace con `./configurar.sh --smtp-interno`.
+## Roles y acceso
+
+| Cuenta | Alcance |
+| --- | --- |
+| Administración (`ADMIN`) | Instituciones, usuarios, soporte, configuración, reportes técnicos y supervisión financiera. Puede anular pagos si las reglas de saldo lo permiten. |
+| Cliente (`USER`) | Saldo, casos e historial público de su institución; abre solicitudes, comenta, adjunta archivos de soporte y confirma sesiones remotas. Sin acceso financiero ni notas internas. |
+| Cobranza (`BILLING`) | Saldos institucionales, pólizas, pagos, acreditación de horas, comprobantes y reportes financieros. Sin acceso a expedientes técnicos, administración de cuentas o anulación de pagos. |
+
+Los permisos se comprueban en el servidor. Los adjuntos de soporte respetan la institución y la visibilidad de la entrada; los comprobantes de pago son exclusivos de Administración/Cobranza. La campana sigue funcionando con el correo pausado y muestra a Cobranza sus avisos de saldo.
+
+Para actualizar desde una versión anterior, respalde primero y conserve `.env`, los volúmenes y las migraciones existentes. Siga [Actualizar a 1.5](docs/VERSION-1.5.md); las guías de [migración 1.0/1.1](docs/MIGRACION-1.1.md) y [SMTP interno](docs/SMTP-INTERNO.md#actualizar-una-instalación-anterior) conservan las particularidades de esas versiones. No es necesario cambiar una configuración SMTP que ya funciona.
 
 ## Inicio rápido desde cero con Docker
 
@@ -90,6 +108,23 @@ El primer inicio descarga dependencias y puede tardar varios minutos. El script 
 
 Si omite `configurar.sh`, `iniciar.sh` genera `.env` automáticamente. Nunca publique ni comparta ese archivo. Los scripts resuelven su propia carpeta y pueden invocarse desde cualquier directorio.
 
+### Comandos equivalentes en Linux y Windows
+
+En PowerShell use el prefijo `.\`; en CMD puede omitirlo. El desarrollo con Spring/Angular fuera de Docker se mantiene en Linux/WSL2 mediante `iniciar-dev.sh`.
+
+| Operación | Linux / Bash | Windows / PowerShell |
+| --- | --- | --- |
+| Crear o validar configuración | `./configurar.sh` | `.\configurar.bat` |
+| Elegir contraseña de una base nueva | `./configurar.sh --password-bd` | `.\configurar.bat --password-bd` |
+| Configurar Postfix interno | `./configurar.sh --smtp-interno` | `.\configurar.bat --smtp-interno` |
+| Compilar e iniciar todo | `./iniciar.sh` | `.\iniciar.bat` |
+| Compilar imágenes | `./compilar.sh --docker` | `.\compilar.bat --docker` |
+| Detener conservando datos | `./detener.sh` | `.\detener.bat` |
+| Respaldar con nombre elegido | `./respaldar.sh --nombre-respaldo backups/mi-respaldo.dump` | `.\respaldar.bat --nombre-respaldo backups/mi-respaldo.dump` |
+| Restaurar una copia compatible | `./restaurar.sh --nombre-respaldo backups/mi-respaldo.dump --confirmar-reemplazo` | `.\restaurar.bat --nombre-respaldo backups/mi-respaldo.dump --confirmar-reemplazo` |
+
+Restaurar reemplaza los datos actuales y deja la aplicación detenida. Para recuperar una versión anterior utilice una base nueva y vacía según la [guía de retroceso](docs/RESPALDO-RESTAURACION.md#retroceder-a-una-versión-anterior). La disponibilidad de scripts Windows no equivale a una ejecución nativa validada; consulte [Windows](docs/WINDOWS.md) y [Validación](docs/VALIDACION.md).
+
 ## Puertos y configuración
 
 Edite `.env` **antes del primer inicio**. Puede usar, por ejemplo, `DB_PORT=5433`, `SERVER_PORT=8081` y `FRONTEND_PORT=4201` si ya tiene aplicaciones en los valores predeterminados.
@@ -132,7 +167,11 @@ La dirección con IP es una identidad de envío; este servicio no crea un buzón
 
 **Notificaciones** permite al administrador consultar la cola, enviar una prueba a su propia dirección y reintentar avisos fallidos u omitidos. Las notas internas sólo notifican al responsable. Consulte [SMTP interno](docs/SMTP-INTERNO.md) para entrega directa, restricciones del puerto 25, relay, cola y red; [Correo](docs/CORREO.md) detalla destinatarios y proveedores. En el helpdesk, SENT significa que Postfix aceptó el aviso; la entrega remota puede continuar pendiente en su cola.
 
-**Cobranza** permite a `ADMIN` y `BILLING` registrar institución, referencia, fecha, importe, moneda, método, descripción y minutos adquiridos para cada canal. El pago y la acreditación se guardan juntos. Sólo un administrador puede anular el pago y retirar los minutos, siempre que ambos canales conserven suficiente saldo disponible. El historial financiero no se borra.
+Gmail institucional `@ucol.mx` es una salida opcional de Postfix: `./configurar-gmail.sh` en Linux o `.\configurar-gmail.bat` en PowerShell. Consulte [Gmail UCOL](docs/GMAIL-UCOL.md) para requisitos y diagnóstico. El usuario confirmó SMTP local funcionando e informó que su configuración Gmail falló; no se presenta ese fallo como resuelto ni se requiere migrar a Gmail.
+
+**Pólizas y pagos:** `ADMIN` y `BILLING` registran dinero recibido en MXN, con referencia, fecha, método, descripción y tiempo por acreditar en cada canal. Se admiten transferencia, depósito, efectivo, tarjeta de crédito/débito, cheque y otro. Los registros anteriores conservan su moneda y método. Crear una póliza no acredita horas; **Pagos** confirma juntos el movimiento y los minutos indicados, sin convertir pesos automáticamente a tiempo. Una parcialidad de póliza puede registrar dinero sin minutos; una póliza ya liquidada permite acreditar horas pendientes con importe cero.
+
+En el detalle del pago se adjuntan [comprobantes PDF/PNG/JPEG](docs/COMPROBANTES-PAGO.md), sin repetir el cobro ni la acreditación. **Reportes de cobranza** ofrece historial por institución y totales generales, separados por moneda, con Excel/PDF. Sólo `ADMIN` puede anular un pago conforme a las reglas de saldo y respaldo monetario; se conserva toda la evidencia. Consulte [Pólizas y cobranza](docs/POLIZAS-COBRANZA.md).
 
 ## Detener, reiniciar y recompilar
 
@@ -179,12 +218,14 @@ Para ejecutar todo sin Docker, conectar un PostgreSQL propio o servir los archiv
 
 ## Flujo inicial recomendado
 
-1. **Instituciones:** registre nombre y contacto; asigne por separado, por ejemplo, 10 h de correo y 2 h de remoto.
-2. **Usuarios:** cree un usuario `USER` asociado a esa institución. Entregue su contraseña inicial por el procedimiento interno de su organización.
-3. **Casos:** abra un caso por correo o remoto, con título y descripción del problema.
-4. **Atención:** registre descripción, canal y minutos utilizados. El canal de cada atención determina qué bolsa se descuenta.
-5. **Seguimiento:** consulte la cronología, agregue comentarios o notas internas y cierre el caso al resolverlo.
-6. **Corrección:** si una atención se capturó mal, anúlela indicando la razón y registre la correcta. La anulación conserva la evidencia y devuelve el saldo.
+1. **Instituciones:** registre nombre, contacto, correo y responsable. Si va a acreditar horas mediante pagos, deje inicialmente las bolsas en cero para no duplicarlas con una asignación manual.
+2. **Usuarios:** cree cuentas `USER` asociadas a la institución y una cuenta `BILLING` para Cobranza. Entregue las credenciales por un medio privado.
+3. **Pólizas:** Cobranza registra el contrato, vigencia, importe MXN y horas por canal, cuando corresponda. Esta operación no incrementa el saldo.
+4. **Pagos:** registre el importe recibido y las horas autorizadas de ese movimiento, con póliza opcional. Revise el saldo antes/después y confirme. Adjunte el comprobante desde su detalle.
+5. **Casos:** con saldo disponible, el cliente abre una solicitud, indica categoría, prioridad y datos técnicos. Un administrativo toma el caso si quedó sin responsable.
+6. **Atención:** registre descripción, canal y minutos, o use el cronómetro y confirme el tiempo antes de descontarlo. Para remoto puede proponer una sesión que confirme el cliente.
+7. **Seguimiento:** consulte el detalle del historial, los adjuntos y la campana; responda y cierre el caso al resolverlo. Las notas internas son exclusivas de Administración.
+8. **Control:** Administración consulta consumos en Reportes; Administración/Cobranza revisan pagos y pólizas en Reportes de cobranza. Una atención errónea se anula con motivo y devuelve sus minutos; la anulación de pagos tiene reglas independientes.
 
 Una hora equivale exactamente a 60 minutos. El sistema rechaza una atención de 31 minutos si la institución sólo dispone de 30 en ese canal. No toma prestados minutos de la otra bolsa. Crear un caso no descuenta tiempo; se requiere saldo positivo para crearlo o reabrirlo. Los comentarios de usuarios no consumen saldo.
 
@@ -208,7 +249,7 @@ Para elegir el nombre y la ubicación del respaldo:
 
 Este ejemplo crea `backups/mi-respaldo.dump` y `backups/mi-respaldo.dump.sha256`. No se sobrescribe una copia existente; use otro nombre para el siguiente respaldo. Las rutas relativas se interpretan desde la carpeta donde ejecuta el comando, y los nombres con espacios deben ir entre comillas.
 
-Para restaurar una copia y reemplazar los datos actuales, detenga antes cualquier sesión de desarrollo y cree un respaldo del estado actual:
+Para restaurar una copia de esquema compatible y reemplazar los datos actuales, detenga antes cualquier sesión de desarrollo y cree un respaldo del estado actual. Para retroceder de versión, siga el procedimiento de [base nueva y vacía](docs/RESPALDO-RESTAURACION.md#retroceder-a-una-versión-anterior):
 
 ```bash
 ./restaurar.sh --nombre-respaldo backups/mi-respaldo.dump --confirmar-reemplazo
@@ -233,6 +274,7 @@ La restauración detiene Spring, Angular y Postfix de Docker, valida el SHA-256 
 - [Comprobantes de pago](docs/COMPROBANTES-PAGO.md): carga, descarga, historial y permisos de archivos financieros.
 - [Actualizar a 1.5](docs/VERSION-1.5.md): conservar pagos, horas y configuración.
 - [Operación y compilación](docs/OPERACION.md): instalación nativa, Docker, red, respaldo y resolución de problemas.
+- [Instalación y scripts Windows](docs/WINDOWS.md): Docker Desktop, Python y equivalencias CMD/PowerShell.
 - [Respaldo y restauración](docs/RESPALDO-RESTAURACION.md): `--nombre-respaldo`, ejemplos, recuperación paso a paso y alcance de las copias.
 - [Arquitectura y modelo de datos](docs/ARQUITECTURA.md): integridad, concurrencia, sesiones y límites.
 - [SMTP interno Postfix](docs/SMTP-INTERNO.md): configuración predeterminada, entrega directa/relay y diagnóstico de cola.
@@ -255,11 +297,11 @@ siabuc-helpdesk/
   scripts/manage.py       Operación y lectura segura de configuración
   docker-compose.yml      PostgreSQL + Postfix + Spring + Nginx
   .env.example            Plantilla sin contraseñas utilizables
-  configurar.sh           Generar / validar .env; --password-bd, --correo y --smtp-interno
-  iniciar.sh              Compilar e iniciar con Docker
+  configurar.sh / .bat    Generar / validar .env; --password-bd, --correo y --smtp-interno
+  iniciar.sh / .bat       Compilar e iniciar con Docker
   iniciar-dev.sh          PostgreSQL/Postfix Docker + Spring/Angular locales
-  detener.sh              Detener Docker conservando datos
-  compilar.sh             Compilar localmente o con --docker
-  respaldar.sh            Crear copia PostgreSQL
-  restaurar.sh            Recuperar copia PostgreSQL
+  detener.sh / .bat       Detener Docker conservando datos
+  compilar.sh / .bat      Compilar imágenes; .sh también permite compilación local
+  respaldar.sh / .bat     Crear copia PostgreSQL
+  restaurar.sh / .bat     Recuperar copia PostgreSQL
 ```

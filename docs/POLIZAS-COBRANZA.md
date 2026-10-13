@@ -13,6 +13,7 @@ Disponible desde SIABUC Helpdesk 1.5.0. El módulo relaciona las pólizas de una
 | Cancelar una póliza sin pagos vigentes | Sí | Sí | No |
 | Registrar pagos y acreditar soporte | Sí | Sí | No |
 | Consultar pagos y reportes financieros | Sí | Sí | No |
+| Adjuntar y descargar comprobantes de pago | Sí | Sí | No |
 | Anular un pago | No | Sí, si quedan los minutos necesarios | No |
 
 Cobranza conserva su acceso a los saldos institucionales; estas funciones no le otorgan acceso a notas internas, expedientes de soporte ni administración de usuarios. Los correos de pagos continúan usando los destinatarios y la política de pausa de notificaciones existentes.
@@ -67,11 +68,12 @@ El detalle de cada póliza conserva, en orden cronológico descendente:
 - Creación y modificaciones, con descripción de los valores anteriores y posteriores.
 - Cada pago o acreditación, su referencia, importe, moneda, método, minutos de ambos canales, autor y fecha.
 - Anulaciones de pagos y motivo.
+- Comprobantes adjuntos a pagos de la póliza, con autor y fecha; no cambian dinero ni minutos.
 - Cancelación de la póliza y motivo.
 
 Puede consultar el importe recibido, el importe contractual pendiente, los minutos acreditados y los minutos contratados aún pendientes de acreditar. **Los minutos pendientes de acreditar no son el saldo disponible para soporte:** el saldo institucional también considera minutos ya utilizados y acreditaciones de otras pólizas o pagos libres.
 
-El historial general de pagos conserva los movimientos libres y los ligados a pólizas. Los reportes financieros permiten consultar institución, póliza, método y periodo, y exportar Excel o PDF. Consulte la guía de reportes para sus filtros y reglas de totalización. Los importes históricos en otras monedas se conservan sin conversión y deben mantenerse separados en los totales.
+El historial general de pagos conserva los movimientos libres y los ligados a pólizas. Desde el detalle de cada pago puede adjuntar o descargar [comprobantes PDF/PNG/JPEG](COMPROBANTES-PAGO.md), sin repetir el pago ni acreditar minutos. Los [reportes financieros](REPORTES-COBRANZA.md) permiten consultar institución, póliza, método y periodo, y exportar Excel o PDF. Los importes históricos en otras monedas se conservan sin conversión y deben mantenerse separados en los totales.
 
 Una póliza cancelada puede conservar información del importe originalmente contratado y sus minutos, pero **no se considera una deuda activa** en los reportes.
 
