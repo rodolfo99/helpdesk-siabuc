@@ -114,3 +114,12 @@ Con una institución de prueba que tenga 1 h de correo y 30 min remotos:
 8. Acceda como usuario de otra institución: no debe poder ver ese caso.
 
 Este recorrido es una guía de uso y de aceptación manual. Los resultados de comprobaciones realmente ejecutadas se encuentran en [VALIDACION.md](VALIDACION.md).
+
+## Dar acceso al historial a una institución cliente
+
+1. Inicie sesión como administrador y registre o seleccione la institución en **Instituciones**.
+2. En **Usuarios**, cree una cuenta activa con identificador de usuario, nombre, contraseña, correo y rol **USER**. Seleccione la institución cliente correspondiente.
+3. Entregue a esa persona la dirección del portal y sus credenciales por un medio privado. El correo de contacto institucional por sí solo no crea una cuenta de acceso.
+4. El cliente inicia sesión en el mismo portal y abre **Casos** para consultar los casos abiertos o cerrados y su historial público, fechas y consumos. Puede cambiar su contraseña desde **Mi cuenta**.
+
+Puede crear varias cuentas personales por institución; todas consultan el historial institucional. Spring restringe la consulta a la institución asociada incluso si alguien modifica el identificador del caso en una petición. Las notas internas quedan reservadas a administración. El agotamiento del saldo impide nuevas atenciones, pero no impide consultar el historial de una institución activa.
