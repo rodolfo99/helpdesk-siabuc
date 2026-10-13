@@ -1,4 +1,4 @@
-# Correo y notificaciones · versión 1.3.2
+# Correo y notificaciones · versión 1.3.3
 
 El sistema guarda notificaciones junto con cada operación y las envía posteriormente por SMTP. **En instalaciones nuevas el envío usa Postfix interno por defecto**, con la IP local como dominio literal del remitente, por ejemplo `soporte@[192.168.1.50]`. Configure la IP real con `./configurar.sh --smtp-interno`. Los `.env` anteriores conservan su configuración y activación. Consulte [SMTP-INTERNO.md](SMTP-INTERNO.md) para el servidor Docker, su cola y las condiciones de recepción. Configurar el servidor no envía un mensaje de prueba; al activar `MAIL_ENABLED` y reiniciar, se procesa también la cola pendiente acumulada si no existe una pausa administrativa. Desde 1.3.1 puede [pausar el envío desde la aplicación](DESACTIVAR-CORREO.md).
 
@@ -113,7 +113,9 @@ Las direcciones se guardan al crear cada evento. Cambiar después el correo de u
 
 ### Contenido de los avisos de casos
 
-Desde 1.3.2 cada aviso de apertura, actualización, atención/comentario, anulación y cambio de estado incluye:
+Desde 1.3.3, en **Historial de notificaciones** un administrador puede abrir cada fila con un clic o con **Ver detalle**, leer el correo completo y sus datos de entrega, y usar **← Volver al historial** para recuperar filtros y posición. Abrir el detalle sólo consulta el registro: no envía ni reintenta. Los usuarios institucionales consultan las entradas públicas en el historial de sus propios casos; no acceden a esta cola administrativa.
+
+Desde 1.3.2 cada aviso de apertura, actualización, atención/comentario, anulación y cambio de estado incluye lo siguiente; los avisos de **Caso tomado** añadidos en 1.3.3 usan el mismo formato:
 
 - Número y título del caso, institución cliente y nombre del administrativo asignado que atiende.
 - Estado **Abierto** o **Cerrado**, canal principal y usuario que registró el evento. El responsable asignado puede ser distinto de quien registró la actualización.

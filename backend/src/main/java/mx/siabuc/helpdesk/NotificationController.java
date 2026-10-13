@@ -20,6 +20,9 @@ public class NotificationController {
         return actor;
     }
     @GetMapping public List<NotificationService.Notification> list() { admin(); return notifications.notifications(); }
+    @GetMapping("/{id}") public NotificationService.NotificationDetail detail(@PathVariable long id) {
+        admin(); return notifications.notificationDetail(id);
+    }
     @GetMapping("/config") public NotificationService.Configuration config() { admin(); return notifications.configuration(); }
     @PostMapping("/config") public NotificationService.Configuration config(@RequestBody JsonNode input) {
         Models.User actor = admin();

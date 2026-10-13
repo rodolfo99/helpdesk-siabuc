@@ -1,6 +1,17 @@
-# Validación de la versión 1.3.2
+# Validación de la versión 1.3.3
 
-## Contenido de avisos de casos · 13 de octubre de 2026
+## Detalle de historiales y toma de casos · 13 de octubre de 2026
+
+- **48 pruebas Java de integración aprobadas**, sin fallos, errores ni omisiones: 14 de Helpdesk, 4 de configuración de correo, 3 de detalle de notificaciones, 7 de outbox, 5 de toma de casos, 8 de SMTP y 7 de pagos. Java 17 / Maven 3.9.9, perfil `postgres-it`; JAR 1.3.3 generado.
+- Detalle de notificaciones: sólo ADMIN, errores 401/403/404, cuerpo histórico exacto y lectura sin modificar ninguno de los seis estados de entrega ni generar avisos. La lista conserva su respuesta compacta.
+- Toma de casos: creación por cliente para su institución, asignación exclusiva administrativa sin consumo de minutos, historial/auditoría/avisos, idempotencia, rechazo de otra asignación, caso cerrado o institución inactiva, saldo y responsable predeterminado. Dos peticiones simultáneas obtuvieron un único éxito y un conflicto, con un solo evento de toma.
+- Spring, JDBC, sesiones y CSRF reales sobre PGlite efímero y una conexión; SQL V1–V4 exacto. Flyway se desactivó sólo para el ensayo. La prueba concurrente queda serializada por ese pool: no acredita contención nativa de PostgreSQL 17 con varias conexiones. SMTP JavaMail sobre socket de loopback; sin correo externo.
+- **27 pruebas Chromium aprobadas** con API simulada: 17 de `history-detail.ui.mjs` y 10 de regresión `mail-control.ui.mjs`. Incluyen clic en fila/tarjeta, contenido completo multilínea, HTML escapado, teclado/foco, filtros y posición al volver, privacidad visible, notas anuladas, errores, acciones separadas, cliente que abre caso, toma administrativa, conflicto 409 y respuesta tardía tras cambiar de pantalla. No sustituyen los permisos reales probados en backend.
+- Angular producción compilado: **368.87 kB** antes de compresión. Capturas de prueba de escritorio y móvil de 390 px revisadas; sin cambios de dependencias.
+- Enlaces locales revisados y ZIP 1.3.3 comprobado mediante CRC/manifiesto SHA-256, con `.sh` ejecutables y `.bat` CRLF. No incluye secretos, datos de clientes ni artefactos de pruebas locales.
+- Docker Desktop/Windows, migración Flyway sobre PostgreSQL 17 y respaldo/restauración reales no se ejecutaron en este entorno. Se conserva por separado la evidencia histórica siguiente.
+
+## Contenido de avisos de casos · versión 1.3.2 · 13 de octubre de 2026
 
 - **40 pruebas Java de integración aprobadas**, sin fallos, errores ni omisiones: 14 de Helpdesk, 4 de configuración, 7 de outbox, 8 de SMTP y 7 de pagos. Java 17 y Maven 3.9.9, `-Ppostgres-it verify`; JAR 1.3.2 generado.
 - Se comprobó responsable asignado distinto del autor del evento, institución cliente, descripción vigente separada del detalle de actualización, estado únicamente Abierto/Cerrado al cerrar y reabrir y leyenda de consulta en Helpdesk. Los avisos anteriores conservan su cuerpo original.

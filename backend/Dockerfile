@@ -8,7 +8,7 @@ RUN mvn -B -ntp package
 FROM eclipse-temurin:17-jre-alpine
 RUN addgroup -S -g 10001 app && adduser -S -u 10001 -G app app
 WORKDIR /app
-COPY --from=build --chown=app:app /build/target/siabuc-helpdesk-1.3.2.jar app.jar
+COPY --from=build --chown=app:app /build/target/siabuc-helpdesk-1.3.3.jar app.jar
 USER app
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

@@ -250,6 +250,24 @@ public class HelpdeskService {
         return detail(authorizedCase(id, actor), actor);
     }
     @Transactional
+    public CaseDetail claimCase(long id) {
+        User actor = admin();
+        LockedCase locked = lockCase(id, actor);
+        requireActive(locked.institution());
+        SupportCase current = locked.supportCase();
+        if (current.status() != CaseStatus.OPEN)
+            throw ApiException.conflict("El caso está cerrado. Reábralo antes de tomarlo.");
+        if (Objects.equals(current.assignedAdminId(), actor.id())) return detail(current, actor);
+        if (current.assignedAdminId() != null)
+            throw ApiException.conflict("Otro administrativo ya es responsable de este caso. Actualice el listado para consultar la asignación.");
+        db.update("UPDATE support_cases SET assigned_admin_id=?,updated_at=NOW() WHERE id=?", actor.id(), id);
+        String description = "Caso tomado por " + actor.displayName() + " (" + actor.username() + "). El administrativo es ahora responsable de la atención.";
+        insertEntry(id, description, null, 0, false, actor.id());
+        audit(actor.username(), "CLAIM_CASE", "CASE", id, description);
+        notifications.caseEvent(id, "CLAIM_CASE", description, false, actor.username());
+        return detail(authorizedCase(id, actor), actor);
+    }
+    @Transactional
     public CaseDetail updateCase(long id, CaseEdit input, boolean assignedAdminProvided) {
         User actor = admin(); validateCase(input.title(), input.description(), input.channel());
         LockedCase locked = lockCase(id, actor);

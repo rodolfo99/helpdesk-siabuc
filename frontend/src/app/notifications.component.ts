@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService, PageState, errorMessage } from './api.service';
@@ -17,6 +17,13 @@ export interface Notification {
   lastError: string | null;
   createdAt: string;
   sentAt: string | null;
+}
+
+export interface NotificationDetail extends Notification {
+  body: string;
+  internal: boolean;
+  recipientType: 'INSTITUTION' | 'USER';
+  recipientEntityId: number | null;
 }
 
 export interface MailConfig {
@@ -39,15 +46,47 @@ export interface MailConfig {
   selector: 'app-notifications',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  styles: ['.table-scroll { position: relative; }'],
+  styles: [`
+    .table-scroll { position: relative; }
+    .history-record { cursor: pointer; }
+    a.back-link { display: inline-block; }
+    .notification-detail dd, .notification-detail h1 { overflow-wrap: anywhere; }
+    .notification-body { padding: 0 24px 24px; }
+    .notification-body p { font-size: 13px; margin-bottom: 0; }
+  `],
   template: `
+    @if (!detail()) {
     <div class="page-heading">
       <div><div class="eyebrow">COMUNICACIÓN</div><h1>Correo y notificaciones</h1><p>Supervisa los avisos de casos y pagos y revisa su entrega.</p></div>
       @if (isAdmin()) {<button class="btn secondary" (click)="load()" [disabled]="busy()">{{busy() ? 'Procesando…' : '↻ Actualizar'}}</button>}
     </div>
+    }
     @if (error()) {<div class="notice error" role="alert">{{error()}}</div>}
     @if (success()) {<div class="notice success" role="status">{{success()}}</div>}
     @if (isAdmin()) {
+      @if (detail(); as item) {
+        <div class="notification-detail">
+          <a class="back-link" href="#historial-notificaciones" (click)="backToHistory($event)">← Volver al historial</a>
+          <div class="page-heading"><div><div class="eyebrow">HISTORIAL DE NOTIFICACIONES</div><h1 id="notification-detail-title" tabindex="-1">Detalle de notificación #{{item.id}}</h1><p>{{reference(item)}}</p></div><span class="badge" [class.open]="item.status === 'SENT'" [class.void]="item.status === 'FAILED'" [class.internal]="item.status === 'SKIPPED' || item.status === 'SUPPRESSED'">{{statusLabel(item.status)}}</span></div>
+          <section class="panel" aria-labelledby="notification-record-title">
+            <div class="panel-heading"><h2 id="notification-record-title">Información del aviso</h2></div>
+            <dl class="detail-list form-grid">
+              <div class="span-2"><dt>Asunto</dt><dd>{{item.subject}}</dd></div>
+              <div><dt>Destinatario</dt><dd>{{item.recipient || 'Sin destinatario registrado'}}</dd></div>
+              <div><dt>Tipo de destinatario</dt><dd>{{item.recipientType === 'INSTITUTION' ? 'Institución cliente' : 'Cuenta de usuario'}}{{item.recipientEntityId !== null ? ' #' + item.recipientEntityId : ' · sin asignación'}}</dd></div>
+              <div><dt>Evento</dt><dd>{{item.eventType}}</dd></div>
+              <div><dt>Visibilidad</dt><dd>{{item.internal ? 'Interna · solo administración' : 'Pública'}}</dd></div>
+              <div><dt>Fecha de registro</dt><dd>{{item.createdAt | date:'dd/MM/yyyy, HH:mm:ss'}}</dd></div>
+              <div><dt>Fecha de aceptación SMTP</dt><dd>{{item.sentAt ? (item.sentAt | date:'dd/MM/yyyy, HH:mm:ss') : 'Sin aceptación registrada'}}</dd></div>
+              <div><dt>Intentos realizados</dt><dd>{{item.attempts}}</dd></div>
+              <div><dt>Referencia</dt><dd>{{reference(item)}}</dd></div>
+              <div class="span-2"><dt>Último error o motivo</dt><dd class="preserve-lines">{{item.lastError || 'Sin error registrado'}}</dd></div>
+            </dl>
+            <div class="notification-body"><h2>Contenido completo del correo</h2><p class="preserve-lines">{{item.body}}</p></div>
+            <div class="table-footer">Se muestra el contenido guardado al generar el aviso. Consultarlo no envía correos ni modifica su estado. Enviada indica aceptación por SMTP, sin confirmar recepción ni lectura.</div>
+          </section>
+        </div>
+      } @else {
       @if (config(); as mail) {
         <div class="metric-grid">
           <section class="metric"><div class="metric-icon mint" aria-hidden="true">✉</div><div class="metric-label">Envío de correo</div><strong class="small-value">{{mail.enabled ? 'Activado' : mail.configuredEnabled ? 'En pausa' : 'Desactivado en servidor'}}</strong><small>{{mail.enabled ? 'Envío automático de nuevos avisos' : mail.paused ? 'Avisos registrados sin envío posterior' : 'Cola detenida por configuración del servidor'}}</small></section>
@@ -103,7 +142,7 @@ export interface MailConfig {
       } @else if (busy()) {
         <div class="loading" role="status">Cargando configuración de correo…</div>
       }
-      <section class="panel" [attr.aria-busy]="busy()">
+      <section class="panel" id="historial-notificaciones" [attr.aria-busy]="busy()">
         <div class="panel-heading"><div><h2>Historial de notificaciones</h2><p>Últimos 500 registros. Enviada significa que SMTP aceptó el mensaje; no confirma recepción ni lectura.</p></div></div>
         <div class="toolbar">
           <label class="search-field"><span aria-hidden="true">⌕</span><input [(ngModel)]="search" placeholder="Buscar destinatario, asunto, caso o motivo…" aria-label="Buscar notificaciones"></label>
@@ -114,7 +153,7 @@ export interface MailConfig {
           <thead><tr><th>Fecha y referencia</th><th>Destinatario y asunto</th><th>Estado</th><th>Intentos</th><th>Último resultado</th><th><span class="sr-only">Acciones</span></th></tr></thead>
           <tbody>
             @for (item of filtered(); track item.id) {
-              <tr>
+              <tr class="history-record" (click)="select(item)" [attr.aria-busy]="busy()">
                 <td class="nowrap"><strong>#{{item.id}}</strong>{{item.createdAt | date:'dd/MM/yyyy HH:mm'}}<small>{{reference(item)}}</small></td>
                 <td class="audit-details"><strong>{{item.recipient || 'Sin destinatario registrado'}}</strong>{{item.subject}}<small>{{item.eventType}}</small></td>
                 <td><span class="badge" [class.open]="item.status === 'SENT'" [class.void]="item.status === 'FAILED'" [class.internal]="item.status === 'SKIPPED' || item.status === 'SUPPRESSED'" [class.channel-email]="item.status === 'PENDING' || item.status === 'SENDING'">{{statusLabel(item.status)}}</span></td>
@@ -125,7 +164,8 @@ export interface MailConfig {
                   @else if (!item.lastError) {<span>{{item.status === 'PENDING' ? 'En espera de procesamiento' : item.status === 'SENDING' ? 'El servidor está procesando el envío' : item.status === 'SKIPPED' ? 'Revisa el correo del destinatario registrado' : item.status === 'SUPPRESSED' ? 'Registro histórico: no se enviará ni podrá reintentarse' : item.status === 'SENT' ? 'Enviada' : 'Sin detalle disponible'}}</span>}
                 </td>
                 <td class="actions-cell">
-                  @if (canRetry(item)) {<button class="text-button" (click)="retry(item)" [disabled]="busy() || !config()?.enabled" [attr.aria-label]="'Reintentar notificación ' + item.id">Reintentar</button>}
+                  <a class="text-button" [id]="'notification-link-' + item.id" [href]="'#notificacion-' + item.id" (click)="select(item, $event)" [attr.aria-disabled]="busy()" [attr.aria-label]="'Ver detalle de notificación ' + item.id">Ver detalle</a>
+                  @if (canRetry(item)) {<button class="text-button" (click)="$event.stopPropagation(); retry(item)" [disabled]="busy() || !config()?.enabled" [attr.aria-label]="'Reintentar notificación ' + item.id">Reintentar</button>}
                 </td>
               </tr>
             } @empty {
@@ -135,19 +175,59 @@ export interface MailConfig {
         </table></div>
         <div class="table-footer">Si una notificación se omitió por falta de correo, corrige el contacto en Instituciones o Usuarios y pulsa Reintentar con el envío activado. Un aviso creado sin responsable no puede recuperarse: asigna uno para los próximos eventos. Las notificaciones enviadas y las no enviadas por desactivación no se pueden reenviar desde aquí.</div>
       </section>
+      }
     }
   `
 })
-export class NotificationsComponent extends PageState implements OnInit {
+export class NotificationsComponent extends PageState implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
+  private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
   readonly items = signal<Notification[]>([]);
   readonly config = signal<MailConfig | null>(null);
+  readonly detail = signal<NotificationDetail | null>(null);
   readonly confirmPause = signal(false);
+  private historyScroll = 0;
+  private originId: number | null = null;
+  private destroyed = false;
+  private navigationFrame: number | null = null;
   search = '';
   statusFilter: NotificationStatus | 'all' = 'all';
 
   ngOnInit() { this.load(); }
+  ngOnDestroy() {
+    this.destroyed = true;
+    if (this.navigationFrame !== null) cancelAnimationFrame(this.navigationFrame);
+  }
+  private focusAfterRender(selector: string, top: number) {
+    if (this.navigationFrame !== null) cancelAnimationFrame(this.navigationFrame);
+    this.navigationFrame = requestAnimationFrame(() => {
+      this.navigationFrame = null;
+      if (this.destroyed) return;
+      this.element.nativeElement.querySelector<HTMLElement>(selector)?.focus({ preventScroll: true });
+      window.scrollTo({ top, behavior: 'auto' });
+    });
+  }
   isAdmin() { return this.api.user()?.role === 'ADMIN'; }
+  select(item: Notification, event?: Event) {
+    event?.preventDefault();
+    event?.stopPropagation();
+    void this.perform(async () => {
+      this.requireAdmin();
+      this.historyScroll = window.scrollY;
+      const detail = await this.api.get<NotificationDetail>('/notifications/' + item.id);
+      if (this.destroyed) return;
+      this.originId = item.id;
+      this.detail.set(detail);
+      this.focusAfterRender('#notification-detail-title', 0);
+    });
+  }
+  backToHistory(event: Event) {
+    event.preventDefault();
+    this.detail.set(null);
+    this.error.set('');
+    this.success.set('');
+    this.focusAfterRender('#notification-link-' + this.originId, this.historyScroll);
+  }
   load() {
     void this.perform(async () => {
       this.requireAdmin();

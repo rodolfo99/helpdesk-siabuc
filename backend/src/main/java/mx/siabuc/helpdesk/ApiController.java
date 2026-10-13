@@ -47,6 +47,7 @@ public class ApiController {
     @GetMapping("/cases") public List<SupportCase> cases() { return service.cases(); }
     @PostMapping("/cases") @ResponseStatus(HttpStatus.CREATED)
     public CaseDetail createCase(@RequestBody CaseInput input) { return service.createCase(input); }
+    @PostMapping("/cases/{id}/claim") public CaseDetail claimCase(@PathVariable long id) { return service.claimCase(id); }
     @GetMapping("/cases/{id}") public CaseDetail caseDetail(@PathVariable long id) { return service.caseDetail(id); }
     @PutMapping("/cases/{id}") public CaseDetail updateCase(@PathVariable long id, @RequestBody JsonNode input) {
         return service.updateCase(id, convert(input, CaseEdit.class), input.has("assignedAdminId"));
