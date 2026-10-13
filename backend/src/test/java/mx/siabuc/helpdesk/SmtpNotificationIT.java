@@ -98,11 +98,17 @@ class SmtpNotificationIT extends ApiIntegrationSupport {
         assertThat(messages).hasSize(5);
         assertThat(messages.stream().filter(m -> m.to().equals("contacto@example.test")).count()).isEqualTo(2);
         assertThat(messages.stream().filter(m -> m.to().equals("testadmin@example.test")).count()).isEqualTo(3);
+        String assignedName = json(admin.get("/auth/me")).path("displayName").asText();
+        String institutionName = findInstitution(institution).path("name").asText();
         for (Delivered message : messages) {
             assertThat(message.envelope().recipients()).hasSize(1);
             assertThat(message.mime().getAllRecipients()).hasSize(1);
             assertThat(message.mime().getFrom()[0].toString()).contains("siabuc@example.test");
-            assertThat(message.body()).contains("Caso: #" + caseId, "Institución:", "testadmin");
+            assertThat(message.body()).contains("Caso: #" + caseId, "Institución cliente: " + institutionName, "testadmin",
+                    "Administrativo que atiende: " + assignedName,
+                    "\n\nDescripción actual del caso:\nDescripción de la solicitud de soporte SIABUC\n\nDetalle de la actualización:\n",
+                    "Para mayor información, consulte la plataforma Helpdesk.")
+                    .doesNotContain("Estado: Activo", "Estado: Inactivo", "Estado: Desactivo");
             if (message.to().equals("contacto@example.test")) assertThat(message.body()).doesNotContain(secret);
         }
         assertThat(messages.stream().filter(m -> m.body().contains(secret)).count()).isEqualTo(1);

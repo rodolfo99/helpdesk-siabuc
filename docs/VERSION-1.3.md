@@ -40,3 +40,11 @@ Cada entrada del manifiesto indica SHA-256 y ruta relativa dentro de `siabuc-hel
 ## Actualización 1.3.1: pausa administrativa de correo
 
 Añade el control de pausa/reactivación desde Correo y notificaciones, persistencia PostgreSQL V4, auditoría y permiso exclusivo ADMIN. Conserva el historial y los scripts Windows/Linux; desactivar suprime los avisos anteriores recuperables y los nuevos durante la pausa. Reactivar sólo notifica eventos nuevos; los correos ya en curso o aceptados por SMTP pueden completar su entrega. MAIL_ENABLED=false permanece como límite del servidor. El artefacto Java pasa a siabuc-helpdesk-1.3.1.jar. Consulte [DESACTIVAR-CORREO.md](DESACTIVAR-CORREO.md) para actualizar, pausar y reanudar. La afirmación anterior de ausencia de migraciones nuevas corresponde a 1.3.0; 1.3.1 sí requiere V4.
+
+## Actualización 1.3.2: contenido de los correos de casos
+
+Los avisos identifican al administrativo responsable y a la institución cliente. Incluyen la descripción vigente del caso, separada del detalle de la actualización, y el estado **Abierto** o **Cerrado**. Terminan con «Para mayor información, consulte la plataforma Helpdesk.». Consulte el [formato y ejemplo de correo](CORREO.md#contenido-de-los-avisos-de-casos).
+
+Se conserva la privacidad de las notas internas y la pausa sin envío de avisos anteriores. No se modifican avisos ya guardados ni la configuración SMTP. El JAR es `siabuc-helpdesk-1.3.2.jar`; no hay migraciones adicionales a V1–V4 ni cambios de dependencias.
+
+Para actualizar, respalde y conserve su `.env`, extraiga el ZIP 1.3.2 completo y use el mismo `COMPOSE_PROJECT_NAME` y motor Docker para reutilizar sus volúmenes. Ejecute `bash iniciar.sh` en Linux o `.\iniciar.bat` en PowerShell desde la nueva carpeta. No use `down -v`. Después de reiniciar, el nuevo formato se aplica a los eventos nuevos; compruébelo con un caso de prueba y los correos de su instalación.
