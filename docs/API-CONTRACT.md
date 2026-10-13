@@ -99,3 +99,40 @@ POST `/notifications/config` ADMIN: cuerpo exacto `{"paused":true}` para pausar 
 POST `/cases/{id}/claim` ADMIN con sesión y CSRF; no requiere datos (la interfaz envía `{}`). Devuelve HTTP 200 con `CaseDetail`. Asigna el caso abierto y sin responsable al administrativo de la sesión, con bloqueo transaccional de institución y caso; registra entrada pública, auditoría y notificación `CLAIM_CASE`. La pausa de correo se respeta como en cualquier otro evento.
 
 Un caso cerrado, una institución inactiva o un responsable diferente ya asignado producen 409. Repetir la toma de un caso abierto que ya pertenece al mismo administrativo devuelve su detalle sin duplicar efectos. USER/BILLING reciben 403. El cliente mantiene POST `/cases` para su propia institución y con saldo en el canal: si existe un responsable institucional, se asigna automáticamente; de lo contrario, el caso queda disponible para tomar. No puede asignar responsables ajenos ni abrir solicitudes para otra institución.
+
+
+## Extensiones 1.4
+
+Todas las rutas siguientes usan el prefijo `/api`, sesión y CSRF en las escrituras. USER sólo accede a su institución; los IDs ajenos devuelven 404. BILLING no accede a casos, adjuntos, cronómetro, agenda ni reportes. Los avisos propios de saldo sí están disponibles para Cobranza.
+
+| Método y ruta | Uso / rol |
+| --- | --- |
+| `GET /case-profiles` | Clasificación resumida por caso autorizado; ADMIN / USER. |
+| `GET/PUT /cases/{id}/profile` | Ficha y SLA / actualizar ficha de caso abierto; ADMIN / USER. |
+| `GET/PUT /support-settings` | Calendario y objetivos SLA; ADMIN. |
+| `GET /cases/{id}/attachments` | Adjuntos del caso; query `entryId` para un comentario concreto. |
+| `POST /cases/{id}/attachments` | Multipart `file` + `requestId` UUID, query `entryId` opcional; ADMIN / USER autorizado. |
+| `GET /attachments/{id}/download` | Archivo binario; autenticación y privacidad del comentario. |
+| `GET /inbox` | `{items,unreadCount,pendingReplies}` del usuario actual. |
+| `POST /inbox/{id}/read`, `POST /inbox/read-all` | Marcar leído; cuerpo vacío o `{}`, respuesta 204. |
+| `GET /balance-alert-settings` | Umbrales y saldos por institución; ADMIN. |
+| `PUT /balance-alert-settings/{institutionId}` | `{emailThresholdMinutes,remoteThresholdMinutes,enabled}`; ADMIN. |
+| `GET /cases/{id}/timer` | Último cronómetro propio, o null; ADMIN. |
+| `POST /cases/{id}/timer/start` | Iniciar cronómetro propio; ADMIN. |
+| `POST /timers/{id}/pause`, `/resume`, `/finish`, `/cancel` | Operación del propietario ADMIN. |
+| `POST /timers/{id}/commit` | Confirmar `{minutes,channel,description,internal,adjustmentReason}`; descuento idempotente. |
+| `GET/POST /cases/{id}/remote-sessions` | Listar agenda autorizada / proponer como ADMIN. |
+| `POST /remote-sessions/{id}/confirm`, `/decline` | Responder como USER de la institución; `{response}`. |
+| `POST /remote-sessions/{id}/cancel`, `/complete` | Operación ADMIN; `{response}`. |
+| `POST /remote-sessions/{id}/reschedule` | Nueva propuesta ADMIN, cancelando la anterior. |
+| `GET /reports/support`, `/reports/support.xlsx`, `/reports/support.pdf` | ADMIN; filtros `institutionId`, `administratorId`, `channel`, `from`, `to`. |
+
+`POST /cases` admite `profile` opcional con `category`, `priority`, `siabucVersion`, `operatingSystem`, `errorMessage` y `reproductionSteps`. La creación del caso y su ficha es atómica; una ficha inválida revierte toda la solicitud. Si no se incluye, se conserva compatibilidad con clientes anteriores: OTHER/NORMAL y datos técnicos vacíos. Los mismos campos se usan en PUT de ficha.
+
+Categorías: INSTALLATION, CATALOGING, LOANS, REPORTS, IMPORT, OTHER. Prioridades: LOW, NORMAL, HIGH, URGENT. `CaseDetail` conserva su estructura previa: la ficha detallada y sus plazos se consultan por la ruta de perfil. [Clasificación y SLA](CLASIFICACION-SLA.md) documenta objetivos, calendario y estados de cumplimiento.
+
+La subida utiliza multipart, no JSON ni Base64, y no debe fijarse manualmente el boundary en el navegador. El cliente genera un UUID por carga; reintentar con el mismo UUID y contenido no duplica el archivo. Un UUID reutilizado con otro archivo o ubicación se rechaza. Superar 10 MiB produce 413; tipos/contenidos no admitidos producen 400; caso cerrado o límites acumulados producen conflicto. Las descargas incluyen `Content-Disposition: attachment`, protección contra interpretación de tipos y control de caché. Consulte [Adjuntos](HELPDESK-1.4.md#archivos-adjuntos).
+
+La propuesta de agenda usa `{startsAt,endsAt,note,adminId?}` con fechas ISO-8601 que identifican un instante; el responsable predeterminado al crear es el administrativo actor. Reprogramar requiere confirmación nueva. [Cronómetro y agenda](CRONOMETRO-AGENDA.md) detalla transiciones y reintentos.
+
+Los informes devuelven 400 si exceden 366 días, 5,000 filas combinadas o sus límites de contenido; nunca se recortan silenciosamente. Excel utiliza el tipo MIME OOXML, PDF `application/pdf`; ambos usan descarga adjunta. Las fechas finales son inclusivas en `REPORTING_TIME_ZONE`. Consulte [Reportes](REPORTES.md) para la semántica exacta de filtros y anulaciones.

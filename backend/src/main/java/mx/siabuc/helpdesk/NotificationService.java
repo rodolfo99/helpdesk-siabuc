@@ -17,7 +17,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class NotificationService {
     private final JdbcTemplate db;
     private final MailConfig config;
-    public NotificationService(JdbcTemplate db, MailConfig config) { this.db = db; this.config = config; }
+    private final PortalEventService portalEvents;
+    public NotificationService(JdbcTemplate db, MailConfig config, PortalEventService portalEvents) {
+        this.db = db; this.config = config; this.portalEvents = portalEvents;
+    }
 
     public record Notification(long id, Long caseId, Long paymentId, String eventType, String recipient,
         String subject, String status, int attempts, String lastError, Instant createdAt, Instant sentAt) {}
@@ -40,6 +43,7 @@ public class NotificationService {
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void caseEvent(long caseId, String eventType, String description, boolean internal, String actor) {
+        portalEvents.caseEvent(caseId, eventType, description, internal, actor);
         CaseInfo c = db.queryForObject("""
             SELECT c.*,i.name AS institution_name,i.email AS institution_email,
                 CASE WHEN u.active THEN u.email END AS assigned_email,u.display_name AS assigned_name
@@ -253,6 +257,13 @@ public class NotificationService {
         return switch (value) {
             case "CREATE_CASE" -> "Caso abierto";
             case "CLAIM_CASE" -> "Caso tomado";
+            case "UPDATE_CASE_PROFILE" -> "Ficha técnica actualizada";
+            case "ATTACHMENT_ADDED" -> "Archivo adjunto agregado";
+            case "REMOTE_SESSION_PROPOSED" -> "Sesión remota propuesta";
+            case "REMOTE_SESSION_CONFIRMED" -> "Sesión remota confirmada";
+            case "REMOTE_SESSION_DECLINED" -> "Sesión remota rechazada";
+            case "REMOTE_SESSION_CANCELLED" -> "Sesión remota cancelada";
+            case "REMOTE_SESSION_COMPLETED" -> "Sesión remota finalizada";
             case "UPDATE_CASE" -> "Caso actualizado";
             case "CHANGE_CASE_STATUS" -> "Cambio de estado";
             case "CREATE_ENTRY" -> "Nueva atención o comentario";

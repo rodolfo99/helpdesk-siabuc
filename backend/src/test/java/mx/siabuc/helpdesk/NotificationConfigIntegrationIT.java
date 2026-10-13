@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class NotificationConfigIntegrationIT extends ApiIntegrationSupport {
     @Autowired JdbcTemplate db;
     @Autowired MailConfig mailConfig;
+    @Autowired PortalEventService portalEvents;
 
     @BeforeEach
     @AfterEach
@@ -33,7 +34,7 @@ class NotificationConfigIntegrationIT extends ApiIntegrationSupport {
 
         // A new session and a freshly constructed service read the same durable state.
         assertThat(json(login("testadmin", "PruebaSegura123!").get("/notifications/config")).path("paused").asBoolean()).isTrue();
-        assertThat(new NotificationService(db, mailConfig).configuration().paused()).isTrue();
+        assertThat(new NotificationService(db, mailConfig, portalEvents).configuration().paused()).isTrue();
         success(admin.post("/notifications/config", Map.of("paused", true)));
         JsonNode resumed = success(admin.post("/notifications/config", Map.of("paused", false)));
         assertThat(resumed.path("paused").asBoolean()).isFalse();
@@ -41,7 +42,7 @@ class NotificationConfigIntegrationIT extends ApiIntegrationSupport {
         assertThat(resumed.path("enabled").asBoolean()).isFalse();
         assertThat(resumed.path("configuredEnabled").asBoolean()).isFalse();
         success(admin.post("/notifications/config", Map.of("paused", false)));
-        assertThat(new NotificationService(db, mailConfig).configuration().paused()).isFalse();
+        assertThat(new NotificationService(db, mailConfig, portalEvents).configuration().paused()).isFalse();
 
         var events = db.queryForList("SELECT actor,action,entity_type,entity_id FROM audit_log WHERE id>? AND entity_type='NOTIFICATION_CONFIG' ORDER BY id", before);
         assertThat(events).hasSize(2);

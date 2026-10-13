@@ -43,6 +43,7 @@ class SmtpNotificationIT extends ApiIntegrationSupport {
     @Autowired JdbcTemplate db;
     @Autowired PlatformTransactionManager transactions;
     @Autowired NotificationService notifications;
+    @Autowired PortalEventService portalEvents;
     private List<Map<String, Object>> deferredFixtures;
 
     @BeforeEach
@@ -199,7 +200,7 @@ class SmtpNotificationIT extends ApiIntegrationSupport {
             assertThat(row.get("status")).isEqualTo("SUPPRESSED");
             assertThat(((Number) row.get("attempts")).intValue()).isZero();
         });
-        var configured = new NotificationService(db, localMailConfig("siabuc@example.test")).configuration();
+        var configured = new NotificationService(db, localMailConfig("siabuc@example.test"), portalEvents).configuration();
         assertThat(configured.configuredEnabled()).isTrue();
         assertThat(configured.paused()).isTrue();
         assertThat(configured.enabled()).isFalse();
@@ -212,7 +213,7 @@ class SmtpNotificationIT extends ApiIntegrationSupport {
                 .isEqualTo(before);
 
         assertStatus(admin.post("/notifications/config", Map.of("paused", false)), 200);
-        assertThat(new NotificationService(db, localMailConfig("siabuc@example.test")).configuration().enabled()).isTrue();
+        assertThat(new NotificationService(db, localMailConfig("siabuc@example.test"), portalEvents).configuration().enabled()).isTrue();
         drainReady();
         assertThat(forCase(caseId)).isEmpty();
         assertThat(db.queryForList("SELECT status FROM notification_outbox WHERE case_id=?", String.class, caseId)).containsOnly("SUPPRESSED");

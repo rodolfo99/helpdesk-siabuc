@@ -82,9 +82,13 @@ async function open({ section = 'notifications', role = 'ADMIN', notices = [noti
       failures.push(`Unexpected mutation: ${request.method()} ${path}`);
       return reply({ message: 'Unexpected mutation' }, 400);
     }
+    if (path === '/api/inbox') return reply({ items: [], unreadCount: 0, pendingReplies: [] });
     if (path === '/api/auth/csrf') return reply({ token: 'test-token' });
     if (path === '/api/auth/me') return reply({ id: 1, username: 'qa', displayName: 'Administrativo Ejemplo', role, email: 'qa@example.test', institutionId: role === 'USER' ? 1 : null });
     if (path === '/api/institutions') return reply([institution]);
+    if (path === '/api/case-profiles') return reply([{caseId:10,category:'OTHER',priority:'NORMAL'}]);
+    if (path === '/api/cases/10/timer') return reply(null);
+    if (path === '/api/cases/10/attachments') return reply([]);
     if (path === '/api/cases') return reply([currentCase]);
     if (path === '/api/cases/10') return reply({ ...currentCase, entries: role === 'ADMIN' ? currentEntries : currentEntries.filter(item => !item.internal) });
     if (path === '/api/users') return reply([{ id: 1, username: 'qa', displayName: 'Administrativo Ejemplo', email: 'qa@example.test', role: 'ADMIN', institutionId: null, active: true }]);

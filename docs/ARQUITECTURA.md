@@ -74,3 +74,17 @@ Estas referencias sustentan las decisiones de compatibilidad y concurrencia. Los
 ## Pausa administrativa del envío
 
 La fila única de notification_settings conserva paused y suppressed_through_id. El envío requiere MAIL_ENABLED=true y paused=false. La misma fila se bloquea para cambiar el control, encolar eventos y reclamar avisos; fija una frontera de desactivación. Los PENDING/FAILED/SKIPPED anteriores pasan a SUPPRESSED y los avisos nuevos durante la pausa nacen SUPPRESSED, terminal y sin reintento. Los SENDING en curso pueden completar, pero un fallo o lease vencido anterior a la frontera no vuelve a PENDING. No se mantiene el bloqueo durante SMTP ni se retiran mensajes de Postfix. El cambio se audita y se incluye en respaldos de PostgreSQL.
+
+
+## Módulos y persistencia desde 1.4
+
+- **V5:** `support_settings` conserva calendario y objetivos globales; `case_profiles` guarda clasificación, ficha, snapshot de calendario y marcas de primera respuesta/resolución. El cálculo usa minutos laborales y no modifica las bolsas contratadas. La migración reconstruye datos heredados sólo a partir de evidencia de auditoría disponible.
+- **V6:** `case_attachments` guarda datos binarios BYTEA, ubicación caso/comentario, identidad de solicitud y hash. Autorización por caso y visibilidad del comentario; validación de contenido, tamaño individual y cuotas agregadas bajo bloqueo. El respaldo PostgreSQL incluye los archivos.
+- **V7:** `portal_notifications`, configuración/estado de alertas y `support_cases.waiting_for` implementan campana, pendientes y aviso de saldo bajo. Se registran dentro de la transacción del evento, antes de cualquier decisión de SMTP. La lectura vuelve a comprobar destinatario, rol, institución y privacidad; un aviso almacenado no otorga permiso por sí mismo.
+- **V8:** `work_timers` persiste segmentos y un índice único parcial permite un solo reloj pendiente por administrativo. `remote_sessions` conserva propuestas y respuestas. La confirmación del cronómetro reutiliza el registro contable existente, bajo bloqueos institución → caso → cronómetro, y vincula una sola atención. Proponer o confirmar una reserva no cobra minutos.
+
+La agenda serializa decisiones de solapamiento por administrativo con bloqueo `FOR NO KEY UPDATE`, compatible con referencias de claves foráneas. La consulta y creación ocurren en la misma transacción. Reprogramar adquiere ese bloqueo antes de generar historial/notificaciones, conservando el orden de las otras operaciones de agenda.
+
+Los informes se consultan con transacción de sólo lectura y aislamiento REPEATABLE READ; el conjunto de cada solicitud usa una instantánea consistente. La consulta y la descarga son solicitudes distintas, de modo que pueden reflejar cambios posteriores. Apache POI genera XLSX con celdas de texto para descripciones; PDFBox genera PDF sin recursos externos. Los filtros usan parámetros SQL y las salidas se limitan explícitamente.
+
+Los clientes Angular consultan componentes separados para seguimiento, ficha/SLA, adjuntos y agenda. La campana se actualiza periódicamente y no depende de un envío SMTP exitoso. Las rutas nuevas están protegidas tanto por Spring Security como por comprobaciones de rol/propiedad en servicios. Los detalles operativos y límites figuran en [Funciones Helpdesk 1.4](HELPDESK-1.4.md).

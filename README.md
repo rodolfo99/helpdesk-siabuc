@@ -1,4 +1,4 @@
-# SIABUC Helpdesk 1.3.3
+# SIABUC Helpdesk 1.4.0
 
 Sistema de atención técnica con servidor **Spring Boot 3.5.16 / Java 17**, cliente **Angular 21.2.25** y base de datos **PostgreSQL 17**. Conserva instituciones, usuarios, casos, pagos, actualizaciones descriptivas y auditoría. El tiempo por correo y por escritorio remoto se administra en **dos bolsas independientes de minutos enteros**.
 
@@ -6,7 +6,7 @@ Para configurar Gmail institucional `@ucol.mx` como salida de Postfix, use `bash
 
 **Windows:** incluye scripts `.bat` para Docker Desktop con contenedores Linux. Consulte [Instalación en Windows](docs/WINDOWS.md). No necesita instalar Java, Maven ni Node en Windows.
 
-Consulte las [notas de versión 1.3 y actualización](docs/VERSION-1.3.md) y el [control administrativo de envío de correo](docs/DESACTIVAR-CORREO.md), añadido en 1.3.1.
+Consulte las [novedades e instalación de 1.4](docs/VERSION-1.4.md), el [manual de las nuevas funciones](docs/HELPDESK-1.4.md) y el [control administrativo de envío de correo](docs/DESACTIVAR-CORREO.md).
 
 ## Funciones incluidas
 
@@ -28,8 +28,14 @@ Consulte las [notas de versión 1.3 y actualización](docs/VERSION-1.3.md) y el 
 - Cada aviso de caso identifica la institución cliente y el administrativo que atiende, incluye la descripción actual, el detalle de la actualización y el estado **Abierto** o **Cerrado**, e invita a consultar la plataforma Helpdesk.
 - Activación y pausa persistente del envío desde **Correo y notificaciones**, exclusiva de administradores, sin reiniciar: los avisos anteriores y los generados durante la pausa quedan sin envío; al reactivar sólo se notifican eventos nuevos.
 - Servidor SMTP Postfix interno configurado por defecto, cola persistente, entrega directa o relay saliente configurable. Sin buzones ni bandeja web.
+- Categorías, prioridades, ficha técnica y plazos de primera respuesta y resolución calculados con horario laboral configurable.
+- Adjuntos protegidos en casos y comentarios: capturas, PDF y diagnósticos; incluidos en el respaldo de PostgreSQL.
+- Campana de avisos y respuestas pendientes, independiente del correo; umbrales de saldo bajo por institución y canal.
+- Cronómetro persistente: iniciar, pausar, finalizar y confirmar minutos antes de descontarlos.
+- Agenda de sesiones remotas: propuesta administrativa, confirmación del cliente y control de horarios ocupados.
+- Reportes por institución, administrativo, canal y periodo, con exportación real a Excel y PDF.
 
-**Alcance:** registra la atención por correo y las sesiones remotas y envía avisos cuando se configura SMTP. No lee correos entrantes ni abre conexiones de escritorio remoto. Los minutos se registran manualmente después de la atención. Los pagos registran dinero recibido y acreditan minutos: no procesan cargos bancarios ni emiten facturas fiscales. No incluye adjuntos ni una instalación dentro de SIABUC: es una aplicación independiente.
+**Alcance:** registra la atención por correo y las sesiones remotas y envía avisos cuando se configura SMTP. No lee correos entrantes ni abre conexiones de escritorio remoto. Los minutos se confirman manualmente o con ayuda del cronómetro. Los pagos registran dinero recibido y acreditan minutos: no procesan cargos bancarios ni emiten facturas fiscales. Es una aplicación independiente de SIABUC.
 
 Si ya instaló 1.0/1.1, conserve `.env`, los volúmenes y las migraciones existentes. Consulte [Migración de datos](docs/MIGRACION-1.1.md) y [SMTP interno](docs/SMTP-INTERNO.md#actualizar-una-instalación-anterior). Un `.env` anterior conserva su conexión de correo; adoptar Postfix se hace con `./configurar.sh --smtp-interno`.
 
@@ -99,6 +105,7 @@ Edite `.env` **antes del primer inicio**. Puede usar, por ejemplo, `DB_PORT=5433
 | `ADMIN_USERNAME` | `admin` | Nombre del administrador de arranque. |
 | `ADMIN_PASSWORD` | Aleatoria | Contraseña utilizada sólo al crear el administrador inicial. |
 | `COOKIE_SECURE` | `false` | `true` cuando el navegador accede por HTTPS. |
+| `REPORTING_TIME_ZONE` | `America/Mexico_City` | Zona de fechas en los reportes. El calendario de SLA se administra en la plataforma. |
 | `COMPOSE_PROJECT_NAME` | `siabuc-helpdesk` | Identidad del proyecto y del volumen de Docker. |
 
 Los puertos deben ser diferentes, enteros entre 1 y 65535. Dentro de Docker, PostgreSQL mantiene `5432`, Spring `8080` y Nginx `80`; los cambios de `.env` afectan los puertos del anfitrión y se aplican automáticamente al proxy en desarrollo. El navegador siempre accede a `/api` desde el mismo origen de Angular.
@@ -116,7 +123,7 @@ Una instalación nueva conecta Spring al servidor SMTP interno **Postfix** en `s
 ./iniciar.sh
 ```
 
-El asistente solicita de forma oculta el secreto de un relay si corresponde; no envía un mensaje al guardar. Para conectar Spring directamente a un SMTP externo, use `./configurar.sh --correo`. Cuando active `MAIL_ENABLED`, el servidor procesará también las notificaciones pendientes. Capture el correo de cada administrador en **Usuarios**, el correo cliente y responsable en **Instituciones** y revise la asignación de cada caso.
+El asistente solicita de forma oculta el secreto de un relay si corresponde; no envía un mensaje al guardar. Para conectar Spring directamente a un SMTP externo, use `./configurar.sh --correo`. `MAIL_ENABLED` habilita el transporte; la pausa administrativa permanece en la base de datos. Al reanudar desde la plataforma sólo se enviarán avisos de eventos nuevos: los anteriores suprimidos no se recuperan. Capture el correo de cada administrador en **Usuarios**, el correo cliente y responsable en **Instituciones** y revise la asignación de cada caso.
 
 La dirección con IP es una identidad de envío; este servicio no crea un buzón para recibir respuestas o rebotes. Puede configurar `MAIL_REPLY_TO` con el correo de atención real. El servidor receptor debe aceptar remitentes con IP local; los proveedores externos pueden rechazarlos. Consulte la configuración del relay institucional si los avisos deben salir de la red local.
 
@@ -160,7 +167,7 @@ Requiere JDK 17 o posterior, Maven 3.9, Node.js 24 LTS, npm, Python 3.10 y Docke
 
 `compilar.sh` ejecuta `mvn package`, `npm ci` y `npm run build`. Produce:
 
-- `backend/target/siabuc-helpdesk-1.3.3.jar`
+- `backend/target/siabuc-helpdesk-1.4.0.jar`
 - `frontend/dist/helpdesk/browser/`
 
 `iniciar-dev.sh` inicia PostgreSQL y Postfix con Docker, compila Spring, instala las dependencias de Angular y ejecuta Spring y `ng serve` en una terminal. Lee los mismos puertos y contraseñas de `.env`; ambos procesos escuchan en `127.0.0.1`. Los registros se guardan en `.runtime/`. **Ctrl+C** detiene Spring y Angular; después `./detener.sh` detiene PostgreSQL y Postfix. No ejecute el modo Docker completo y el modo de desarrollo al mismo tiempo sobre los mismos puertos.
@@ -212,6 +219,12 @@ La restauración detiene Spring, Angular y Postfix de Docker, valida el SHA-256 
 ## Documentación y pruebas
 
 - [Manual de administradores y usuarios](docs/MANUAL-USUARIO.md): permisos, instituciones, minutos y casos.
+- [Funciones Helpdesk 1.4](docs/HELPDESK-1.4.md): adjuntos, cronómetro, agenda y permisos.
+- [Cronómetro y agenda](docs/CRONOMETRO-AGENDA.md): confirmación de minutos y sesiones con el cliente.
+- [Clasificación, ficha técnica y SLA](docs/CLASIFICACION-SLA.md): prioridades y calendario laboral.
+- [Avisos internos y saldos](docs/AVISOS-INTERNOS.md): campana, pendientes y umbrales.
+- [Reportes](docs/REPORTES.md): filtros, Excel, PDF y zona horaria.
+- [Actualizar a 1.4](docs/VERSION-1.4.md): pasos para Windows y Linux, migraciones y respaldo.
 - [Operación y compilación](docs/OPERACION.md): instalación nativa, Docker, red, respaldo y resolución de problemas.
 - [Respaldo y restauración](docs/RESPALDO-RESTAURACION.md): `--nombre-respaldo`, ejemplos, recuperación paso a paso y alcance de las copias.
 - [Arquitectura y modelo de datos](docs/ARQUITECTURA.md): integridad, concurrencia, sesiones y límites.

@@ -27,7 +27,8 @@ public final class Models {
     public record InstitutionInput(String name, String contactName, String email, String phone, String notes,
         Long emailAllocatedMinutes, Long remoteAllocatedMinutes, Boolean active, Long supportAdminId) {}
     public record UserInput(String username, String displayName, String password, Role role, Long institutionId, Boolean active, String email) {}
-    public record CaseInput(Long institutionId, String title, String description, Channel channel, Long assignedAdminId) {}
+    public record CaseInput(Long institutionId, String title, String description, Channel channel, Long assignedAdminId,
+        CaseProfileService.ProfileInput profile) {}
     public record CaseEdit(String title, String description, Channel channel, Long assignedAdminId) {}
     public record EntryInput(String description, Channel channel, Long minutes, Boolean internal) {}
     public record StatusInput(CaseStatus status, String reason) {}

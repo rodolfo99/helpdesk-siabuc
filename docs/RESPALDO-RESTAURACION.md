@@ -1,8 +1,10 @@
 # Respaldo y restauración de SIABUC Helpdesk
 
-Guía para la versión 1.3.3. En Windows utilice `respaldar.bat` y `restaurar.bat` con los mismos argumentos; consulte [WINDOWS.md](WINDOWS.md). Los scripts `respaldar.sh` y `restaurar.sh` operan sobre la base PostgreSQL del servicio Docker `db`, utilizando los valores de conexión de `.env`.
+Guía para la versión 1.4.0. En Windows utilice `respaldar.bat` y `restaurar.bat` con los mismos argumentos; consulte [WINDOWS.md](WINDOWS.md). Los scripts `respaldar.sh` y `restaurar.sh` operan sobre la base PostgreSQL del servicio Docker `db`, utilizando los valores de conexión de `.env`.
 
 ## 1. Preparar el entorno
+
+Desde 1.4 los archivos adjuntos se almacenan dentro de PostgreSQL: una copia nueva incluye su contenido, permisos, comentarios asociados y metadatos. También incluye avisos internos, calendario SLA, umbrales, cronómetros y agenda. No debe copiar una carpeta externa de adjuntos. El tamaño de los respaldos crecerá con la evidencia guardada. Una copia anterior a 1.4 no contiene estas funciones ni datos posteriores a su fecha.
 
 Abra una terminal en la carpeta `siabuc-helpdesk`. Necesita Python 3.10 o posterior, Docker funcionando, Docker Compose y un `.env` válido de esta instalación. Los scripts no crean ni cambian credenciales durante el respaldo o la restauración.
 
