@@ -1,19 +1,24 @@
-# SIABUC Helpdesk 1.5.0
+# SIABUC Helpdesk 1.6.0
 
 Sistema de atención técnica con servidor **Spring Boot 3.5.16 / Java 17**, cliente **Angular 21.2.25** y base de datos **PostgreSQL 17**. Conserva instituciones, usuarios, casos, pagos, actualizaciones descriptivas y auditoría. El tiempo por correo y por escritorio remoto se administra en **dos bolsas independientes de minutos enteros**.
 
-**Versión 1.5:** pólizas, pagos en pesos, acreditación de horas, comprobantes y reportes de cobranza. Incluye las funciones de soporte de 1.4: clasificación, prioridades, SLA, adjuntos, campana, cronómetro, agenda y reportes técnicos.
+**Versión 1.6:** cotizaciones, solicitudes de pago por validar, renovación de pólizas, portal financiero institucional configurable, recibos PDF, base de conocimientos, encuestas y respaldos programados. Incluye todas las funciones de soporte y cobranza de 1.4/1.5.
+
+**Los respaldos automáticos están desactivados por defecto**, también al actualizar desde 1.5. Sólo Administración puede activarlos expresamente, configurar su horario y retención o volver a desactivarlos. Los respaldos manuales y las copias existentes se conservan.
 
 **Linux y Windows:** scripts `.sh` y `.bat` para configurar, compilar, iniciar, detener, respaldar y restaurar. Con Docker se requieren Python 3.10+ y Docker Compose; en Windows, Docker Desktop con contenedores Linux. Java, Maven y Node se ejecutan dentro de las imágenes.
 
 | Necesito… | Guía |
 | --- | --- |
-| Instalar o actualizar conservando mis datos | [Versión 1.5](docs/VERSION-1.5.md) · [Windows](docs/WINDOWS.md) · [Operación Linux/Docker](docs/OPERACION.md) |
+| Instalar o actualizar conservando mis datos | [Versión 1.6](docs/VERSION-1.6.md) · [Windows](docs/WINDOWS.md) · [Operación Linux/Docker](docs/OPERACION.md) |
 | Atender casos, usar adjuntos, cronómetro y agenda | [Manual de uso](docs/MANUAL-USUARIO.md) · [Funciones de soporte](docs/HELPDESK-1.4.md) |
 | Registrar pólizas, pagos y horas adquiridas | [Pólizas y cobranza](docs/POLIZAS-COBRANZA.md) |
+| Cotizar, renovar o validar pagos pendientes | [Cotizaciones y renovaciones](docs/COTIZACIONES-RENOVACIONES.md) · [Solicitudes de pago](docs/SOLICITUDES-PAGO.md) |
+| Habilitar la consulta financiera del cliente | [Portal financiero](docs/PORTAL-FINANCIERO.md) |
 | Adjuntar un recibo o una transferencia | [Comprobantes de pago](docs/COMPROBANTES-PAGO.md) |
 | Consultar consumos o ingresos y exportarlos | [Reportes técnicos](docs/REPORTES.md) · [Reportes de cobranza](docs/REPORTES-COBRANZA.md) |
 | Configurar o pausar los avisos por correo | [SMTP interno](docs/SMTP-INTERNO.md) · [Pausa de envío](docs/DESACTIVAR-CORREO.md) |
+| Configurar copias programadas (apagadas por defecto) | [Respaldos automáticos](docs/RESPALDOS-AUTOMATICOS.md) |
 | Respaldar, restaurar o conocer las pruebas | [Respaldo y restauración](docs/RESPALDO-RESTAURACION.md) · [Validación y límites](docs/VALIDACION.md) |
 
 ## Funciones incluidas
@@ -44,7 +49,14 @@ Sistema de atención técnica con servidor **Spring Boot 3.5.16 / Java 17**, cli
 - Reportes por institución, administrativo, canal y periodo, con exportación real a Excel y PDF.
 - Pólizas por institución con vigencia, importe en MXN y horas contratadas; historial y seguimiento de parcialidades para Cobranza y Administración.
 - Pagos vinculados a la acreditación de minutos por canal, con límites de póliza, control de duplicados y reportes financieros por institución, método y periodo.
-- Comprobantes PDF/PNG/JPEG adjuntos a cada pago, protegidos para Cobranza y Administración e incluidos en respaldos.
+- Comprobantes PDF/PNG/JPEG adjuntos a cada pago, protegidos por rol e institución e incluidos en respaldos.
+- Cotizaciones MXN con emisión y aceptación documentadas, conversión única a póliza y renovaciones relacionadas sin acreditar horas automáticamente.
+- Solicitudes de pago con comprobantes: pendientes sin crédito, aprobación por Administración/Cobranza con acreditación atómica, o rechazo con motivo.
+- Portal financiero del cliente habilitable por institución, inicialmente desactivado; consulta de sus pólizas, pagos y evidencia y presentación de solicitudes.
+- Recibos administrativos PDF con folio y datos preservados desde su primera emisión; anulación visible. No son facturas fiscales.
+- Base de conocimientos por categoría/versión de SIABUC, borradores privados, publicación y enlaces desde los casos.
+- Encuesta institucional de 1 a 5 al cerrar el caso, con comentario y reportes de satisfacción para Administración.
+- Servicio de respaldos automáticos con programación diaria, retención, historial y alertas de error. **Apagado por defecto** y desactivable sin borrar copias ni impedir respaldos manuales.
 
 **Alcance:** registra la atención por correo y las sesiones remotas y envía avisos cuando se configura SMTP. No lee correos entrantes ni abre conexiones de escritorio remoto. Los minutos se confirman manualmente o con ayuda del cronómetro. Los pagos registran dinero recibido y acreditan minutos: no procesan cargos bancarios ni emiten facturas fiscales. Es una aplicación independiente de SIABUC.
 
@@ -53,12 +65,12 @@ Sistema de atención técnica con servidor **Spring Boot 3.5.16 / Java 17**, cli
 | Cuenta | Alcance |
 | --- | --- |
 | Administración (`ADMIN`) | Instituciones, usuarios, soporte, configuración, reportes técnicos y supervisión financiera. Puede anular pagos si las reglas de saldo lo permiten. |
-| Cliente (`USER`) | Saldo, casos e historial público de su institución; abre solicitudes, comenta, adjunta archivos de soporte y confirma sesiones remotas. Sin acceso financiero ni notas internas. |
+| Cliente (`USER`) | Saldo, casos e historial público de su institución; abre solicitudes, comenta, adjunta archivos de soporte y confirma sesiones remotas. Sin notas internas. El acceso financiero propio requiere habilitación expresa de Administración. |
 | Cobranza (`BILLING`) | Saldos institucionales, pólizas, pagos, acreditación de horas, comprobantes y reportes financieros. Sin acceso a expedientes técnicos, administración de cuentas o anulación de pagos. |
 
-Los permisos se comprueban en el servidor. Los adjuntos de soporte respetan la institución y la visibilidad de la entrada; los comprobantes de pago son exclusivos de Administración/Cobranza. La campana sigue funcionando con el correo pausado y muestra a Cobranza sus avisos de saldo.
+Los permisos se comprueban en el servidor. Los adjuntos de soporte respetan la institución y la visibilidad de la entrada; Administración/Cobranza consultan todos los comprobantes de pago; el portal financiero habilitado permite al cliente consultar sólo los de su institución. La campana sigue funcionando con el correo pausado y muestra a Cobranza sus avisos de saldo.
 
-Para actualizar desde una versión anterior, respalde primero y conserve `.env`, los volúmenes y las migraciones existentes. Siga [Actualizar a 1.5](docs/VERSION-1.5.md); las guías de [migración 1.0/1.1](docs/MIGRACION-1.1.md) y [SMTP interno](docs/SMTP-INTERNO.md#actualizar-una-instalación-anterior) conservan las particularidades de esas versiones. No es necesario cambiar una configuración SMTP que ya funciona.
+Para actualizar desde una versión anterior, respalde primero y conserve `.env`, los volúmenes y las migraciones existentes. Siga [Actualizar a 1.6](docs/VERSION-1.6.md); las guías de [migración 1.0/1.1](docs/MIGRACION-1.1.md) y [SMTP interno](docs/SMTP-INTERNO.md#actualizar-una-instalación-anterior) conservan las particularidades de esas versiones. No es necesario cambiar una configuración SMTP que ya funciona.
 
 ## Inicio rápido desde cero con Docker
 
@@ -104,7 +116,7 @@ Requisitos en Linux: Docker Engine funcionando, complemento `docker compose` con
 
 5. Abra **http://127.0.0.1:4200** o el puerto `FRONTEND_PORT` que haya configurado. Acceda con la cuenta indicada en `.env`, cambie su contraseña en **Mi cuenta** y comience creando una institución y sus usuarios.
 
-El primer inicio descarga dependencias y puede tardar varios minutos. El script espera a que PostgreSQL, Postfix, Spring y Nginx respondan correctamente. Si algún puerto está ocupado, cambie su valor en `.env` y vuelva a iniciar.
+El primer inicio descarga dependencias y puede tardar varios minutos. El script espera a que PostgreSQL, Postfix, Spring, Nginx y el servicio de respaldo respondan correctamente. El servicio de respaldo permanece esperando: su calendario empieza desactivado. Si algún puerto está ocupado, cambie su valor en `.env` y vuelva a iniciar.
 
 Si omite `configurar.sh`, `iniciar.sh` genera `.env` automáticamente. Nunca publique ni comparta ese archivo. Los scripts resuelven su propia carpeta y pueden invocarse desde cualquier directorio.
 
@@ -144,6 +156,8 @@ Edite `.env` **antes del primer inicio**. Puede usar, por ejemplo, `DB_PORT=5433
 | `ADMIN_PASSWORD` | Aleatoria | Contraseña utilizada sólo al crear el administrador inicial. |
 | `COOKIE_SECURE` | `false` | `true` cuando el navegador accede por HTTPS. |
 | `REPORTING_TIME_ZONE` | `America/Mexico_City` | Zona de fechas en los reportes. El calendario de SLA se administra en la plataforma. |
+| `BACKUP_DIRECTORY` | `./backups/automatic` | Carpeta privada para el servicio de respaldos; configurarla no activa el calendario. |
+| `BACKUP_UID` / `BACKUP_GID` | Usuario actual en Linux; `0` en Windows | Propietario del proceso que escribe las copias. |
 | `COMPOSE_PROJECT_NAME` | `siabuc-helpdesk` | Identidad del proyecto y del volumen de Docker. |
 
 Los puertos deben ser diferentes, enteros entre 1 y 65535. Dentro de Docker, PostgreSQL mantiene `5432`, Spring `8080` y Nginx `80`; los cambios de `.env` afectan los puertos del anfitrión y se aplican automáticamente al proxy en desarrollo. El navegador siempre accede a `/api` desde el mismo origen de Angular.
@@ -168,6 +182,8 @@ La dirección con IP es una identidad de envío; este servicio no crea un buzón
 **Notificaciones** permite al administrador consultar la cola, enviar una prueba a su propia dirección y reintentar avisos fallidos u omitidos. Las notas internas sólo notifican al responsable. Consulte [SMTP interno](docs/SMTP-INTERNO.md) para entrega directa, restricciones del puerto 25, relay, cola y red; [Correo](docs/CORREO.md) detalla destinatarios y proveedores. En el helpdesk, SENT significa que Postfix aceptó el aviso; la entrega remota puede continuar pendiente en su cola.
 
 Gmail institucional `@ucol.mx` es una salida opcional de Postfix: `./configurar-gmail.sh` en Linux o `.\configurar-gmail.bat` en PowerShell. Consulte [Gmail UCOL](docs/GMAIL-UCOL.md) para requisitos y diagnóstico. El usuario confirmó SMTP local funcionando e informó que su configuración Gmail falló; no se presenta ese fallo como resuelto ni se requiere migrar a Gmail.
+
+Desde 1.6 puede comenzar con una **Cotización**, guardar la aceptación y convertirla en póliza. Una **Solicitud de pago** permanece pendiente hasta que Administración o Cobranza revise su comprobante y apruebe explícitamente el importe y los minutos. Sólo la aprobación crea el pago y acredita el saldo; cotizar, crear una póliza o adjuntar evidencia no acredita horas. El registro directo de pagos se conserva para dinero ya verificado.
 
 **Pólizas y pagos:** `ADMIN` y `BILLING` registran dinero recibido en MXN, con referencia, fecha, método, descripción y tiempo por acreditar en cada canal. Se admiten transferencia, depósito, efectivo, tarjeta de crédito/débito, cheque y otro. Los registros anteriores conservan su moneda y método. Crear una póliza no acredita horas; **Pagos** confirma juntos el movimiento y los minutos indicados, sin convertir pesos automáticamente a tiempo. Una parcialidad de póliza puede registrar dinero sin minutos; una póliza ya liquidada permite acreditar horas pendientes con importe cero.
 
@@ -209,7 +225,7 @@ Requiere JDK 17 o posterior, Maven 3.9, Node.js 24 LTS, npm, Python 3.10 y Docke
 
 `compilar.sh` ejecuta `mvn package`, `npm ci` y `npm run build`. Produce:
 
-- `backend/target/siabuc-helpdesk-1.5.0.jar`
+- `backend/target/siabuc-helpdesk-1.6.0.jar`
 - `frontend/dist/helpdesk/browser/`
 
 `iniciar-dev.sh` inicia PostgreSQL y Postfix con Docker, compila Spring, instala las dependencias de Angular y ejecuta Spring y `ng serve` en una terminal. Lee los mismos puertos y contraseñas de `.env`; ambos procesos escuchan en `127.0.0.1`. Los registros se guardan en `.runtime/`. **Ctrl+C** detiene Spring y Angular; después `./detener.sh` detiene PostgreSQL y Postfix. No ejecute el modo Docker completo y el modo de desarrollo al mismo tiempo sobre los mismos puertos.
@@ -230,6 +246,8 @@ Para ejecutar todo sin Docker, conectar un PostgreSQL propio o servir los archiv
 Una hora equivale exactamente a 60 minutos. El sistema rechaza una atención de 31 minutos si la institución sólo dispone de 30 en ese canal. No toma prestados minutos de la otra bolsa. Crear un caso no descuenta tiempo; se requiere saldo positivo para crearlo o reabrirlo. Los comentarios de usuarios no consumen saldo.
 
 ## Respaldo y restauración
+
+**Programación automática:** está desactivada por defecto. Administración puede configurarla y activarla desde **Respaldos**; al desactivarla se cancelan las nuevas ejecuciones programadas y se conservan las copias. Una ejecución ya iniciada puede terminar para no dejar un archivo incompleto. Consulte [Respaldos automáticos](docs/RESPALDOS-AUTOMATICOS.md) para el destino, horario, retención y prueba de restauración.
 
 La [guía paso a paso de respaldo y restauración](docs/RESPALDO-RESTAURACION.md) explica los parámetros, las rutas, la recuperación y el diagnóstico de errores.
 
@@ -272,7 +290,14 @@ La restauración detiene Spring, Angular y Postfix de Docker, valida el SHA-256 
 - [Pólizas y cobranza](docs/POLIZAS-COBRANZA.md): contratación, abonos, acreditación de horas y permisos BILLING/ADMIN.
 - [Reportes de cobranza](docs/REPORTES-COBRANZA.md): ingresos, anulaciones, saldos de pólizas, Excel y PDF.
 - [Comprobantes de pago](docs/COMPROBANTES-PAGO.md): carga, descarga, historial y permisos de archivos financieros.
-- [Actualizar a 1.5](docs/VERSION-1.5.md): conservar pagos, horas y configuración.
+- [Actualizar a 1.5](docs/VERSION-1.5.md): guía histórica de esa versión.
+- [Instalar o actualizar a 1.6](docs/VERSION-1.6.md): recorrido comercial, portal y operación, conservando datos.
+- [Cotizaciones y renovaciones](docs/COTIZACIONES-RENOVACIONES.md): propuesta, constancias, conversión a póliza y avisos de vencimiento.
+- [Solicitudes y portal financiero](docs/SOLICITUDES-PAGO.md): habilitación institucional, comprobantes pendientes y aprobación.
+- [Recibos de pago](docs/RECIBOS-PAGO.md): PDF, folios, datos preservados y anulaciones.
+- [Base de conocimientos](docs/BASE-CONOCIMIENTOS.md): publicación, búsqueda y soluciones vinculadas a casos.
+- [Encuestas de satisfacción](docs/ENCUESTAS-SATISFACCION.md): respuesta del cliente y reportes.
+- [Respaldos automáticos](docs/RESPALDOS-AUTOMATICOS.md): activación opcional, pausa, calendario, retención y diagnóstico.
 - [Operación y compilación](docs/OPERACION.md): instalación nativa, Docker, red, respaldo y resolución de problemas.
 - [Instalación y scripts Windows](docs/WINDOWS.md): Docker Desktop, Python y equivalencias CMD/PowerShell.
 - [Respaldo y restauración](docs/RESPALDO-RESTAURACION.md): `--nombre-respaldo`, ejemplos, recuperación paso a paso y alcance de las copias.
@@ -293,6 +318,7 @@ siabuc-helpdesk/
   backend/                Spring, seguridad, API y migraciones Flyway
   frontend/               Angular, proxy de desarrollo y Nginx
   smtp/                   Dockerfile y configuración Postfix de salida
+  backup/                 Servicio de copias PostgreSQL programadas, inicialmente apagadas
   docs/                   Manuales, contrato API y validación
   scripts/manage.py       Operación y lectura segura de configuración
   docker-compose.yml      PostgreSQL + Postfix + Spring + Nginx

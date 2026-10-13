@@ -61,6 +61,12 @@ async function open({role='ADMIN',inbox=true,files=[],sessions=[session],width=1
   if(path==='/api/cases/10/attachments')return reply(state.files.filter(f=>f.entryId===(url.searchParams.has('entryId')?Number(url.searchParams.get('entryId')):null)));
   if(path==='/api/attachments/50/download'||path==='/api/attachments/51/download'){downloads.push(path);return route.fulfill({status:200,contentType:'text/plain',body:'diagnostico de prueba'});}
   if(path==='/api/cases/10/remote-sessions')return reply(state.sessions);
+  
+  // v1.6 shell and case sections; this suite keeps its original regression scope.
+  if (path === '/api/backups/status') return reply({settings:{enabled:false,dailyTime:'02:00',timeZone:'America/Mexico_City',retentionDays:30,keepLast:3,destinationConfirmed:false,updatedAt:'2026-10-13T18:00:00Z'},worker:{online:false,writable:false,destinationLabel:'',lastError:'',lastSeenAt:null},runs:[],lastFailure:null});
+  if (path === '/api/client-finance-access') return reply([]);
+  if (/^\/api\/cases\/\d+\/knowledge-links$/.test(path)) return reply([]);
+  if (/^\/api\/satisfaction\/cases\/\d+$/.test(path)) return reply({caseId:Number(path.split('/').at(-1)),caseStatus:'CLOSED',canRespond:false,survey:null});
   if(path==='/api/inbox')return reply(role==='BILLING'?{...state.inbox,items:[],pendingReplies:[],unreadCount:0}:state.inbox);
   if(path==='/api/support-settings')return reply(state.settings);
   if(path==='/api/balance-alert-settings')return reply([state.balance]);

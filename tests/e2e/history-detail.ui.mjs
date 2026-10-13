@@ -82,7 +82,13 @@ async function open({ section = 'notifications', role = 'ADMIN', notices = [noti
       failures.push(`Unexpected mutation: ${request.method()} ${path}`);
       return reply({ message: 'Unexpected mutation' }, 400);
     }
-    if (path === '/api/inbox') return reply({ items: [], unreadCount: 0, pendingReplies: [] });
+    
+  // v1.6 shell and case sections; this suite keeps its original regression scope.
+  if (path === '/api/backups/status') return reply({settings:{enabled:false,dailyTime:'02:00',timeZone:'America/Mexico_City',retentionDays:30,keepLast:3,destinationConfirmed:false,updatedAt:'2026-10-13T18:00:00Z'},worker:{online:false,writable:false,destinationLabel:'',lastError:'',lastSeenAt:null},runs:[],lastFailure:null});
+  if (path === '/api/client-finance-access') return reply([]);
+  if (/^\/api\/cases\/\d+\/knowledge-links$/.test(path)) return reply([]);
+  if (/^\/api\/satisfaction\/cases\/\d+$/.test(path)) return reply({caseId:Number(path.split('/').at(-1)),caseStatus:'CLOSED',canRespond:false,survey:null});
+  if (path === '/api/inbox') return reply({ items: [], unreadCount: 0, pendingReplies: [] });
     if (path === '/api/policies') return reply([]);
     if (path === '/api/auth/csrf') return reply({ token: 'test-token' });
     if (path === '/api/auth/me') return reply({ id: 1, username: 'qa', displayName: 'Administrativo Ejemplo', role, email: 'qa@example.test', institutionId: role === 'USER' ? 1 : null });

@@ -2,7 +2,7 @@
 
 ## Alcance
 
-Los `.bat` permiten operar desde CMD o PowerShell con Python en Windows. Docker Desktop ejecuta PostgreSQL, Spring, Angular/nginx y Postfix como contenedores **Linux**. No se requiere Git Bash ni instalar Java, Maven o Node en el anfitrión. No basta con renombrar `.sh` a `.bat`: el proyecto conserva su lógica común en Python y usa lanzadores específicos por sistema.
+Los `.bat` permiten operar desde CMD o PowerShell con Python en Windows. Docker Desktop ejecuta PostgreSQL, Spring, Angular/nginx, Postfix y el worker de respaldos como contenedores **Linux**. No se requiere Git Bash ni instalar Java, Maven o Node en el anfitrión. No basta con renombrar `.sh` a `.bat`: el proyecto conserva su lógica común en Python y usa lanzadores específicos por sistema.
 
 El desarrollo nativo (`iniciar-dev.sh`, Java/Angular fuera de Docker) se mantiene para Linux/WSL2. No se proporciona un lanzador de desarrollo nativo de Windows; `compilar.bat` compila dentro de Docker. Los comandos Docker siguen usando la misma configuración y volúmenes del proyecto.
 
@@ -49,7 +49,25 @@ Use las terminales para conservar los mensajes de error; no dependa del doble cl
 | Respaldar con nombre/ruta | `.\respaldar.bat --nombre-respaldo "C:\Copias SIABUC\lunes.dump"` |
 | Restaurar reemplazando datos | `.\restaurar.bat --nombre-respaldo "C:\Copias SIABUC\lunes.dump" --confirmar-reemplazo` |
 
-Los nombres relativos de respaldo se resuelven desde la carpeta actual de la terminal. Se escribe el respaldo binario directamente desde Python, sin redirecciones de PowerShell. Conserve `.dump` y `.dump.sha256`; no se sobrescribe un respaldo existente. Restaurar reemplaza los datos actuales de forma transaccional y deja los servicios de aplicación detenidos; después ejecute iniciar.bat.
+Los nombres relativos de respaldo manual se resuelven desde la carpeta actual de la terminal. Se escribe el respaldo binario directamente desde Python, sin redirecciones de PowerShell. Conserve `.dump` y `.dump.sha256`; no se sobrescribe un respaldo existente. Restaurar reemplaza los datos actuales de forma transaccional y deja detenidos el worker `backup`, la aplicación y SMTP. Revise la configuración recuperada antes de reiniciar; [RESPALDO-RESTAURACION.md](RESPALDO-RESTAURACION.md) explica cómo arrancar la aplicación primero con el worker detenido.
+
+## Respaldos automáticos en Windows
+
+El calendario se instala **desactivado por defecto**, también al actualizar desde una versión anterior. `iniciar.bat` puede dejar saludable el servicio `backup` sin crear ninguna copia programada. Los respaldos manuales de `respaldar.bat` funcionan independientemente de ese calendario y nunca se eliminan por su retención.
+
+Para elegir una carpeta privada diferente, edite `.env` con una sola definición de cada variable:
+
+```dotenv
+BACKUP_DIRECTORY='C:/SIABUC/copias automaticas'
+BACKUP_UID=0
+BACKUP_GID=0
+```
+
+Use barras `/` en este ejemplo y comillas simples del formato `.env` si hay espacios. La ruta predeterminada `./backups/automatic` parte del directorio del proyecto, aunque invoque `iniciar.bat` desde otra carpeta. El script crea la carpeta si falta; Docker Desktop debe poder montarla. Configure sus permisos mediante **Propiedades → Seguridad** y no utilice una carpeta compartida públicamente.
+
+Ejecute `iniciar.bat`, acceda como ADMIN a **Respaldos**, compruebe el destino y guarde hora, zona, retención y confirmación del directorio. **Guardar no activa el calendario**: pulse **Activar respaldos automáticos** cuando lo decida. Puede volver a **Desactivar respaldos automáticos**; conserva copias e historial, cancela los programados pendientes y permite seguir usando **Crear respaldo ahora**. Una ejecución ya iniciada puede completar. Al reactivar no se recuperan horarios perdidos.
+
+El archivo `backup/compose.restore-test.yml` permite ensayar una restauración en otro proyecto y volumen, sin SMTP ni puertos publicados. La guía [RESPALDOS-AUTOMATICOS.md](RESPALDOS-AUTOMATICOS.md) contiene los pasos para PowerShell. Ningún ensayo de restauración se ejecuta automáticamente sobre sus datos.
 
 ## SMTP y datos de otra instalación
 
@@ -67,6 +85,7 @@ En Linux se utilizan modos 600 para archivos privados. `chmod(600)` de Python **
 docker compose ps -a
 docker compose logs --tail=150 backend
 docker compose logs --tail=100 smtp
+docker compose logs --tail=100 backup
 docker compose exec -T smtp postqueue -p
 ```
 

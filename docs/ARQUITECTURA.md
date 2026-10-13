@@ -5,9 +5,10 @@
 - **Angular:** interfaz de administración y portal institucional. Conversión de horas/minutos, formularios, búsquedas y vistas según rol.
 - **Nginx:** sirve la compilación de Angular y reenvía `/api/` a Spring por la red de Docker. Las rutas del cliente regresan a `index.html`.
 - **Spring Boot:** autenticación, autorización, reglas de negocio, acceso JDBC, transacciones y auditoría. El cliente no decide permisos ni saldos.
-- **PostgreSQL:** persistencia relacional, restricciones de integridad y bloqueos de filas. Las migraciones Flyway crean el esquema en el primer inicio.
+- **PostgreSQL:** persistencia relacional, restricciones de integridad y bloqueos de filas. Las migraciones Flyway crean el esquema en el primer inicio y aplican extensiones versionadas al actualizar.
 - **SMTP/outbox:** cola PostgreSQL creada junto con los eventos, procesador periódico y conexión de correo configurable. No se realiza I/O SMTP dentro de la transacción de negocio.
 - **Postfix interno:** SMTP de salida en Docker, autorizado únicamente para loopback y la subred dedicada al backend. Entrega directamente por MX o mediante relay. Cola durable `smtp_queue`, sin buzones ni bandeja web.
+- **Worker de respaldos:** servicio Docker `backup`, con acceso a PostgreSQL y a un directorio privado del anfitrión. Ejecuta `pg_dump` y conserva estado/hash/retención sin montar el socket Docker ni el volumen de datos de PostgreSQL. Su calendario se instala desactivado.
 - **Mailpit opcional:** sumidero y bandeja local para pruebas de correo, perfil Docker `mail-test`.
 
 En desarrollo, el servidor Angular ocupa el lugar de Nginx y su proxy toma `SERVER_PORT` del entorno. En Docker, los puertos internos son estables; sólo se configuran sus publicaciones en el anfitrión.
@@ -16,7 +17,7 @@ En desarrollo, el servidor Angular ocupa el lugar de Nginx y su proxy toma `SERV
 
 Una **institución** contiene contacto, estado, responsable predeterminado y dos presupuestos. Un **usuario** tiene correo y pertenece a una institución cuando su rol es `USER`; `ADMIN` y `BILLING` no tienen institución. Cada **caso** pertenece a una institución y contiene título, descripción, canal inicial, estado, responsable asignado, autor y fechas. Cada **entrada** pertenece a un caso y describe una atención o comentario. Un **pago** contiene importe, referencia, institución, acreditación y trazabilidad de anulación. Una **notificación** conserva evento, destinatario individual, contenido y estado de entrega. Un **evento de auditoría** identifica actor, acción, entidad, detalle y fecha.
 
-El esquema concreto y sus restricciones se encuentran en `backend/src/main/resources/db/migration/`: V1 original, V2 de cobranza/contactos/asignaciones y V3 de notificaciones y V4 de control persistente del envío. No cambie una migración que ya se haya aplicado a una base existente; añada la siguiente migración versionada. Consulte [MIGRACION-1.1.md](MIGRACION-1.1.md).
+El esquema concreto y sus restricciones se encuentran en `backend/src/main/resources/db/migration/`: V1 original, V2 de cobranza/contactos/asignaciones, V3 de notificaciones y V4 de control persistente del envío; V5–V10 incorporan los módulos de 1.4/1.5 y V11–V16 los de 1.6, descritos más adelante. No cambie una migración que ya se haya aplicado a una base existente; añada la siguiente migración versionada. Consulte [MIGRACION-1.1.md](MIGRACION-1.1.md).
 
 ## Minutos e independencia de canales
 
@@ -29,7 +30,7 @@ remoto_disponible = remoto_asignado - remoto_utilizado
 
 Una atención descuenta únicamente el canal registrado en esa entrada. El canal inicial del caso determina la validación al abrir/reabrir, pero no restringe la atención posterior a un único medio. Las notas sin consumo usan `minutes=0` y `channel=null`.
 
-Los presupuestos se expresan como total histórico; recargar significa incrementar el asignado. No hay vencimientos, renovación mensual automática ni trasvase de saldo entre canales en esta versión.
+Los presupuestos se expresan como total histórico; recargar significa incrementar el asignado. El saldo acreditado no caduca ni se renueva mensualmente de forma automática y no se transfiere entre canales. Las pólizas tienen vigencia informativa; las renovaciones de 1.6 crean otro contrato mediante una cotización aceptada, sin aumentar ni retirar minutos por sí mismas.
 
 ## Concurrencia, errores y trazabilidad
 
@@ -41,7 +42,7 @@ La API responde `400` a entradas inválidas, `401` a solicitudes sin sesión, `4
 
 Los pagos utilizan importes decimales y minutos enteros. Registrar el pago, acreditar las bolsas, auditar y crear sus notificaciones es atómico. Un UUID de solicitud protege ante reintentos y una referencia única normalizada por institución evita duplicados operativos. Anular requiere saldo disponible suficiente para retirar toda la acreditación, conserva el registro y nunca ejecuta un reembolso bancario.
 
-La cola conserva los estados `PENDING`, `SENDING`, `SENT`, `FAILED` y `SKIPPED`; procesa fuera de la transacción de negocio, limita intentos y recupera bloqueos vencidos tras caídas. La entrega es al menos una vez: puede duplicarse si SMTP acepta y el proceso cae antes de confirmar el envío en la base. La falta de correo o responsable queda registrada como omisión. Más detalles y fuentes primarias en [CORREO.md](CORREO.md).
+La cola conserva los estados `PENDING`, `SENDING`, `SENT`, `FAILED`, `SKIPPED` y el terminal `SUPPRESSED`; procesa fuera de la transacción de negocio, limita intentos y recupera bloqueos vencidos tras caídas. La entrega es al menos una vez: puede duplicarse si SMTP acepta y el proceso cae antes de confirmar el envío en la base. La falta de correo o responsable queda registrada como omisión. Más detalles y fuentes primarias en [CORREO.md](CORREO.md).
 
 ## Sesiones y permisos
 
@@ -49,7 +50,9 @@ La autenticación usa sesión del servidor, cookie de sesión `HttpOnly` y `Same
 
 Las contraseñas se almacenan como hashes BCrypt, nunca como texto recuperable. Las respuestas de usuarios no incluyen el hash. Spring restringe las consultas al ámbito institucional del usuario y elimina información interna de las respuestas de ese rol. Un usuario desactivado o vinculado a una institución dada de baja no conserva autorización por tener una sesión previa.
 
-`BILLING` puede consultar instituciones sin notas administrativas, registrar/consultar pagos y cambiar su contraseña. No puede operar casos, usuarios, auditoría, notificaciones o bajas institucionales ni anular pagos. La asignación como responsable exige un `ADMIN` activo.
+`BILLING` puede consultar instituciones sin notas administrativas, administrar pólizas, pagos, comprobantes, recibos y reportes de cobranza, gestionar cotizaciones/renovaciones, decidir solicitudes de pago y cambiar su contraseña. No puede operar casos, conocimiento, encuestas, usuarios, auditoría, configuración de correo, portal financiero o respaldos ni dar de baja instituciones o anular pagos. Su campana conserva avisos propios de saldo; los avisos de vencimiento se consultan en Renovaciones. La asignación como responsable de soporte exige un `ADMIN` activo.
+
+El portal financiero `USER` tiene autorización adicional por institución, desactivada por defecto. `ClientFinanceAccessService` comprueba cuenta e institución activas y la habilitación en cada operación; las proyecciones de consulta omiten información interna. Las rutas `/api/client-finance/**` no conceden acceso a `/api/payments`, `/api/policies`, cotizaciones o reportes administrativos. Habilitar también autoriza comprobantes históricos de la institución; revocar no puede recuperar archivos ya descargados. El PDF cliente omite notas internas y motivo/responsable interno de anulación, manteniendo visible el estado ANULADO. Consulte [Portal financiero](PORTAL-FINANCIERO.md) y [Recibos](RECIBOS-PAGO.md).
 
 Las sesiones residen en memoria de Spring: un reinicio cierra las sesiones. La arquitectura entregada es de una instancia y no incluye balanceo, sesiones distribuidas, MFA, SSO ni recuperación de contraseña por correo. Los administradores pueden restablecer contraseñas desde Usuarios.
 
@@ -57,9 +60,9 @@ Las sesiones residen en memoria de Spring: un reinicio cierra las sesiones. La a
 
 La persistencia de negocio usa un volumen Docker de PostgreSQL. Postfix conserva una segunda cola en `smtp_queue`; SENT en PostgreSQL significa aceptación del primer SMTP, no finalización de la entrega remota. Consulte [SMTP-INTERNO.md](SMTP-INTERNO.md). Los archivos compilados de Angular y el JAR se reconstruyen a partir del código. La inicialización administrativa utiliza una contraseña de `.env` sólo cuando falta la cuenta de arranque según la lógica de inicialización; no sustituye la administración regular de contraseñas.
 
-El objetivo es un helpdesk institucional de volumen moderado. Los listados se cargan en el cliente y se filtran en la interfaz; no se ha realizado una prueba de carga productiva ni se declara un número máximo validado de usuarios simultáneos. Antes de un crecimiento grande, conviene añadir paginación del servidor, índices según consultas reales y monitoreo. La auditoría de interfaz presenta los últimos 500 eventos.
+El objetivo es un helpdesk institucional de volumen moderado. Varios listados operativos se cargan en el cliente y se filtran en la interfaz; conocimiento ya utiliza búsqueda y paginación del servidor, y reportes aplican filtros/límites del servidor. No se ha realizado una prueba de carga productiva ni se declara un número máximo validado de usuarios simultáneos. Antes de un crecimiento grande, conviene ampliar la paginación a los listados restantes, ajustar índices según consultas reales y añadir monitoreo. La auditoría de interfaz presenta los últimos 500 eventos.
 
-La configuración inicial publica todos los servicios sólo en localhost. Para acceso externo necesita terminación HTTPS, políticas de red, procedimiento de respaldo y administración de cuentas acordes con su instalación. Consulte [OPERACION.md](OPERACION.md).
+Las publicaciones de puertos de la configuración inicial usan localhost; el worker de respaldos no publica puertos. Para acceso externo necesita terminación HTTPS, políticas de red, procedimiento de respaldo y administración de cuentas acordes con su instalación. Consulte [OPERACION.md](OPERACION.md).
 
 ## Referencias técnicas
 
@@ -101,4 +104,40 @@ Los saldos financieros se derivan de pagos vigentes; no se mantienen contadores 
 Las rutas financieras permiten BILLING/ADMIN antes de la regla general que restringe reportes técnicos a ADMIN. Los servicios vuelven a comprobar permisos. Los registros de pagos y pólizas son informativos de operaciones recibidas; no se integró una pasarela bancaria ni facturación fiscal.
 
 
-V10 incorpora `payment_attachments`: archivos BYTEA asociados a pagos, con UUID de carga, digest y metadatos. Sus permisos son financieros (BILLING/ADMIN), independientes de los adjuntos de casos. Las cuotas se verifican bajo bloqueo del pago, respetando el orden institución → póliza → pago. La carga no acredita ni retira minutos, y el respaldo PostgreSQL incluye los bytes. El historial financiero agrega ATTACH_PAYMENT_PROOF; los avisos SMTP existentes no transportan estos archivos.
+V10 incorpora `payment_attachments`: archivos BYTEA asociados a pagos, con UUID de carga, digest y metadatos. Sus rutas originales y la carga usan permisos financieros (BILLING/ADMIN), independientes de los adjuntos de casos. Desde V12, rutas separadas permiten al cliente habilitado descargar sólo la evidencia de su institución. Las cuotas se verifican bajo bloqueo del pago, respetando el orden institución → póliza → pago. La carga no acredita ni retira minutos, y el respaldo PostgreSQL incluye los bytes. El historial financiero agrega ATTACH_PAYMENT_PROOF; los avisos SMTP existentes no transportan estos archivos.
+
+
+## Extensiones de 1.6 y fronteras de autorización
+
+| Migración | Persistencia y regla principal |
+|---|---|
+| V11 | `support_quotes`, `quote_history`, `policy_renewals` y configuración/avisos de renovación. Términos congelados al emitir; decisión con evidencia; conversión idempotente a póliza sin pagos ni crédito. |
+| V12 | `client_finance_access`, `payment_requests` y `payment_request_attachments`. Portal institucional desactivado por defecto; solicitud pendiente sin efectos monetarios; aprobación atómica y archivos BYTEA. |
+| V13 | `payment_receipts`: folio único y snapshot JSONB conservado en la primera descarga autorizada. Generación PDF sin otro pago ni incremento del saldo. |
+| V14 | Artículos, revisiones editoriales, vínculos a casos y eventos. Borrador/publicado/archivado, revisión esperada para evitar sobrescrituras y texto plano escapado. |
+| V15 | `satisfaction_surveys`: una respuesta institucional por caso, puntuación 1–5, autor/asignación conservados al responder; reabrir no genera otra encuesta. |
+| V16 | Configuración, estado del worker, ejecuciones e intentos de respaldo. Programación diaria desactivada hasta confirmar destino y activarla explícitamente. |
+
+### Cotización, validación y acreditación
+
+Las cotizaciones y solicitudes conservan términos y evidencia. La aceptación de una oferta es un registro hecho por el personal en nombre del cliente, no una firma digital. Convertir utiliza los bloqueos contables y restricciones únicas para crear una sola póliza. Las claves foráneas compuestas mantienen la misma institución en cotización, antecedente, sucesora y vínculo de renovación. Cancelar una sucesora conserva la cadena; su reemplazo continúa desde la última cancelada. Los avisos de vencimiento son internos y deduplicados por póliza/fecha, independientes de SMTP. Consulte [Cotizaciones y renovaciones](COTIZACIONES-RENOVACIONES.md).
+
+Aprobar una solicitud bloquea institución, póliza opcional y solicitud, y reutiliza `HelpdeskService.createPayment` con un UUID interno estable. Pago, acreditación, decisión y copia de comprobantes se confirman o revierten juntos. Se comprueban nuevamente límites contractuales y evidencia; el cliente no decide ni modifica los importes al aprobar. Las solicitudes rechazadas no tocan saldo. Los pagos directos de 1.5 siguen disponibles. Consulte [Solicitudes de pago](SOLICITUDES-PAGO.md).
+
+Un recibo conserva datos de emisión, pero cada descarga obtiene el estado vigente de anulación. El folio permanece estable; el PDF se genera desde PostgreSQL sin guardar un archivo adicional. Las versiones cliente y administrativa respetan sus permisos. Un PDF descargado anteriormente no puede actualizarse fuera del sistema. El recibo no es CFDI ni factura y no implica comunicación bancaria.
+
+### Conocimiento y satisfacción
+
+Conocimiento autoriza ADMIN/USER; Cobranza queda excluida. Las consultas cliente filtran artículos publicados antes de mapearlos, incluso en vínculos a casos. IDs adivinados de borradores o archivados no entregan contenido. El historial editorial queda reservado a ADMIN. Los vínculos apuntan a la publicación actual y no descuentan minutos. La interfaz interpola texto, sin `innerHTML` ni recursos externos. Consulte [Base de conocimientos](BASE-CONOCIMIENTOS.md).
+
+La encuesta exige un caso propio cerrado y una cuenta/institución activas. La unicidad por caso y UUID protege respuestas simultáneas y reintentos. Guarda nombres y asignación al responder; una reasignación posterior no reatribuye la evaluación. Los informes ADMIN calculan medias sobre todas las respuestas del resultado y exportan CSV con protección de fórmulas. No requiere habilitar finanzas ni genera consumo o correo. Consulte [Encuestas de satisfacción](ENCUESTAS-SATISFACCION.md).
+
+### Respaldos y restauración
+
+La configuración del worker persiste en PostgreSQL. En una instalación nueva o al incorporar V16, `enabled=false`; iniciar Compose no activa la programación. ADMIN confirma el destino, configura hora/zona/retención y activa expresamente el calendario. El worker publica archivos finalizados mediante escritura temporal y cambio de nombre, conserva SHA-256 y evita ejecuciones simultáneas. Desactivar cancela programados pendientes, conserva historia/copias y deja terminar una ejecución en curso; reactivar no recupera los horarios de la pausa.
+
+La retención se aplica sólo después de un respaldo programado exitoso, con calendario activo, a copias programadas propias y verificadas; respeta edad y mínimo de copias. Las copias manuales y archivos ajenos no se limpian. Los fallos se muestran a ADMIN en la plataforma sin depender de SMTP. No se devuelve la contraseña de PostgreSQL ni se monta el socket Docker en el worker.
+
+El dump incluye datos y adjuntos BYTEA, recibos JSONB y configuración de módulos. No incluye `.env`, certificados, imágenes Docker o cola de Postfix; requieren conservación aparte. Se mantienen `respaldar.sh`/`.bat` y `restaurar.sh`/`.bat`; la copia manual desde la plataforma también funciona con calendario desactivado si el destino está confirmado y el worker disponible. La programación corresponde al despliegue Compose; el inicio nativo de desarrollo no levanta ese worker.
+
+Una comprobación de hash y catálogo no sustituye restaurar en una base aislada. El procedimiento documentado no utiliza el volumen productivo. Consulte [Respaldos automáticos](RESPALDOS-AUTOMATICOS.md), [Respaldo y restauración manual](RESPALDO-RESTAURACION.md) y [Validación](VALIDACION.md); describir la arquitectura no afirma una ejecución de Docker o restauración que no conste allí.

@@ -2,7 +2,7 @@
 
 Desde la versión 1.5.0, **Reportes de cobranza** está disponible para los usuarios de **Cobranza (BILLING)** y los **Administrativos (ADMIN)**. Permite consultar el historial de pagos, totalizar por institución y obtener totales generales, siempre separando las monedas. También muestra la situación actual de las pólizas institucionales.
 
-Las instituciones cliente no acceden a estos reportes. Dar acceso financiero a Cobranza no abre los casos, sus notas internas, adjuntos ni los reportes técnicos de soporte.
+Las instituciones cliente no acceden a estos reportes, tampoco cuando se habilita el portal financiero de 1.6. Ese portal empieza desactivado por defecto y presenta un resumen propio de pólizas y pagos, con sus recibos/comprobantes y solicitudes, sin abrir informes generales ni historiales administrativos. Consulte [Portal financiero](PORTAL-FINANCIERO.md). Dar acceso financiero a Cobranza no abre los casos, sus notas internas, adjuntos ni los reportes técnicos de soporte.
 
 ## Consultar y filtrar
 
@@ -47,6 +47,16 @@ Una póliza puede tener abonos de dinero que todavía no liberan minutos. Esos a
 Cuando la póliza ya está totalmente pagada, un registro permitido de acreditación posterior puede liberar minutos pendientes con importe cero. Cuenta como **movimiento vigente**, aumenta los minutos acreditados y no aumenta el dinero cobrado. Por eso el contador usa la palabra movimientos y no equivale necesariamente al número de depósitos bancarios.
 
 Crear la póliza por sí sola no acredita horas ni constituye un pago. Los pagos y sus anulaciones son los movimientos que afectan los totales correspondientes.
+
+## Qué cambia con las solicitudes, cotizaciones y recibos de 1.6
+
+Los informes conservan el criterio de 1.5: suman **pagos registrados**, incluyendo los creados al aprobar una solicitud. Una solicitud pendiente o rechazada, sus comprobantes o una cotización aceptada no representan por sí solos un ingreso ni minutos acreditados. Al aprobar, el pago generado entra en los reportes con su fecha `paidOn`, que puede ser anterior al día de aprobación; no se suma también la solicitud como un segundo movimiento.
+
+Convertir una cotización crea una póliza sin pagos: su contrato puede aparecer en la situación actual de pólizas y su pendiente de cobro, pero todavía no añade dinero recibido ni tiempo acreditado al periodo. Una renovación conserva la relación con la póliza anterior sin trasladar ni duplicar pagos. Las canceladas continúan excluidas de la deuda computable.
+
+Emitir o descargar un [recibo administrativo PDF](RECIBOS-PAGO.md) tampoco añade un ingreso ni altera los totales. El recibo acredita un registro administrativo y no es CFDI, factura ni constancia de una devolución bancaria. Los comprobantes descargables conservan evidencia documental; no se agregan como filas monetarias adicionales.
+
+Consulte [Solicitudes de pago](SOLICITUDES-PAGO.md), [Cotizaciones y renovaciones](COTIZACIONES-RENOVACIONES.md) y [Pólizas y cobranza](POLIZAS-COBRANZA.md) para los estados y sus efectos.
 
 ## Situación actual de pólizas: todo el histórico
 
@@ -142,8 +152,12 @@ Parámetros opcionales compartidos:
 
 JSON devuelve `generatedAt`, `timeZone`, `filters`, `payments`, `totals`, `institutionTotals`, `groups`, `policyBalances` y `policyTotals`. Los importes de `totals`, `institutionTotals` y `groups` siempre llevan moneda. `policyTotals` expresa su moneda en los nombres `agreedMXN`, `paidMXN` y `pendingMXN` porque las pólizas se contratan en pesos mexicanos.
 
-Las tres rutas verifican rol BILLING o ADMIN. Devuelven 403 a una cuenta cliente y 401 sin sesión. Las respuestas se marcan `Cache-Control: no-store`; los archivos usan `Content-Disposition: attachment` y el tipo MIME correspondiente.
+Las tres rutas verifican rol BILLING o ADMIN. La habilitación del portal institucional no cambia esta restricción. Devuelven 403 a una cuenta cliente y 401 sin sesión. Las respuestas se marcan `Cache-Control: no-store`; los archivos usan `Content-Disposition: attachment` y el tipo MIME correspondiente.
 
 La exportación reutiliza las dependencias de Apache POI y Apache PDFBox incorporadas en la versión 1.4. No requiere instalar Excel, LibreOffice ni un visor PDF en el servidor.
 
 `BillingReportIntegrationIT` verifica separación de monedas históricas, suma decimal exacta por institución entre métodos diferentes, filtros por fecha del pago, anulaciones, situación contractual independiente del periodo, permisos de los tres formatos y separación del contenido técnico. También abre el libro con POI y el PDF multipágina con PDFBox, comprueba texto seguro para Excel y rechaza resultados excesivos. La evidencia de ejecución se publica en la validación de la versión.
+
+## Conservación de la información
+
+Los pagos, solicitudes, pólizas y relaciones de renovación se conservan en PostgreSQL. Los archivos exportados son consultas de esos datos y no sustituyen un respaldo de la base. Los scripts manuales de [respaldo y restauración](RESPALDO-RESTAURACION.md) siguen vigentes; los [respaldos automáticos](RESPALDOS-AUTOMATICOS.md) de 1.6 requieren configuración y activación expresa de ADMIN, con calendario desactivado por defecto. Los importes, monedas y evidencias históricas de 1.5 se mantienen sin conversión ni recreación de movimientos.

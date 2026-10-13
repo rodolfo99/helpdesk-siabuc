@@ -174,3 +174,44 @@ La suite verifica creación de pólizas sin acreditar minutos, edición y cancel
 Los comprobantes se adjuntan y descargan tanto en pagos vigentes como anulados. La prueba comprueba que el archivo utiliza el mismo pago y que no se envía otra petición de cobro ni se vuelven a acreditar horas. Las simulaciones de las suites anteriores incluyen ahora `/policies` para conservar sus comprobaciones al cargar el resumen de Cobranza.
 
 **Límites:** los permisos comprobados aquí son los de la interfaz; el servidor necesita sus propias pruebas de autorización. Los archivos de descarga simulados no validan el contenido real de Excel/PDF, la persistencia de adjuntos, el control de concurrencia ni las transacciones. Esta suite no entrega correo, cobra dinero ni contacta bancos. Para esos comportamientos del servidor, ejecutar las pruebas de integración y `billing-v15.e2e.mjs` contra una base desechable.
+
+## Flujos 1.6 con interfaz y servidor reales
+
+`workflows-v16.e2e.mjs` requiere la versión 1.6, una base desechable nueva con todas sus migraciones y correo de arranque desactivado (`MAIL_ENABLED=false`). Usa Angular, sesiones, cookies, CSRF, Spring y persistencia reales: no intercepta `/api` ni simula respuestas. Crea cuentas e instituciones propias y conserva sus registros para diagnóstico.
+
+Utiliza la misma instalación de Playwright y variables de la sección «Pólizas, cobranza y soporte 1.5 con servidor real». Cambia únicamente el comando por:
+
+```bash
+node workflows-v16.e2e.mjs
+```
+
+El comando funciona también en PowerShell con las variables allí documentadas. Exige `E2E_DISPOSABLE_DATABASE=true` y credenciales de un administrador de pruebas; `E2E_REPORT_DIR` guarda `workflows-v16-results.json`, capturas y descargas sintéticas. No ejecutarlo sobre datos de producción.
+
+El recorrido contiene 14 etapas y cubre:
+
+- Cotización preparada por Cobranza, constancias de emisión y aceptación, conversión idempotente a póliza sin acreditar minutos. Aviso de vencimiento con umbral configurable, lectura persistente y sin duplicados al revisar nuevamente.
+- Portal financiero deshabilitado inicialmente, habilitación explícita por administración y separación entre instituciones.
+- Cliente envía solicitud pendiente y comprobante PDF sintético; no aumenta saldo. Cobranza verifica la evidencia y aprueba una vez: pago, póliza y minutos se actualizan juntos.
+- Recibo administrativo PDF con folio estable, accesible al personal financiero y al cliente autorizado. Las descargas y reintentos no vuelven a acreditar minutos; la evidencia conserva sus bytes. Un pago auxiliar sin consumo se anula para verificar que el PDF cliente muestra ANULADO, conserva folio y oculta las notas del pago y el motivo privado de anulación; el saldo neto queda igual.
+- Publicación de conocimiento, consulta del cliente y enlace al caso; los borradores e historial editorial no son públicos. Retirar una publicación oculta también su enlace al cliente.
+- Evaluación institucional del caso cerrado, rechazo en casos abiertos y a usuarios sin permiso; reabrir conserva la evaluación. Reporte por periodo, institución y responsable con conteo, promedio y CSV.
+- Respaldos automáticos inicialmente desactivados: guardar horario conserva ese estado. Sin worker conectado no permite activar ni solicitar ejecución; el diagnóstico y la explicación del respaldo manual permanecen visibles. USER y BILLING no pueden administrar respaldos.
+
+Para la comprobación de respaldos, esta suite requiere **no iniciar el worker** y una base de pruebas nueva: verifica configuración y permisos, no crea un archivo de respaldo. El manual con calendario desactivado se verifica en las pruebas del servicio con fixtures identificadas. Este recorrido no demuestra un `pg_dump`, programación Docker ni restauración real; esos procedimientos se verifican por separado siguiendo la documentación de respaldos. PGlite, si se usa como motor de pruebas, debe declararse expresamente y no equivale a PostgreSQL nativo.
+
+## Base de conocimientos 1.6 con API simulada
+
+`knowledge-v16.ui.mjs` comprueba **10 escenarios** de interfaz sobre Angular compilado. Desde la raíz, compilar el cliente y preparar Chromium con los mismos comandos de las suites anteriores; después ejecutar:
+
+```bash
+cd tests/e2e
+node knowledge-v16.ui.mjs
+```
+
+Comprueba búsqueda y paginación, filtros por categoría y versión, alta de borrador, publicación con confirmación, edición con revisión esperada, manejo de conflicto conservando el texto local, archivo, vínculo y retiro de soluciones del caso, controles visibles por rol y regreso al listado. La prueba de texto literal introduce etiquetas sintéticas y verifica que no se convierten en elementos HTML ejecutables. La vista móvil se verifica a 390 píxeles, incluyendo texto largo sin espacios.
+
+`E2E_REPORT_DIR` guarda cuatro capturas: administración editorial, consulta de cliente, solución vinculada a caso y consulta móvil. Las variables `E2E_PLAYWRIGHT_PATH`, `E2E_CHROMIUM_PATH` y `E2E_CHROMIUM_ARGS` permiten usar un navegador ya instalado.
+
+Las cuatro suites previas (`helpdesk-v14.ui.mjs`, `billing-v15.ui.mjs`, `history-detail.ui.mjs`, `mail-control.ui.mjs`) conservan sus 61 escenarios e incorporan respuestas sintéticas para el aviso global de respaldos, la configuración de acceso financiero, los vínculos de conocimiento y las encuestas de casos cerrados. Esto permite comprobar las funciones anteriores dentro de la aplicación 1.6 completa. Las cinco suites juntas cubren 71 escenarios simulados.
+
+**Alcance:** estas pruebas ejecutan la interfaz real compilada con API interceptada. No demuestran seguridad del servidor, persistencia PostgreSQL, restauración de respaldos, entrega de correo ni operaciones monetarias reales. `KnowledgeIntegrationIT` valida los permisos y estados del servidor; los flujos con API y base de datos reales se ejecutan y reportan por separado. Los datos y textos de estas pruebas son sintéticos.

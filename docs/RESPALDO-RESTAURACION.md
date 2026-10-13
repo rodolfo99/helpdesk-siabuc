@@ -1,6 +1,8 @@
 # Respaldo y restauración de SIABUC Helpdesk
 
-Guía para la versión 1.5.0. En Windows utilice `respaldar.bat` y `restaurar.bat` con los mismos argumentos; consulte [WINDOWS.md](WINDOWS.md). Los scripts `respaldar.sh` y `restaurar.sh` operan sobre la base PostgreSQL del servicio Docker `db`, utilizando los valores de conexión de `.env`.
+Guía para la versión 1.6.0. En Windows utilice `respaldar.bat` y `restaurar.bat` con los mismos argumentos; consulte [WINDOWS.md](WINDOWS.md). Los scripts `respaldar.sh` y `restaurar.sh` operan sobre la base PostgreSQL del servicio Docker `db`, utilizando los valores de conexión de `.env`.
+
+Desde 1.6 existe también un calendario de respaldos **desactivado por defecto**, administrable en **Respaldos**. El servicio `backup` puede permanecer iniciado sin producir copias programadas. Activarlo requiere configurar y confirmar el destino; desactivarlo conserva copias e historial y no impide respaldar manualmente. La programación, retención y prueba de restauración en un proyecto aislado se documentan en [RESPALDOS-AUTOMATICOS.md](RESPALDOS-AUTOMATICOS.md). Los comandos de esta guía siguen siendo respaldos **manuales**, fuera de la limpieza automática.
 
 Desde 1.5 las pólizas, su historial, los vínculos de pagos y el contenido binario de sus comprobantes también se incluyen automáticamente en la copia PostgreSQL. Restaurar una copia anterior pierde las operaciones posteriores a su fecha.
 
@@ -92,13 +94,13 @@ Este procedimiento sobre la instalación actual requiere un esquema compatible c
    ./restaurar.sh backups/mi-respaldo.dump --confirmar-reemplazo
    ```
 
-4. Espere el mensaje de restauración terminada. Revise la configuración y las colas de correo antes de reanudar los envíos. Luego inicie los servicios:
+4. Espere el mensaje de restauración terminada. Revise la configuración y las colas de correo antes de reanudar los envíos. Una copia de 1.6 también recupera el estado guardado del calendario de respaldos: podría estar activado aunque una instalación nueva lo deje desactivado. Para revisarlo primero con el worker detenido, inicie únicamente los servicios indicados:
 
    ```bash
-   ./iniciar.sh
+   docker compose up -d --build --wait db smtp backend frontend
    ```
 
-5. Acceda con una cuenta incluida en la copia y compruebe instituciones, usuarios, saldos, pagos y casos. Los cambios posteriores a la fecha del respaldo no estarán en la base recuperada.
+5. Acceda con una cuenta administrativa incluida en la copia, abra **Respaldos**, desactive el calendario si corresponde y compruebe destino y retención. Después utilice `./iniciar.sh` o `iniciar.bat` para iniciar también el worker. Compruebe instituciones, usuarios, saldos, pagos y casos. Los cambios posteriores a la fecha del respaldo no estarán en la base recuperada.
 
 ### Qué comprueba y ejecuta el script
 
@@ -106,7 +108,7 @@ Primero exige el nombre del archivo y `--confirmar-reemplazo`, comprueba su exis
 
 Si no existe el `.sha256`, la restauración puede continuar sin esa comprobación; conservarlo junto al respaldo permite detectar alteraciones. La huella comprueba integridad, no la identidad ni la confianza de quien proporcionó la copia.
 
-Después inicia PostgreSQL si es necesario y detiene los contenedores `frontend`, `backend` y `smtp`. Ejecuta `pg_restore` con `--clean`, `--if-exists`, `--single-transaction` y `--exit-on-error`, omitiendo propietarios y privilegios originales. Si una sentencia de restauración falla, PostgreSQL revierte esa transacción. Los servicios de aplicación y correo quedan detenidos tanto al terminar correctamente como si falla `pg_restore`; no se reinician automáticamente.
+Después inicia PostgreSQL si es necesario y detiene los contenedores `backup`, `frontend`, `backend` y `smtp`. Ejecuta `pg_restore` con `--clean`, `--if-exists`, `--single-transaction` y `--exit-on-error`, omitiendo propietarios y privilegios originales. Si una sentencia de restauración falla, PostgreSQL revierte esa transacción. Los servicios de respaldos automáticos, aplicación y correo quedan detenidos tanto al terminar correctamente como si falla `pg_restore`; no se reinician automáticamente.
 
 ## 4. Alcance de la copia
 
@@ -116,6 +118,7 @@ Después inicia PostgreSQL si es necesario y detiene los contenedores `frontend`
 | Saldos, casos e historial de atenciones | Código fuente e imágenes Docker |
 | Pagos, anulaciones, responsables y auditoría | Sesiones de acceso en memoria |
 | Cola de notificaciones de Spring y migraciones | Cola Postfix del volumen `smtp_queue` |
+| Configuración e historial de respaldos programados | Archivos `.dump` y `.sha256` externos del destino de copias |
 
 Preserve `.env` por separado con acceso restringido y mantenga código y base de datos de versiones compatibles. Esta entrega utiliza PostgreSQL 17. Para recuperar en otro equipo, prepare Docker, el proyecto y su configuración de conexión antes de ejecutar `restaurar.sh`.
 
@@ -132,11 +135,11 @@ La cola PostgreSQL puede contener avisos pendientes que vuelvan a enviarse al in
 | Error SHA-256 | Recupere una copia íntegra y su archivo de verificación; no elimine la verificación para ignorar el error. |
 | Docker no responde | Revise `docker info`, el servicio Docker y los permisos de su usuario. |
 | Falla el respaldo porque `db` está detenido | Ejecute `./iniciar.sh --solo-bd` y repita con un nombre nuevo si corresponde. |
-| Falla `pg_restore` | Revise su salida y la compatibilidad de PostgreSQL/código. Spring, Angular y Postfix quedan detenidos; corrija la causa antes de reanudar. |
+| Falla `pg_restore` | Revise su salida y la compatibilidad de PostgreSQL/código. Respaldos automáticos, Spring, Angular y Postfix quedan detenidos; corrija la causa antes de reanudar. |
 
 ## 6. Validación disponible
 
-La suite Python de esta revisión tiene **37 pruebas satisfactorias**, incluidas 12 de respaldo/restauración. Comprueba argumentos, archivos, permisos, SHA-256, protección de copias existentes, fallos y parámetros transaccionales con una llamada a Compose simulada. También se comprobó la ayuda de los scripts y el rechazo de argumentos inválidos desde otro directorio.
+Como evidencia histórica anterior a 1.6, la suite Python de aquella revisión obtuvo **37 pruebas satisfactorias**, incluidas 12 de respaldo/restauración. Comprobó argumentos, archivos, permisos, SHA-256, protección de copias existentes, fallos y parámetros transaccionales con una llamada a Compose simulada. También se comprobó la ayuda de los scripts y el rechazo de argumentos inválidos desde otro directorio. La evidencia actual de 1.6 y sus pruebas de worker están en [VALIDACION.md](VALIDACION.md) y [RESPALDOS-AUTOMATICOS.md](RESPALDOS-AUTOMATICOS.md).
 
 **No se ejecutó una restauración real de PostgreSQL en Docker en el entorno de preparación.** Los detalles y resultados históricos están en [VALIDACION.md](VALIDACION.md). Para otras tareas de instalación y operación, consulte [OPERACION.md](OPERACION.md).
 
@@ -146,7 +149,7 @@ Los respaldos con V4 incluyen notification_settings y su pausa administrativa. R
 
 ## Retroceder a una versión anterior
 
-`pg_restore --clean` borra únicamente los objetos incluidos en el respaldo. Por ejemplo, una copia anterior a 1.5 no conoce las tablas V9/V10; sus relaciones con instituciones y pagos pueden impedir restaurar esa copia sobre la base actual. El script no realiza una migración inversa ni vacía completamente el esquema.
+`pg_restore --clean` borra únicamente los objetos incluidos en el respaldo. Por ejemplo, una copia anterior a 1.5 no conoce las tablas V9/V10; una anterior a 1.6 tampoco conoce V11–V16. Sus relaciones con instituciones y pagos pueden impedir restaurar esa copia sobre la base actual. El script no realiza una migración inversa ni vacía completamente el esquema.
 
 1. Detenga los servicios de la instalación actual y conserve su volumen, un respaldo reciente y su `.env`. Manténgalos disponibles para volver a la versión actual.
 2. Descomprima el código de la versión que desea recuperar en **otra carpeta**. Configure un `.env` propio con un `COMPOSE_PROJECT_NAME` nuevo y puertos libres para evitar reutilizar volúmenes o entrar en conflicto con la instalación conservada.

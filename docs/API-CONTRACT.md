@@ -1,4 +1,4 @@
-# Contrato de integración (v1.5)
+# Contrato de integración (v1.6)
 
 Base `/api`. Instantes ISO 8601 UTC; fechas civiles de pagos y pólizas `YYYY-MM-DD`, sin conversión de zona horaria. Identificadores numéricos. Unidad de soporte: minutos enteros (no flotantes). Roles `ADMIN`, `USER` y `BILLING`; canales `EMAIL` y `REMOTE`; estados `OPEN` y `CLOSED`.
 
@@ -177,3 +177,13 @@ BILLING y ADMIN pueden `GET /api/payments/{id}/attachments`, subir mediante `POS
 Se admiten PDF, PNG y JPEG; 10 MiB por archivo, 10 archivos y 50 MiB acumulados por pago. El servidor valida contenido, cuotas y nombre. Reintentar la misma solicitud no duplica el comprobante. La evidencia puede agregarse a pagos históricos, incluidos anulados y de instituciones inactivas. No cambia importes ni minutos. Las descargas requieren sesión autorizada y se entregan como archivo adjunto con protección de tipo/caché.
 
 El contenido binario se guarda en PostgreSQL. Se conservan autor, fecha y SHA-256; no hay borrado físico. Cuando el pago tiene póliza, la carga se registra también en su historial como `ATTACH_PAYMENT_PROOF`. Consulte [Comprobantes de pago](COMPROBANTES-PAGO.md).
+
+## Extensiones 1.6
+
+Las funciones anteriores se conservan. Cotizaciones y renovaciones usan `/api/quotes` y `/api/renewals`; las solicitudes pendientes usan `/api/payment-requests` para ADMIN/BILLING. Su aprobación es la operación que crea el pago y acredita los minutos, una sola vez.
+
+El portal USER usa exclusivamente `/api/client-finance/**`, requiere institución propia activa y habilitación expresa mediante `/api/client-finance-access` (ADMIN, inicialmente deshabilitado). Las rutas financieras anteriores siguen restringidas a ADMIN/BILLING. Los recibos tienen ruta `/api/payments/{id}/receipt.pdf` para el personal y `/api/client-finance/payments/{id}/receipt.pdf` para el cliente habilitado.
+
+Conocimiento usa `/api/knowledge/**` y `/api/cases/{id}/knowledge-links`; sólo ADMIN edita/publica y USER únicamente consulta contenido publicado autorizado. Encuestas usa `/api/satisfaction/cases/{caseId}` para casos propios y `/api/satisfaction/reports` para ADMIN. Respaldos usa `/api/backups/**`, exclusivo ADMIN, con programación desactivada por defecto.
+
+Las guías de cada módulo enumeran DTOs, rutas, estados, límites y errores: [cotizaciones/renovaciones](COTIZACIONES-RENOVACIONES.md), [solicitudes y portal](SOLICITUDES-PAGO.md), [recibos](RECIBOS-PAGO.md), [conocimiento](BASE-CONOCIMIENTOS.md), [encuestas](ENCUESTAS-SATISFACCION.md) y [respaldos](RESPALDOS-AUTOMATICOS.md). No se cambia el mecanismo de sesión ni la protección CSRF.

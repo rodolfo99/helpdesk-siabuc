@@ -4,6 +4,8 @@ Desde 1.4 también están disponibles [clasificación, ficha técnica y SLA](CLA
 
 Desde 1.5, el usuario **Cobranza** dispone de [pólizas, abonos y acreditación de horas](POLIZAS-COBRANZA.md), [comprobantes de pago](COMPROBANTES-PAGO.md) y [reportes financieros](REPORTES-COBRANZA.md). Administración conserva la supervisión y la autorización para anular pagos.
 
+Desde 1.6 se incorporan [cotizaciones y renovaciones](COTIZACIONES-RENOVACIONES.md), [solicitudes de pago para validación](SOLICITUDES-PAGO.md), [portal financiero institucional](PORTAL-FINANCIERO.md), [recibos administrativos PDF](RECIBOS-PAGO.md), [base de conocimientos](BASE-CONOCIMIENTOS.md), [encuestas de satisfacción](ENCUESTAS-SATISFACCION.md) y [respaldos automáticos](RESPALDOS-AUTOMATICOS.md). El portal financiero de clientes y el calendario de respaldos comienzan **desactivados por defecto**. El acceso al soporte y los scripts de respaldo manual siguen disponibles.
+
 ## Acceso y cuentas
 
 La aplicación abre en la pantalla de inicio de sesión. El administrador inicial se configura mediante `.env`; las cuentas posteriores se crean desde **Usuarios**. Las contraseñas deben tener al menos 12 caracteres y no exceder 72 bytes UTF-8, límite de BCrypt. Una contraseña con caracteres acentuados o emojis puede ocupar más bytes que caracteres.
@@ -23,14 +25,25 @@ La sesión termina tras 30 minutos de inactividad del servidor o al cerrar sesi�
 | Notas internas | Sí | No | No |
 | Editar, asignar, cerrar/reabrir casos | Sí | No | No |
 | Anular atención | Sí | No | No |
-| Registrar y consultar pagos | Sí | No | Sí |
-| Gestionar pólizas e historial financiero | Sí | No | Sí |
-| Adjuntar y descargar comprobantes de pago | Sí | No | Sí |
+| Registrar pagos directos y acreditar soporte | Sí | No | Sí |
+| Consultar pagos y resumen de pólizas | Sí | Propios, sólo con portal financiero habilitado | Sí |
+| Gestionar pólizas e historial financiero interno | Sí | No | Sí |
+| Adjuntar comprobantes a pagos ya registrados | Sí | No | Sí |
+| Descargar comprobantes y recibos administrativos | Sí | Propios, sólo con portal financiero habilitado | Sí |
+| Crear solicitudes y adjuntar evidencia pendiente de validación | Sí | Propias, sólo con portal financiero habilitado | Sí |
+| Aprobar o rechazar solicitudes de pago | Sí | No | Sí |
+| Gestionar cotizaciones, renovaciones y avisos de vencimiento | Sí | No | Sí |
+| Habilitar el portal financiero por institución | Sí | No | No |
 | Consultar/exportar reportes financieros | Sí | No | Sí |
 | Consultar/exportar reportes técnicos | Sí | No | No |
 | Anular pagos | Sí | No | No |
 | Auditoría y cola/configuración de correo | Sí | No | No |
 | Campana de avisos propios | Casos según asignación; saldos institucionales | Casos y saldos de su institución | Avisos de saldo |
+| Consultar artículos publicados de conocimiento | Sí | Sí | No |
+| Editar/publicar artículos y vincular soluciones a casos | Sí | No; consulta vínculos publicados de casos propios | No |
+| Responder encuesta de caso cerrado | No | Una respuesta por caso de su institución | No |
+| Consultar reportes y exportar satisfacción | Sí | No | No |
+| Configurar o solicitar respaldos desde la plataforma | Sí | No | No |
 | Cambiar su propia contraseña | Sí | Sí | Sí |
 
 Los permisos se verifican en Spring en cada operación. Ocultar un botón en Angular no es el control de acceso. Varios usuarios de una misma institución comparten sus saldos y el historial institucional; no existe aislamiento individual por usuario dentro de esa institución.
@@ -121,11 +134,49 @@ Si una póliza tiene acreditaciones de importe cero respaldadas por su liquidaci
 
 Abra el detalle de un pago, pulse **Seleccionar comprobante** y después **Adjuntar comprobante**. Se permiten PDF, PNG y JPG/JPEG: hasta 10 MiB por archivo, 10 archivos y 50 MiB por pago. Se conservan nombre, autor, fecha, tamaño y huella SHA-256; los archivos se descargan con sesión autorizada. No hay sustitución ni borrado: para corregir evidencia se adjunta otro archivo.
 
-Adjuntar un comprobante no cambia importes ni minutos, no repite el pago y no genera correo. También se admite en pagos anulados o de instituciones inactivas. Sólo `ADMIN` y `BILLING` acceden a la evidencia financiera; el cliente no puede consultar estos archivos. Consulte [Comprobantes de pago](COMPROBANTES-PAGO.md).
+Adjuntar un comprobante no cambia importes ni minutos, no repite el pago y no genera correo. También se admite en pagos anulados o de instituciones inactivas. La carga al pago registrado sigue siendo exclusiva de `ADMIN` y `BILLING`. Desde 1.6, los clientes pueden descargar los comprobantes de sus propios pagos, incluidos los históricos, únicamente si `ADMIN` habilitó el portal financiero de la institución. No pueden agregar archivos al pago registrado. Consulte [Comprobantes de pago](COMPROBANTES-PAGO.md).
+
+Desde el detalle del pago también puede descargar un [recibo administrativo PDF](RECIBOS-PAGO.md) con folio estable. No es CFDI ni factura y no crea otro pago. Si el pago se anula, una nueva descarga indica ese estado; un PDF ya guardado no se actualiza automáticamente. El cliente habilitado recibe una versión que omite notas internas y motivo/responsable interno de anulación.
 
 En **Reportes de cobranza**, filtre institución, póliza, método, moneda, estado y periodo. Consulte totales por institución y generales, historial y exportaciones Excel/PDF. Las monedas no se mezclan; los pagos se filtran por su fecha de pago. La situación actual de las pólizas considera todo su histórico y se muestra aparte del periodo. Consulte [Reportes de cobranza](REPORTES-COBRANZA.md). Los reportes técnicos de casos y consumos siguen siendo exclusivos de `ADMIN`.
 
 Los ajustes manuales de presupuesto siguen disponibles para `ADMIN` y no crean un pago ficticio. Para una recarga respaldada por dinero recibido, utilice Cobranza. El módulo no es una pasarela de cobro ni emite CFDI/factura fiscal.
+
+## Cotizaciones, renovaciones y validación de pagos
+
+En **Cotizaciones**, Administración y Cobranza crean una oferta con institución, vigencia, importe MXN y minutos de cada canal. Emitirla congela sus condiciones y registra una constancia; no envía automáticamente un correo. La aceptación o rechazo se registra en nombre del cliente, con contacto, fecha y evidencia: no es una firma digital. Una aceptación puede convertirse una sola vez en póliza. **Ni emitir, aceptar, convertir ni renovar acredita horas.** El pago registrado es el que acredita los minutos expresamente indicados.
+
+**Renovaciones** muestra pólizas próximas a vencer o vencidas que todavía no tienen sucesora. Cada renovación conserva su cotización y la relación entre póliza anterior y nueva. Si se cancela la nueva, el vínculo histórico permanece; un reemplazo continúa desde esa última póliza cancelada. Los avisos de vencimiento son internos al módulo, con umbral configurable e independientes del correo. La vigencia no retira saldo. Consulte [Cotizaciones y renovaciones](COTIZACIONES-RENOVACIONES.md).
+
+Para revisar evidencia antes de acreditar, abra **Validar pagos → Nueva solicitud**. Capture referencia, importe, fecha, método, póliza opcional y minutos solicitados; adjunte la evidencia. La solicitud queda **Pendiente** y no modifica saldos. Administración o Cobranza verifica los documentos, el dinero y los minutos antes de **Aprobar y registrar pago**. Se exige al menos un comprobante. La aprobación registra el pago, acredita sus minutos, copia los archivos y conserva la decisión en una transacción. Repetirla devuelve el mismo pago.
+
+**Rechazar** exige un motivo visible para la institución y no acredita tiempo. Las solicitudes resueltas no se editan; la observación privada de aprobación sólo la ve el personal autorizado. Si las cantidades eran incorrectas, rechace y cree otra solicitud. Los pagos directos de 1.5 siguen disponibles cuando la validación ya ocurrió fuera del sistema; no capture un pago directo adicional para la misma solicitud que va a aprobar. Consulte [Solicitudes de pago](SOLICITUDES-PAGO.md).
+
+## Portal financiero de clientes
+
+Tener una cuenta de soporte no habilita información financiera. El portal comienza **desactivado para cada institución**, incluidas las existentes al actualizar desde 1.5. Sólo `ADMIN` puede abrir **Configuración de soporte → Acceso financiero de clientes**, seleccionar una institución activa y confirmar la habilitación. Cobranza no cambia este permiso.
+
+Al habilitarlo, todos los usuarios activos de esa institución pueden entrar a **Finanzas institucionales** para consultar sus pólizas, importes, pagos y estados, descargar recibos y comprobantes históricos y crear solicitudes de pago. Pueden adjuntar evidencia a solicitudes pendientes; no pueden aprobarlas, registrar pagos directos, cambiar contratos ni aumentar su saldo. Los datos de otras instituciones, notas internas e historial administrativo no se entregan. El recibo cliente conserva el estado **Anulado** cuando corresponde, pero omite la información interna de la anulación.
+
+La confirmación incluye el acceso a comprobantes cargados antes de habilitar el portal: revise su contenido antes de conceder acceso. Deshabilitar bloquea las siguientes consultas, descargas y solicitudes sin borrar registros. No retira archivos ya descargados ni información ya abierta en una pestaña. Consulte [Portal financiero](PORTAL-FINANCIERO.md).
+
+## Soluciones y evaluación del soporte
+
+En **Base de conocimientos**, el cliente busca soluciones publicadas por texto, categoría o versión de SIABUC. Administración crea borradores, publica, archiva y consulta las revisiones editoriales. Un artículo publicado debe pasar a borrador para editarlo; mientras sea borrador o esté archivado queda oculto a los clientes. Cada modificación conserva autor, fecha y revisión.
+
+Dentro del caso, Administración puede **Vincular solución** desde los artículos publicados. El cliente abre el contenido y utiliza **Volver al listado de soluciones** para regresar. Sólo se muestran vínculos de casos de su institución y artículos actualmente publicados. Consultar, vincular o retirar una solución no consume tiempo ni cierra el caso. Consulte [Base de conocimientos](BASE-CONOCIMIENTOS.md).
+
+En un caso cerrado, **¿Cómo fue la atención?** permite al cliente enviar una calificación de 1 a 5 y un comentario opcional. Se acepta una respuesta por caso para toda la institución. Reabrir conserva la respuesta y no permite otra; la atribución corresponde al administrativo asignado cuando se responde. Administración consulta los resultados por periodo/institución/responsable y exporta CSV desde **Satisfacción**. La encuesta no exige portal financiero ni afecta minutos o correos. Consulte [Encuestas de satisfacción](ENCUESTAS-SATISFACCION.md).
+
+## Respaldos manuales y automáticos
+
+Los scripts **`respaldar.sh` / `respaldar.bat`** y **`restaurar.sh` / `restaurar.bat`** se conservan; consulte [Respaldo y restauración](RESPALDO-RESTAURACION.md) para nombre de respaldo, configuración y restauración. Instalar la versión 1.6 no sustituye esos procedimientos.
+
+El calendario automático comienza **desactivado**. Sólo Administración puede usar **Respaldos** para verificar el destino configurado en `BACKUP_DIRECTORY`, confirmar que es privado y escribible, guardar hora/zona/retención y activar expresamente los respaldos automáticos. **Crear respaldo ahora** permite solicitar una copia manual con destino confirmado y servicio disponible, aunque el calendario esté desactivado.
+
+Desactivar el calendario conserva los archivos y el historial, cancela los programados pendientes y no interrumpe una copia ya iniciada. Reactivar espera el siguiente horario futuro. La limpieza por retención sólo afecta copias programadas propias, finalizadas y verificadas, después de otro respaldo programado exitoso; no elimina copias manuales. Un aviso administrativo informa fallos sin depender del correo.
+
+Las copias de PostgreSQL incluyen historiales, comprobantes, artículos, encuestas y configuraciones almacenadas en la base. Conserve `.env` y otros archivos externos por separado. Una copia finalizada debe probarse restaurándola en un destino aislado antes de considerarla recuperable; la guía explica ese procedimiento sin usar el volumen de producción. Consulte [Respaldos automáticos](RESPALDOS-AUTOMATICOS.md) y [Validación](VALIDACION.md) para el alcance y las comprobaciones ejecutadas.
 
 ## Avisos y notificaciones
 

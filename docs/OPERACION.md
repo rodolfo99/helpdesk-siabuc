@@ -7,7 +7,7 @@ En Linux se usan los scripts Bash `.sh`. En Windows se usan los `.bat` desde CMD
 1. Instale Docker Engine y el complemento `docker compose` mediante el procedimiento oficial de su sistema. Confirme que `docker info` funciona con su usuario. Si requiere privilegios, configure el acceso a Docker conforme a las políticas de su equipo.
 2. Descomprima el proyecto. Desde su carpeta, ejecute `chmod +x ./*.sh` si hace falta.
 3. Ejecute `./configurar.sh`. Abra `.env` con un editor y ajuste los puertos antes de iniciar. Mantenga el archivo fuera del control de versiones.
-4. Ejecute `./iniciar.sh`. Compose compila las imágenes, arranca PostgreSQL y Postfix, espera su salud, inicia Spring con migraciones Flyway y finalmente sirve Angular con Nginx.
+4. Ejecute `./iniciar.sh`. Compose compila las imágenes, arranca PostgreSQL y Postfix, espera su salud, inicia Spring con migraciones Flyway y finalmente sirve Angular con Nginx e inicia el servicio `backup` en espera. Su calendario está desactivado por defecto.
 5. Abra el puerto `FRONTEND_PORT` del anfitrión. Por defecto es `http://127.0.0.1:4200`.
 6. Inicie sesión como `ADMIN_USERNAME` usando `ADMIN_PASSWORD` y cambie la contraseña desde Mi cuenta.
 
@@ -55,7 +55,7 @@ npm run build
 npm test
 ```
 
-Artefactos: `backend/target/siabuc-helpdesk-1.5.0.jar` y `frontend/dist/helpdesk/browser/`. `npm ci` utiliza el archivo `package-lock.json` entregado. No sustituya `npm ci` por actualizaciones de dependencias durante una instalación reproducible.
+Artefactos: `backend/target/siabuc-helpdesk-1.6.0.jar` y `frontend/dist/helpdesk/browser/`. `npm ci` utiliza el archivo `package-lock.json` entregado. No sustituya `npm ci` por actualizaciones de dependencias durante una instalación reproducible.
 
 `mvn package` compila también las clases de prueba y ejecuta pruebas unitarias si existen. Los archivos `*IT.java` se ejecutan únicamente con el perfil `postgres-it`. Una compilación satisfactoria no significa por sí sola que se ejecutaron esas pruebas de integración.
 
@@ -110,7 +110,7 @@ from scripts.manage import ROOT, config
 env = os.environ.copy()
 env.update(config())
 env.update(DB_HOST="127.0.0.1", SERVER_ADDRESS="127.0.0.1")
-subprocess.run(["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.5.0.jar")], env=env, check=True)
+subprocess.run(["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.6.0.jar")], env=env, check=True)
 PY
 ```
 
@@ -181,6 +181,8 @@ Para restablecer una contraseña de usuario del helpdesk, utilice otra cuenta ad
 
 ## Respaldo
 
+Desde 1.6, el servicio Docker `backup` ofrece calendario, retención e historial, **desactivados por defecto**, también al actualizar. La sección **Respaldos** de Administración permite activarlo o desactivarlo expresamente. La carpeta se define con `BACKUP_DIRECTORY`; los scripts preparan ese destino. Consulte [Respaldos automáticos](RESPALDOS-AUTOMATICOS.md) para Linux/Windows, permisos y prueba de recuperación aislada. Los siguientes scripts manuales siguen funcionando con el calendario apagado.
+
 Consulte también la [guía completa de respaldo y restauración](RESPALDO-RESTAURACION.md), con los pasos en orden, parámetros, ejemplos y solución de errores.
 
 ```bash
@@ -224,7 +226,7 @@ Sin `--confirmar-reemplazo`, el script se niega a modificar la base. Verifica la
 
 `--nombre-respaldo` debe señalar un respaldo existente, **no** el archivo `.sha256`. Admite nombres entre comillas y rutas absolutas o relativas a la carpeta de ejecución, con las mismas reglas de `respaldar.sh`. También funciona `./restaurar.sh backups/mi-respaldo.dump --confirmar-reemplazo`. Se exige una de esas dos formas de indicar el archivo y se rechaza combinarlas. Consulte `./restaurar.sh --help`.
 
-La recuperación usa `pg_restore --clean --if-exists --single-transaction --exit-on-error` contra la base configurada y omite propietarios/privilegios originales. Detiene los contenedores de aplicación y los deja detenidos para revisar el resultado. Si falla una sentencia, PostgreSQL revierte esa transacción. Una copia debe restaurarse con versiones compatibles de PostgreSQL y del código; esta entrega está configurada para PostgreSQL 17.
+La recuperación usa `pg_restore --clean --if-exists --single-transaction --exit-on-error` contra la base configurada y omite propietarios/privilegios originales. Detiene los contenedores de aplicación, SMTP y `backup`, y los deja detenidos para revisar el resultado. La copia conserva su configuración de calendario: revise estado y destino antes de reiniciar el worker. Si falla una sentencia, PostgreSQL revierte esa transacción. Una copia debe restaurarse con versiones compatibles de PostgreSQL y del código; esta entrega está configurada para PostgreSQL 17.
 
 ## Acceso por red y HTTPS
 
