@@ -62,3 +62,16 @@ node mail-control.ui.mjs
 ```
 
 Admite E2E_PLAYWRIGHT_PATH, E2E_CHROMIUM_PATH y E2E_CHROMIUM_ARGS para instalaciones de navegador propias. El resultado de esta prueba de interfaz no reemplaza las pruebas de permisos en Spring ni demuestra entrega SMTP.
+
+## Detalle de historiales y toma de casos 1.3.3 con API simulada
+
+`history-detail.ui.mjs` prueba la aplicación Angular compilada en Chromium: clic en filas y tarjetas, contenido completo de avisos y atenciones, texto multilínea escapado, navegación por teclado, regreso al listado con filtros y posición, notas internas, anulaciones, errores de consulta y pantalla móvil. También comprueba que un cliente puede abrir un caso y que un administrador puede tomar uno sin responsable, incluidos el bloqueo durante la petición y el conflicto cuando otro administrativo se adelanta.
+
+Tras compilar Angular e instalar Playwright como en el apartado anterior, ejecute desde `tests/e2e`:
+
+```bash
+node history-detail.ui.mjs
+node mail-control.ui.mjs
+```
+
+Estas pruebas interceptan la API con datos de prueba: no sustituyen `mvn -Ppostgres-it verify`, no conectan con PostgreSQL ni envían correo. Admiten las mismas variables E2E_PLAYWRIGHT_PATH, E2E_CHROMIUM_PATH y E2E_CHROMIUM_ARGS. E2E_REPORT_DIR permite conservar el informe y capturas de prueba fuera del paquete distribuido.

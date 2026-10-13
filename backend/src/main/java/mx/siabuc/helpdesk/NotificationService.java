@@ -21,6 +21,9 @@ public class NotificationService {
 
     public record Notification(long id, Long caseId, Long paymentId, String eventType, String recipient,
         String subject, String status, int attempts, String lastError, Instant createdAt, Instant sentAt) {}
+    public record NotificationDetail(long id, Long caseId, Long paymentId, String eventType, String recipient,
+        String subject, String status, int attempts, String lastError, Instant createdAt, Instant sentAt,
+        String body, boolean internal, String recipientType, Long recipientEntityId) {}
     public record Configuration(boolean enabled, boolean configuredEnabled, boolean paused, String host, int port, String username, String fromAddress,
         String fromName, String security, boolean auth, String replyTo, long pendingCount, long failedCount, long suppressedCount) {}
     private static final RowMapper<Notification> NOTIFICATION = (r, n) -> new Notification(r.getLong("id"),
@@ -124,6 +127,23 @@ public class NotificationService {
 
     public List<Notification> notifications() {
         return db.query("SELECT * FROM notification_outbox ORDER BY id DESC LIMIT 500", NOTIFICATION);
+    }
+    @Transactional(readOnly = true)
+    public NotificationDetail notificationDetail(long id) {
+        // Read the persisted event snapshot; viewing history never retries or regenerates mail.
+        List<NotificationDetail> rows = db.query("""
+            SELECT id,case_id,payment_id,event_type,recipient,subject,status,attempts,last_error,
+                created_at,sent_at,body,internal,recipient_type,recipient_entity_id
+            FROM notification_outbox WHERE id=?
+            """, (r, n) -> new NotificationDetail(r.getLong("id"), r.getObject("case_id", Long.class),
+                r.getObject("payment_id", Long.class), r.getString("event_type"), r.getString("recipient"),
+                r.getString("subject"), r.getString("status"), r.getInt("attempts"), r.getString("last_error"),
+                r.getTimestamp("created_at").toInstant(),
+                r.getTimestamp("sent_at") == null ? null : r.getTimestamp("sent_at").toInstant(),
+                r.getString("body"), r.getBoolean("internal"), r.getString("recipient_type"),
+                r.getObject("recipient_entity_id", Long.class)), id);
+        if (rows.isEmpty()) throw ApiException.missing();
+        return rows.get(0);
     }
     public Configuration configuration() {
         boolean paused = db.queryForObject("SELECT paused FROM notification_settings WHERE id=1", Boolean.class);
@@ -232,6 +252,7 @@ public class NotificationService {
     private static String eventLabel(String value) {
         return switch (value) {
             case "CREATE_CASE" -> "Caso abierto";
+            case "CLAIM_CASE" -> "Caso tomado";
             case "UPDATE_CASE" -> "Caso actualizado";
             case "CHANGE_CASE_STATUS" -> "Cambio de estado";
             case "CREATE_ENTRY" -> "Nueva atención o comentario";

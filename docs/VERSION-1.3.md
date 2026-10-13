@@ -48,3 +48,11 @@ Los avisos identifican al administrativo responsable y a la institución cliente
 Se conserva la privacidad de las notas internas y la pausa sin envío de avisos anteriores. No se modifican avisos ya guardados ni la configuración SMTP. El JAR es `siabuc-helpdesk-1.3.2.jar`; no hay migraciones adicionales a V1–V4 ni cambios de dependencias.
 
 Para actualizar, respalde y conserve su `.env`, extraiga el ZIP 1.3.2 completo y use el mismo `COMPOSE_PROJECT_NAME` y motor Docker para reutilizar sus volúmenes. Ejecute `bash iniciar.sh` en Linux o `.\iniciar.bat` en PowerShell desde la nueva carpeta. No use `down -v`. Después de reiniciar, el nuevo formato se aplica a los eventos nuevos; compruébelo con un caso de prueba y los correos de su instalación.
+
+## Actualización 1.3.3: detalle de historiales y toma de casos
+
+- Hacer clic en un elemento del historial de atención abre su detalle completo. **← Volver al historial** devuelve al mismo caso y recupera posición y foco; conserva filtros y borradores.
+- Los administrativos pueden abrir cada notificación para leer el correo persistido y todos sus datos de entrega. La vuelta conserva búsqueda y filtro. El nuevo endpoint de detalle exige `ADMIN` y no provoca envíos ni cambios en la cola.
+- Los clientes conservan **Nuevo caso** para su propia institución. Los administrativos pueden **Tomar caso** si está abierto y sin responsable; la operación comprueba la asignación dentro de la transacción, conserva el historial y genera el aviso. Se añaden filtros **Sin responsable** y **Mis casos**. No cambia la asignación institucional predeterminada.
+
+No se añaden migraciones ni dependencias. El JAR es `siabuc-helpdesk-1.3.3.jar`. Para actualizar, respalde, conserve `.env`, extraiga el ZIP 1.3.3 completo, mantenga el mismo `COMPOSE_PROJECT_NAME` y motor Docker y ejecute `bash iniciar.sh` en Linux o `.\iniciar.bat` en PowerShell. No elimine volúmenes. Consulte [Manual de usuario](MANUAL-USUARIO.md) y [Validación](VALIDACION.md) para el alcance de las pruebas.

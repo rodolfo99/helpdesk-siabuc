@@ -58,6 +58,10 @@ En **Casos**, seleccione una institución, canal inicial, título y descripción
 
 El administrador puede elegir un responsable activo. Si no lo elige al crear el caso, se toma el responsable institucional y, si tampoco hay uno, al administrador creador. Un usuario institucional no puede asignar responsables; se usa el configurado en su institución. Los casos históricos pueden estar sin asignación hasta que un administrador los edite. El responsable puede cambiarse incluso en un caso cerrado; el cambio conserva historial. Una reasignación institucional no cambia automáticamente todos sus casos existentes.
 
+Desde 1.3.3, un cliente puede acceder a **Casos → Nuevo caso**, describir su solicitud y crearla para su propia institución si tiene saldo en el canal elegido. Si la institución no tiene responsable predeterminado, el caso queda sin asignación. Un administrativo puede filtrar **Asignación → Sin responsable**, abrir el caso y pulsar **Tomar caso**. El sistema lo asigna a esa cuenta, registra el movimiento en el historial y la auditoría y genera las notificaciones conforme a la configuración de correo. **Mis casos** permite consultar los asignados al administrativo conectado.
+
+Sólo se pueden tomar casos abiertos de instituciones activas que estén sin responsable. Si otro administrativo se adelantó, se informa el conflicto y se muestra la asignación vigente. Tomar de nuevo un caso ya propio no duplica el historial ni los avisos. Las instituciones con responsable predeterminado conservan su asignación automática. El cliente no puede tomar ni reasignar casos.
+
 Dentro del caso, use las acciones de seguimiento:
 
 1. **Registrar atención:** describa lo realizado, elija correo o remoto e indique horas/minutos. Puede atender por cualquiera de los dos canales y cada registro descuenta la bolsa correspondiente, independientemente del canal inicial del caso.
@@ -67,6 +71,8 @@ Dentro del caso, use las acciones de seguimiento:
 5. **Editar caso:** el administrador puede corregir título, descripción inicial y canal; la acción queda auditada. No cambia los canales ni minutos de atenciones existentes.
 
 Las entradas incluyen fecha, autor, descripción, canal, minutos y condición pública/interna. Las fechas se almacenan en UTC y la interfaz las presenta en el formato local del navegador.
+
+Haga clic en una entrada del **Historial de atención** o en **Ver detalle** para abrir toda su información: folio, autor, fecha con segundos, descripción completa, canal, minutos, visibilidad y anulación con su motivo cuando corresponda. La información actual del caso se presenta separada del registro histórico. Use **← Volver al historial** para regresar al mismo caso y recuperar la posición de la lista; se conservan filtros y borradores. Los enlaces pueden operarse con el teclado. Consultar el detalle no modifica el registro ni descuenta tiempo. Las entradas internas siguen siendo exclusivas de administradores.
 
 Un caso cerrado no admite atenciones ni comentarios nuevos. Debe reabrirse para continuar su seguimiento. Con saldo agotado se pueden conservar y consultar casos anteriores, comentar casos aún abiertos sin consumo y cerrar casos; no se autoriza nuevo consumo ni crear/reabrir un caso del canal agotado. Agotar correo no impide utilizar remoto cuando éste mantiene saldo.
 
@@ -91,6 +97,8 @@ Sólo `ADMIN` puede **anular** un pago, indicando el motivo. Debe quedar disponi
 Los ajustes manuales de presupuesto siguen disponibles para `ADMIN` y no crean un pago ficticio. Para una recarga respaldada por dinero recibido, utilice Cobranza. El módulo no es una pasarela de cobro ni emite CFDI/factura fiscal.
 
 ## Avisos y notificaciones
+
+En **Correo y notificaciones → Historial de notificaciones**, haga clic en una fila o en **Ver detalle** para leer el asunto, destinatario, referencia, evento, estado de envío, intentos, fechas, último error o motivo y **contenido completo del correo** guardado. **← Volver al historial** recupera la búsqueda, el filtro de estado, la posición y el foco del enlace de origen. Esta consulta es exclusiva de `ADMIN`, no envía mensajes ni provoca reintentos. Si el servidor no permite consultar el registro o éste no existe, se muestra el error sin abrir un detalle ficticio. La información del correo refleja el evento original; no se reemplaza por la descripción actual de un caso editado posteriormente.
 
 Cuando SMTP está configurado y activado, los cambios públicos de casos, incluido su cierre, generan avisos al correo institucional y al administrador asignado. Las notas internas sólo avisan al responsable; si su dirección coincide con la institucional, se omiten hasta separar las direcciones para preservar su privacidad. Registrar o anular un pago avisa a la institución y al autor original del pago, aunque otro administrador lo anule. Las direcciones iguales se deduplican en eventos públicos.
 

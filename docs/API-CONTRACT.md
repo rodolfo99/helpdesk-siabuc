@@ -74,11 +74,12 @@ Los ADMIN conservan el ajuste directo del presupuesto institucional como operaci
 ## Notificaciones
 
 - GET `/notifications` ADMIN: últimos 500 avisos sin cuerpo del mensaje ni secretos. Campos `{id,caseId,paymentId,eventType,recipient,subject,status,attempts,lastError,createdAt,sentAt}`.
+- GET `/notifications/{id}` ADMIN: los campos del listado más `{body,internal,recipientType,recipientEntityId}`. Devuelve el contenido persistido del aviso, no una regeneración con datos actuales. HTTP 404 si no existe; 401 sin sesión y 403 para USER/BILLING. Sólo lectura: no cambia estados, intentos, auditoría ni genera envíos. No expone tokens de procesamiento ni configuración secreta.
 - GET `/notifications/config` ADMIN: `{enabled,configuredEnabled,paused,host,port,username,fromAddress,fromName,security,auth,replyTo,pendingCount,failedCount,suppressedCount}`. Nunca incluye contraseña SMTP.
 - POST `/notifications/test` ADMIN: `{}`; HTTP 201, encola prueba exclusivamente al correo de la propia cuenta. Rechaza destinatarios o contenido arbitrarios.
 - POST `/notifications/{id}/retry` ADMIN: `{}`; sólo FAILED/SKIPPED. No permite reenviar SENT. Conserva el destinatario original; si faltaba su email, consulta el contacto actual de esa misma entidad. No permite elegir otro destinatario. Avisos sin responsable identificado requieren asignación para eventos futuros.
 
-Eventos `CREATE_CASE`, `UPDATE_CASE`, `CHANGE_CASE_STATUS`, `CREATE_ENTRY`, `VOID_ENTRY`, `CREATE_PAYMENT`, `VOID_PAYMENT`, `TEST_MAIL`. Un cambio de estado al mismo estado es una operación sin cambios: no crea entrada ni correo duplicados. Un cambio a CLOSED siempre registra motivo y encola aviso público para institución y responsable. Los eventos internos y su anulación únicamente se encolan al ADMIN responsable; si su dirección coincide con la institucional, se omiten para evitar divulgar notas privadas.
+Eventos `CREATE_CASE`, `CLAIM_CASE`, `UPDATE_CASE`, `CHANGE_CASE_STATUS`, `CREATE_ENTRY`, `VOID_ENTRY`, `CREATE_PAYMENT`, `VOID_PAYMENT`, `TEST_MAIL`. Un cambio de estado al mismo estado es una operación sin cambios: no crea entrada ni correo duplicados. Un cambio a CLOSED siempre registra motivo y encola aviso público para institución y responsable. Los eventos internos y su anulación únicamente se encolan al ADMIN responsable; si su dirección coincide con la institucional, se omiten para evitar divulgar notas privadas.
 
 Los mensajes públicos se envían por separado al correo institucional y al ADMIN asignado; direcciones idénticas se deduplican por evento. Los pagos se notifican a la institución y al ADMIN/BILLING autor del pago. Las notas del pago forman parte del aviso. Las direcciones se capturan al registrar el evento: cambiarlas no modifica mensajes ya pendientes. Las operaciones fallidas no dejan mensajes en la cola.
 
@@ -92,3 +93,9 @@ La versión 1.2 conserva este contrato y añade SMTP Postfix interno predetermin
 ## Control de envío añadido en 1.3.1
 
 POST `/notifications/config` ADMIN: cuerpo exacto `{"paused":true}` para pausar o `{"paused":false}` para reactivar. Exige sesión y CSRF, rechaza campos extra y valores ausentes, null o distintos de boolean. Devuelve Configuration; `enabled` es el estado efectivo, `configuredEnabled` refleja MAIL_ENABLED al arranque y `paused` el estado persistido en PostgreSQL. Repetir el mismo valor no añade auditoría duplicada. Una pausa/reanudación real registra PAUSE_NOTIFICATIONS/RESUME_NOTIFICATIONS. El control no puede superar MAIL_ENABLED=false. Al pausar se suprimen PENDING/FAILED/SKIPPED existentes y los avisos nuevos se guardan SUPPRESSED. Al reactivar sólo se envían eventos nuevos; pruebas/reintentos se bloquean durante la pausa y ningún SUPPRESSED puede reintentarse. Los ya reclamados pueden terminar; véase [DESACTIVAR-CORREO.md](DESACTIVAR-CORREO.md).
+
+## Toma de casos añadida en 1.3.3
+
+POST `/cases/{id}/claim` ADMIN con sesión y CSRF; no requiere datos (la interfaz envía `{}`). Devuelve HTTP 200 con `CaseDetail`. Asigna el caso abierto y sin responsable al administrativo de la sesión, con bloqueo transaccional de institución y caso; registra entrada pública, auditoría y notificación `CLAIM_CASE`. La pausa de correo se respeta como en cualquier otro evento.
+
+Un caso cerrado, una institución inactiva o un responsable diferente ya asignado producen 409. Repetir la toma de un caso abierto que ya pertenece al mismo administrativo devuelve su detalle sin duplicar efectos. USER/BILLING reciben 403. El cliente mantiene POST `/cases` para su propia institución y con saldo en el canal: si existe un responsable institucional, se asigna automáticamente; de lo contrario, el caso queda disponible para tomar. No puede asignar responsables ajenos ni abrir solicitudes para otra institución.
