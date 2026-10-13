@@ -108,6 +108,39 @@ services:
     # HEALTHCHECK comes from smtp/Dockerfile and only performs SMTP EHLO/NOOP.
     restart: unless-stopped
 
+  backup:
+    build:
+      context: ./backup
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:?Configure DB_NAME}
+      DB_USER: ${DB_USER:?Configure DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD:?Configure DB_PASSWORD}
+      BACKUP_TARGET: /backups
+      BACKUP_DIRECTORY_LABEL: ${BACKUP_DIRECTORY:-./backups/automatic}
+    # No Docker socket. Filesystem capability lets UID 0 write only within the explicitly mounted destination.
+    user: "${BACKUP_UID:-0}:${BACKUP_GID:-0}"
+    volumes:
+      - type: bind
+        source: ${BACKUP_DIRECTORY:-./backups/automatic}
+        target: /backups
+        bind:
+          create_host_path: false
+    depends_on:
+      backend:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - DAC_OVERRIDE
+    read_only: true
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
+
   mailpit:
     image: axllent/mailpit:v1.27.4
     profiles: ["mail-test"]

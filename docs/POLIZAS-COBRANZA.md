@@ -4,16 +4,24 @@ Disponible desde SIABUC Helpdesk 1.5.0. El módulo relaciona las pólizas de una
 
 **Cada pago guarda en una sola operación su importe, método, institución, póliza opcional y minutos de correo/remoto.** El servidor actualiza las bolsas de soporte y el historial dentro de la misma transacción. Si el movimiento es inválido o falla su registro, no se guarda parcialmente el dinero ni se acreditan minutos sueltos.
 
+Desde 1.6 se añaden [cotizaciones y renovaciones](COTIZACIONES-RENOVACIONES.md), [solicitudes pendientes de validación](SOLICITUDES-PAGO.md), [recibos administrativos](RECIBOS-PAGO.md) y un [portal financiero institucional](PORTAL-FINANCIERO.md) deshabilitado por defecto. Las reglas contables y el registro directo de pagos de 1.5 se conservan.
+
 ## Permisos
 
 | Operación | Cobranza —BILLING— | Administrativo —ADMIN— | Cliente —USER— |
 |---|---|---|---|
-| Consultar pólizas y su historial | Sí | Sí | No |
+| Consultar pólizas e historial administrativo | Sí | Sí | No; sólo resumen propio si se habilita el portal |
 | Crear o modificar una póliza sin historial de pagos | Sí | Sí | No |
 | Cancelar una póliza sin pagos vigentes | Sí | Sí | No |
 | Registrar pagos y acreditar soporte | Sí | Sí | No |
-| Consultar pagos y reportes financieros | Sí | Sí | No |
-| Adjuntar y descargar comprobantes de pago | Sí | Sí | No |
+| Consultar pagos propios y resumen contractual | Sí | Sí | Sólo con portal institucional habilitado |
+| Consultar/exportar reportes financieros generales | Sí | Sí | No |
+| Adjuntar comprobantes a pagos registrados | Sí | Sí | No |
+| Descargar comprobantes y recibos de pagos | Sí | Sí | Propios, sólo con portal habilitado |
+| Crear solicitudes y adjuntar evidencia pendiente | Sí | Sí | Propias, sólo con portal habilitado |
+| Aprobar o rechazar solicitudes | Sí | Sí | No |
+| Gestionar cotizaciones y renovaciones | Sí | Sí | No |
+| Habilitar acceso financiero por institución | No | Sí | No |
 | Anular un pago | No | Sí, si quedan los minutos necesarios | No |
 
 Cobranza conserva su acceso a los saldos institucionales; estas funciones no le otorgan acceso a notas internas, expedientes de soporte ni administración de usuarios. Los correos de pagos continúan usando los destinatarios y la política de pausa de notificaciones existentes.
@@ -31,6 +39,12 @@ Desde el apartado **Pólizas**, seleccione la institución y capture:
 **Crear la póliza no acredita horas ni registra un pago.** El contrato describe lo convenido; la acreditación ocurre al registrar cada movimiento de cobranza.
 
 La póliza tiene estado administrativo **Activa** o **Cancelada**. Además, muestra una vigencia informativa: **Por iniciar**, **Vigente** o **Vencida**, calculada con la fecha de `America/Mexico_City`. El vencimiento no elimina minutos ya acreditados ni cierra casos: los saldos de soporte pertenecen a las bolsas de la institución. Se permiten registros de pago de pólizas pasadas o futuras para documentar operaciones retrospectivas o anticipos; una póliza cancelada sí rechaza nuevos movimientos.
+
+## Cotizaciones y renovaciones desde 1.6
+
+Una cotización aceptada puede convertirse en una póliza con los términos registrados. Administración o Cobranza documentan la emisión y la respuesta del cliente; aceptar no es una firma digital. La conversión es idempotente y no registra dinero ni acredita soporte. Los pagos directos o aprobados desde solicitudes usan después las mismas reglas de acreditación descritas en esta guía.
+
+La renovación enlaza la póliza anterior con su sucesora y conserva la cotización, el responsable y la fecha. Cada antecedente admite una sucesora. Si ésta se cancela, la relación permanece; para reemplazarla se crea una cotización desde esa última póliza cancelada, sin reactivarla. Los avisos de vencimiento se consultan en Renovaciones, con umbral configurable, sin depender de SMTP. No trasladan ni vencen automáticamente los minutos. Consulte [Cotizaciones y renovaciones](COTIZACIONES-RENOVACIONES.md).
 
 ## Registrar un pago y acreditar soporte
 
@@ -61,6 +75,14 @@ El total final es $1,000, 100 minutos de correo y 60 remotos. También puede reg
 
 La suma de pagos **vigentes, sin anular**, no puede superar el importe contratado ni los minutos pactados de cada canal. La póliza y el pago deben pertenecer a la misma institución. Además, la acreditación no puede llevar la bolsa institucional por encima de su máximo permitido.
 
+## Validar una solicitud antes de acreditar
+
+Desde **Validar pagos**, Administración o Cobranza puede revisar una solicitud y sus comprobantes antes de crear el movimiento financiero. Un cliente también puede presentarla para su institución si `ADMIN` habilitó el portal financiero; ese acceso está desactivado por defecto. Una solicitud **Pendiente** no registra ingreso ni acredita minutos.
+
+La aprobación requiere evidencia y vuelve a comprobar la institución, la póliza y sus límites. Crea un solo pago, acredita los minutos aprobados y copia los comprobantes en una misma transacción. No se alteran las cantidades durante la decisión. Si son incorrectas, se rechaza con motivo y se presenta otra solicitud. Las observaciones privadas de aprobación no se muestran al cliente; el motivo de rechazo sí. Una solicitud resuelta y su evidencia permanecen congeladas.
+
+El registro directo de **Pagos** continúa disponible para cobros ya validados fuera de la plataforma. No registre directamente un movimiento que también va a aprobar como solicitud: ambas vías representan el mismo hecho de cobranza. Consulte [Solicitudes de pago](SOLICITUDES-PAGO.md).
+
 ## Historial y saldos
 
 El detalle de cada póliza conserva, en orden cronológico descendente:
@@ -75,7 +97,15 @@ Puede consultar el importe recibido, el importe contractual pendiente, los minut
 
 El historial general de pagos conserva los movimientos libres y los ligados a pólizas. Desde el detalle de cada pago puede adjuntar o descargar [comprobantes PDF/PNG/JPEG](COMPROBANTES-PAGO.md), sin repetir el pago ni acreditar minutos. Los [reportes financieros](REPORTES-COBRANZA.md) permiten consultar institución, póliza, método y periodo, y exportar Excel o PDF. Los importes históricos en otras monedas se conservan sin conversión y deben mantenerse separados en los totales.
 
+Desde 1.6, el detalle del pago permite descargar un [recibo administrativo PDF](RECIBOS-PAGO.md) con folio estable. Su primera emisión conserva los datos de ese momento; no crea otro ingreso ni acredita minutos. Un recibo no es CFDI ni factura.
+
 Una póliza cancelada puede conservar información del importe originalmente contratado y sus minutos, pero **no se considera una deuda activa** en los reportes.
+
+## Consulta institucional con acceso explícito
+
+Sólo Administración habilita **Configuración de soporte → Acceso financiero de clientes** para una institución activa. El permiso comienza desactivado y se aplica a todas sus cuentas cliente. El cliente habilitado consulta un resumen propio de contratos/pagos y descarga recibos y comprobantes, incluidos archivos históricos, pero no recibe auditoría ni historial financiero interno. Tampoco modifica pólizas, anula pagos ni agrega evidencia a pagos registrados.
+
+Deshabilitar bloquea nuevas peticiones sin borrar los registros. Los archivos ya descargados permanecen fuera de la plataforma. Los reportes generales de cobranza, las cotizaciones y las renovaciones siguen siendo exclusivos de ADMIN/BILLING aun con el portal habilitado. Consulte [Portal financiero](PORTAL-FINANCIERO.md).
 
 ## Correcciones y cancelaciones
 
@@ -104,7 +134,7 @@ El servidor bloquea primero la institución, luego la póliza y después el pago
 
 ## API y actualización técnica
 
-Todos los endpoints requieren sesión y las mutaciones requieren el token CSRF.
+Las rutas de la tabla siguiente requieren ADMIN/BILLING, salvo anular pagos, que exige ADMIN. Todas requieren sesión y las mutaciones requieren el token CSRF. El portal cliente utiliza rutas separadas `/api/client-finance/**` y no abre estas rutas administrativas.
 
 | Método / ruta | Resultado |
 |---|---|
@@ -123,4 +153,6 @@ La migración `V9__support_policies.sql` crea `support_policies` y `policy_histo
 
 Los datos de pólizas e historial se almacenan en PostgreSQL y forman parte del respaldo normal con `respaldar.sh` / `respaldar.bat` y de su restauración. Antes de actualizar, genere y conserve un respaldo con la versión instalada. Las migraciones se aplican al iniciar el servidor actualizado; no elimine los volúmenes de Docker.
 
-Las pruebas están en `PolicyIntegrationIT` y en `tests/migrations/upgrade-v15.mjs`. Consulte el informe de validación de 1.5.0 para resultados realmente ejecutados, incluyendo concurrencia, reversión de errores, conservación de registros anteriores y exportaciones financieras.
+Desde 1.6 también puede configurarse el servicio de [respaldos automáticos](RESPALDOS-AUTOMATICOS.md), con calendario desactivado por defecto; no elimina ni reemplaza los scripts manuales existentes.
+
+Las pruebas de las reglas incorporadas en 1.5 están en `PolicyIntegrationIT` y en `tests/migrations/upgrade-v15.mjs`. Consulte el informe de validación de 1.5.0 para resultados realmente ejecutados, incluyendo concurrencia, reversión de errores, conservación de registros anteriores y exportaciones financieras.

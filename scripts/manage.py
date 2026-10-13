@@ -37,6 +37,9 @@ DEFAULTS = {
     "ADMIN_USERNAME": "admin",
     "COOKIE_SECURE": "false",
     "REPORTING_TIME_ZONE": "America/Mexico_City",
+    "BACKUP_DIRECTORY": "./backups/automatic",
+    "BACKUP_UID": str(os.getuid()) if hasattr(os, "getuid") else "0",
+    "BACKUP_GID": str(os.getgid()) if hasattr(os, "getgid") else "0",
     "ADMIN_EMAIL": "",
     "MAIL_ENABLED": "false",
     "SMTP_HOST": "",
@@ -264,6 +267,11 @@ def config(create: bool = False, prompt_db_password: bool = False, prompt_mail: 
         fail("Los seis puertos publicados de PostgreSQL, Spring, Angular, SMTP interno y Mailpit deben ser diferentes.")
     if values["COOKIE_SECURE"] not in {"true", "false"}:
         fail("COOKIE_SECURE debe ser true o false.")
+    if not values["BACKUP_DIRECTORY"].strip() or len(values["BACKUP_DIRECTORY"]) > 1000:
+        fail("BACKUP_DIRECTORY debe indicar una carpeta privada de hasta 1000 caracteres.")
+    for key in ("BACKUP_UID", "BACKUP_GID"):
+        if not values[key].isdecimal() or not 0 <= int(values[key]) <= 2147483647:
+            fail(f"{key} debe ser un identificador numérico de usuario/grupo válido.")
     if not prompt_mail and not prompt_smtp:
         validate_mail(values)
     if not prompt_smtp:
@@ -487,6 +495,10 @@ def compose(values: dict[str, str], *arguments: str, **kwargs):
     # Compose prioriza el entorno del proceso: fijamos los valores ya validados.
     env = os.environ.copy()
     env.update(values)
+    backup_directory = Path(values.get("BACKUP_DIRECTORY", "./backups/automatic")).expanduser()
+    if not backup_directory.is_absolute():
+        backup_directory = ROOT / backup_directory
+    env["BACKUP_DIRECTORY"] = str(backup_directory.resolve())
     return run(["docker", "compose", "--project-directory", str(ROOT), "--env-file",
                 str(ENV_FILE), "-f", str(ROOT / "docker-compose.yml"), *arguments], env=env, **kwargs)
 
@@ -527,7 +539,7 @@ def build_native() -> None:
     run(["mvn", "-B", "-ntp", "package"], cwd=ROOT / "backend")
     run(["npm", "ci"], cwd=ROOT / "frontend")
     run(["npm", "run", "build"], cwd=ROOT / "frontend")
-    print("Compilación terminada: backend/target/siabuc-helpdesk-1.5.0.jar y frontend/dist/helpdesk/browser/.")
+    print("Compilación terminada: backend/target/siabuc-helpdesk-1.6.0.jar y frontend/dist/helpdesk/browser/.")
 
 
 def wait_http(url: str, process: subprocess.Popen, log_path: Path, timeout: int = 180) -> None:
@@ -584,7 +596,7 @@ def development(values: dict[str, str]) -> None:
     previous_sigterm = signal.signal(signal.SIGTERM, interrupted)
     try:
         commands = [
-            (["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.5.0.jar")],
+            (["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.6.0.jar")],
              ROOT / "backend", RUNTIME / "backend.log", f"http://127.0.0.1:{values['SERVER_PORT']}/api/health"),
             (["npm", "start", "--", "--host", "127.0.0.1", "--port", values["FRONTEND_PORT"]],
              ROOT / "frontend", RUNTIME / "frontend.log", f"http://127.0.0.1:{values['FRONTEND_PORT']}/"),
@@ -621,6 +633,20 @@ def development(values: dict[str, str]) -> None:
         for handle in handles:
             handle.close()
         marker.unlink(missing_ok=True)
+
+
+def prepare_automatic_backup_directory(values: dict[str, str]) -> Path:
+    """Create only the configured destination; never chmod/chown an existing host directory."""
+    destination = Path(values.get("BACKUP_DIRECTORY", "./backups/automatic")).expanduser()
+    if not destination.is_absolute():
+        destination = ROOT / destination
+    destination = destination.resolve()
+    if destination == ROOT or destination == Path(destination.anchor):
+        fail("BACKUP_DIRECTORY debe ser una carpeta exclusiva de copias, no la raíz del disco ni del proyecto.")
+    destination.mkdir(parents=True, exist_ok=True, mode=0o700)
+    if not destination.is_dir():
+        fail("BACKUP_DIRECTORY no es un directorio.")
+    return destination
 
 
 def backup(values: dict[str, str], output: str | None) -> None:
@@ -668,14 +694,14 @@ def restore(values: dict[str, str], filename: str, confirmed: bool) -> None:
             fail("SHA-256 incorrecto: la copia no coincide con su archivo de verificación.")
     docker_ready(values)
     compose(values, "up", "-d", "--wait", "--wait-timeout", "180", "db")
-    compose(values, "stop", "frontend", "backend", "smtp")
+    compose(values, "stop", "backup", "frontend", "backend", "smtp")
     try:
         with source.open("rb") as handle:
             compose(values, "exec", "-T", "db", "pg_restore", "-U", values["DB_USER"],
                     "-d", values["DB_NAME"], "--clean", "--if-exists", "--no-owner", "--no-privileges",
                     "--single-transaction", "--exit-on-error", stdin=handle)
     except subprocess.CalledProcessError:
-        fail("Falló la restauración transaccional. Spring, Angular y Postfix siguen detenidos; revise el error antes de reiniciar.")
+        fail("Falló la restauración transaccional. Respaldos automáticos, Spring, Angular y Postfix siguen detenidos; revise el error antes de reiniciar.")
     print("Restauración terminada. Se conservarán las cuentas y contraseñas del respaldo.")
     print("Ejecute iniciar.bat para iniciar todos los servicios." if IS_WINDOWS else "Ejecute ./iniciar.sh para iniciar todos los servicios, o ./iniciar-dev.sh para desarrollo.")
 
@@ -749,6 +775,7 @@ def main() -> None:
             compose(values, "up", "-d", "--wait", "--wait-timeout", "180", "db")
             print(f"PostgreSQL listo en {values['BIND_HOST']}:{values['DB_PORT']}.")
         else:
+            prepare_automatic_backup_directory(values)
             compose(values, "up", "-d", "--build", "--wait", "--wait-timeout", "300")
             print(f"SIABUC Helpdesk listo: http://127.0.0.1:{values['FRONTEND_PORT']}")
             credentials(values)
@@ -759,7 +786,7 @@ def main() -> None:
         print("Contenedores detenidos. Se conservaron los volúmenes de PostgreSQL, la cola SMTP y Mailpit si se utilizó.")
     elif args.command == "build":
         docker_ready(values)
-        compose(values, "build", "backend", "frontend", "smtp")
+        compose(values, "build", "backend", "frontend", "smtp", "backup")
     elif args.command == "dev":
         development(values)
     elif args.command == "backup":

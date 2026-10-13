@@ -5,8 +5,9 @@ import {ApiService,PageState} from './api.service';
 import {Institution,Payment,PaymentMethod,PaymentOpenRequest,SupportPolicy} from './models';
 import {formatTime,toMinutes} from './time';
 import {PaymentAttachmentsComponent} from './payment-attachments.component';
+import {PaymentReceiptComponent} from './payment-receipt.component';
 import {money,parseAmount,newRequestId,amountTotals,PAYMENT_METHODS,paymentMethodName,calendarDate} from './payment-utils';
-@Component({selector:'app-payments',standalone:true,imports:[CommonModule,FormsModule,PaymentAttachmentsComponent],templateUrl:'./payments.component.html',styles:[`
+@Component({selector:'app-payments',standalone:true,imports:[CommonModule,FormsModule,PaymentAttachmentsComponent,PaymentReceiptComponent],templateUrl:'./payments.component.html',styles:[`
  .policy-payment-summary{padding:18px;border:1px solid #cbded9;background:#f4faf7;border-radius:10px;margin:18px 0}.policy-payment-summary p{margin:6px 0;font-size:12px}.payment-confirmation{padding:18px;border:1px solid #b3d1c8;border-radius:10px;background:#eef7f3;margin:18px 0}.payment-confirmation h3{color:#216a5a}.payment-confirmation p{margin:6px 0;font-size:12px}.payment-filters{display:flex;gap:15px;flex-wrap:wrap;padding:0 24px 20px}.payment-filters label{min-width:160px;flex:1}.payment-totals{display:flex;gap:18px;flex-wrap:wrap;padding:0 24px 18px;font-size:12px}.payment-totals strong{display:block;margin-top:5px}.receipt-change{margin:18px 0;padding:15px;border:1px solid #c6ded7;background:#f3faf6;border-radius:8px}.receipt-change p{margin:5px 0;font-size:12px}.form-actions .btn{white-space:normal}
 `]})
 export class PaymentsComponent extends PageState implements OnInit {

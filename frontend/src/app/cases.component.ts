@@ -9,10 +9,12 @@ import { CaseProfileComponent, CaseCategory, CasePriority, CASE_CATEGORIES, CASE
 import { AttachmentsComponent } from './attachments.component';
 import { CaseTimerComponent } from './case-timer.component';
 import { RemoteSessionsComponent } from './remote-sessions.component';
+import { CaseKnowledgeComponent } from './case-knowledge.component';
+import { SatisfactionSurveyComponent } from './satisfaction-survey.component';
 interface CaseProfileSummary {caseId:number;category:CaseCategory;priority:CasePriority;}
 export interface CaseOpenRequest {caseId:number;sequence:number;}
 
-@Component({selector:'app-cases',standalone:true,imports:[CommonModule,FormsModule,CaseProfileComponent,AttachmentsComponent,CaseTimerComponent,RemoteSessionsComponent],templateUrl:'./cases.component.html',styles:[`
+@Component({selector:'app-cases',standalone:true,imports:[CommonModule,FormsModule,CaseProfileComponent,AttachmentsComponent,CaseTimerComponent,RemoteSessionsComponent,CaseKnowledgeComponent,SatisfactionSurveyComponent],templateUrl:'./cases.component.html',styles:[`
   .history-entry-clickable{cursor:pointer;border-radius:0 8px 8px 0;transition:background .15s}
   .history-entry-clickable:hover{background:#f5f9f8}
   .history-entry-clickable:focus-within{outline:2px solid #6d9b90;outline-offset:3px}

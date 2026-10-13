@@ -1,5 +1,23 @@
 # Validación de SIABUC Helpdesk
 
+## Versión 1.6.0 · 13 de octubre de 2026
+
+- **155 pruebas Java de integración y 5 unitarias aprobadas**, sin fallos, errores ni omisiones en la ejecución final completa. Java 17 / Maven 3.9.9, perfil `postgres-it`; JAR `siabuc-helpdesk-1.6.0.jar` generado.
+- Nuevas comprobaciones: cotizaciones y conversión única sin crédito, renovaciones y avisos sin duplicados, aprobación/rechazo de pagos con evidencia y acreditación atómica, portal financiero inicialmente cerrado y aislado por institución, recibos con folio estable y proyección privada/pública, conocimiento publicado frente a borradores, encuestas y configuración de respaldos. Se conservan las regresiones de soporte, SMTP y cobranza anteriores.
+- El PDF institucional omite notas del pago, identidades internas y motivo de anulación; conserva folio, importes y **ANULADO**. Se comprobó con lectura PDF, tanto cuando la primera emisión es del cliente como cuando es del personal. La descripción de un pago directo puede haberse incluido en su aviso por correo; no se redefine ese campo histórico como privado.
+- Spring/JDBC/sesiones/CSRF reales sobre PGlite efímero con SQL exacto V1–V16 y una conexión. Flyway desactivado únicamente en el ensayo. Esto **no acredita PostgreSQL 17 nativo, ejecución real de Flyway ni contención entre varias conexiones**.
+- `tests/migrations/upgrade-v16.mjs`: **767 comprobaciones aprobadas**, conservando las 19 tablas de 1.5 a través de V11–V16, incluidos hashes, monedas históricas, saldos, comprobantes y pausa/cola de correo. Confirma calendario de respaldo desactivado al migrar y acceso financiero institucional cerrado.
+- **71 escenarios Chromium con API simulada aprobados:** 10 de conocimiento, 18 de cobranza, 16 de funciones 1.4, 17 de historial/toma de casos y 10 de pausa de correo. Incluyen capturas de escritorio y móvil revisadas. Se ejecutaron antes de los dos últimos cambios de presentación: texto del recibo institucional y bloqueo de campos de renovación mientras cargan; éstos se compilaron después y se ejercitan en el recorrido real de 1.6.
+- **14 recorridos de navegador contra Angular → Spring → base de datos reales aprobados**, sin interceptar la API y sin errores JavaScript. Cubren cotización, conversión idempotente, habilitación explícita del portal, solicitud con PDF, aprobación única y saldo, recibos y privacidad al anular, conocimiento y borradores, encuesta/cierre/reapertura, aviso de renovación y CSV de satisfacción. Comprueban respaldos apagados y el diagnóstico de worker ausente; no se simula una copia real ni un servicio disponible. La base de este recorrido sigue siendo PGlite de pruebas.
+- **62 pruebas Python aprobadas:** 49 de operación, incluidas 14 del worker automático, y 13 de SMTP. Se verifican calendario apagado por defecto, manual independiente, retención sólo tras éxito programado, mínimo de archivos íntegros presentes y desactivación durante una copia. **15 comprobaciones SQL del worker con PGlite** verifican exclusión, reintentos, recuperación tras desactivar, cancelación sin recuperar pendientes antiguos y cambio de destino con nueva confirmación.
+- **6 pruebas de lógica del cliente aprobadas.** Angular producción compilado: 659.49 kB iniciales, transferencia estimada de 140.09 kB. Sin cambios de dependencias.
+- SMTP JavaMail probado sólo en loopback, sin correos externos. Docker, Windows, Compose completo, `pg_dump` y restauración Docker reales **no ejecutados**. Las pruebas de archivos simulan esos procesos; `backup/compose.restore-test.yml` y la guía incluyen un ensayo aislado para el operador, sin presentarlo como ejecutado.
+- El paquete de fuentes incluye manifiesto SHA-256, scripts `.sh` ejecutables y `.bat` CRLF. Excluye `.env`, datos, dependencias descargadas, binarios compilados y artefactos de QA.
+
+Consulte [actualización 1.6](VERSION-1.6.md), [pruebas de navegador](../tests/e2e/README.md) y [respaldos automáticos](RESPALDOS-AUTOMATICOS.md) para repetir las comprobaciones y realizar el ensayo aislado de recuperación. La evidencia histórica siguiente se conserva sin atribuirla a la versión nueva.
+
+---
+
 ## Versión 1.5.0 · 13 de octubre de 2026
 
 - **104 pruebas Java de integración y 5 unitarias aprobadas**, sin fallos, errores ni omisiones en la ejecución final completa. Java 17 / Maven 3.9.9, perfil `postgres-it`; JAR `siabuc-helpdesk-1.5.0.jar` generado.

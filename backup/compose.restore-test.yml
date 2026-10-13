@@ -1,0 +1,23 @@
+# Isolated rehearsal only. No backend, SMTP, application worker, host ports or production volume.
+name: siabuc-restore-test
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: siabuc_restore_test
+      POSTGRES_USER: restorecheck
+      POSTGRES_PASSWORD: ${RESTORE_TEST_PASSWORD:?Declare RESTORE_TEST_PASSWORD only for this isolated rehearsal}
+    volumes:
+      - restore_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U restorecheck -d siabuc_restore_test"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    networks:
+      - isolated
+volumes:
+  restore_test_data:
+networks:
+  isolated:
+    internal: true
