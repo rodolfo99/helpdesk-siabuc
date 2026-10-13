@@ -92,6 +92,27 @@ Si Docker informa solapamiento de direcciones, elija otra subred privada libre e
 
 ## Cola y diagnóstico
 
+### Reinicio por `mailq.1.gz` ausente
+
+Si el registro muestra `chown: cannot access '/usr/share/man/man1/mailq.1.gz'` seguido de `No se pudo preparar Postfix`, el fallo ocurre en `postfix set-permissions`, antes de iniciar el servicio SMTP. La imagen Debian slim excluye manuales al instalar paquetes y puede dejar sin destino los enlaces de manual creados para `mailq` y `newaliases`.
+
+La corrección conserva `/usr/share/man/*` mediante una regla de `dpkg` antes de instalar Postfix. La construcción comprueba que `sendmail.1.gz` exista y que los enlaces `mailq.1.gz` y `newaliases.1.gz` resuelvan. Se mantiene el ajuste estricto de permisos; no se omite su código de error ni se crean manuales vacíos.
+
+Desde la raíz de una copia clonada del repositorio, actualice y reconstruya SMTP:
+
+```bash
+git pull --ff-only
+docker compose build smtp
+docker compose up -d --wait --wait-timeout 180
+docker compose ps
+```
+
+Si instaló desde ZIP, sustituya `smtp/Dockerfile` por el del repositorio actualizado y ejecute los tres comandos Docker anteriores. Conserve `.env` y los volúmenes. Estos pasos no requieren borrar la base, la cola ni ejecutar `docker compose down -v`.
+
+El resultado esperado es `smtp` saludable y después el arranque de `backend` y `frontend`. Si persiste otro error, consulte `docker compose logs --tail=100 smtp`. La salud SMTP sólo comprueba la respuesta local a EHLO/NOOP; no demuestra entrega externa de correo.
+
+### Consultar las colas
+
 Hay dos etapas persistentes:
 
 1. La cola del helpdesk, en PostgreSQL, espera que el primer SMTP acepte el aviso.
