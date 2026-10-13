@@ -1,6 +1,16 @@
-# Validación de la versión 1.3.1
+# Validación de la versión 1.3.2
 
-## Desactivación sin reenvío posterior · 13 de octubre de 2026
+## Contenido de avisos de casos · 13 de octubre de 2026
+
+- **40 pruebas Java de integración aprobadas**, sin fallos, errores ni omisiones: 14 de Helpdesk, 4 de configuración, 7 de outbox, 8 de SMTP y 7 de pagos. Java 17 y Maven 3.9.9, `-Ppostgres-it verify`; JAR 1.3.2 generado.
+- Se comprobó responsable asignado distinto del autor del evento, institución cliente, descripción vigente separada del detalle de actualización, estado únicamente Abierto/Cerrado al cerrar y reabrir y leyenda de consulta en Helpdesk. Los avisos anteriores conservan su cuerpo original.
+- También se verificó ausencia de asignación, identificación del responsable desactivado sin generar un envío nuevo para su cuenta, privacidad de notas internas y continuidad de la pausa sin reenvío de avisos anteriores.
+- Spring, JDBC, sesiones y CSRF reales con PGlite temporal, una conexión y SQL exacto V1–V4. Flyway se desactivó sólo durante el ensayo. SMTP probado con JavaMail y socket real de loopback, sin correos externos. Esto no prueba PostgreSQL 17 nativo ni entrega a proveedores externos.
+- Angular producción 1.3.2 compilado: **353.36 kB** antes de compresión. No se modificó la interfaz ni se repitieron las pruebas Chromium de 1.3.1; sus resultados se conservan abajo.
+- Dependencias sin cambios y enlaces locales de los documentos modificados comprobados. El ZIP 1.3.2 se verificó mediante CRC y manifiesto SHA-256, con scripts `.sh` ejecutables y `.bat` CRLF.
+- Docker/Windows y respaldo/restauración reales no se ejecutaron en este entorno. Las pruebas Python y de navegador de 1.3.1 siguientes son evidencia histórica, no nuevas ejecuciones de 1.3.2.
+
+## Desactivación sin reenvío posterior · versión 1.3.1 · 13 de octubre de 2026
 
 - **38 pruebas Java de integración aprobadas**, sin fallos ni omisiones: 14 de Helpdesk, 4 de configuración de correo, 5 de outbox, 8 de SMTP y 7 de pagos. Maven `-Ppostgres-it verify` genera el JAR 1.3.1.
 - Spring, JDBC, sesiones y CSRF reales con PGlite temporal, una conexión y SQL exacto V1–V4. Flyway se desactivó sólo en ese ensayo. No equivale a validación de migración Flyway sobre PostgreSQL 17 ni a contención entre varias conexiones.

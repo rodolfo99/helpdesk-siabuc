@@ -30,7 +30,7 @@ public class NotificationService {
         r.getTimestamp("sent_at") == null ? null : r.getTimestamp("sent_at").toInstant());
     private record Recipient(String type, Long id, String address, String absentReason) {}
     private record CaseInfo(long id, long institutionId, String institutionName, String institutionEmail,
-        Long assignedId, String assignedEmail, String title, String status, String channel) {}
+        Long assignedId, String assignedEmail, String assignedName, String title, String description, String status, String channel) {}
     private record PaymentInfo(long id, long institutionId, String institutionName, String institutionEmail,
         long authorId, String authorEmail, String reference, String amount, String currency, String paidOn,
         String method, long emailMinutes, long remoteMinutes, boolean voided) {}
@@ -38,22 +38,29 @@ public class NotificationService {
     @Transactional(propagation = Propagation.MANDATORY)
     public void caseEvent(long caseId, String eventType, String description, boolean internal, String actor) {
         CaseInfo c = db.queryForObject("""
-            SELECT c.*,i.name AS institution_name,i.email AS institution_email,u.email AS assigned_email
+            SELECT c.*,i.name AS institution_name,i.email AS institution_email,
+                CASE WHEN u.active THEN u.email END AS assigned_email,u.display_name AS assigned_name
             FROM support_cases c JOIN institutions i ON i.id=c.institution_id
-            LEFT JOIN app_users u ON u.id=c.assigned_admin_id AND u.role='ADMIN' AND u.active
+            LEFT JOIN app_users u ON u.id=c.assigned_admin_id AND u.role='ADMIN'
             WHERE c.id=?
             """, (r, n) -> new CaseInfo(r.getLong("id"), r.getLong("institution_id"), r.getString("institution_name"),
                 r.getString("institution_email"), r.getObject("assigned_admin_id", Long.class), r.getString("assigned_email"),
-                r.getString("title"), r.getString("status"), r.getString("channel")), caseId);
+                r.getString("assigned_name"), r.getString("title"), r.getString("description"),
+                r.getString("status"), r.getString("channel")), caseId);
         if (c == null) throw ApiException.missing();
         UUID eventKey = UUID.randomUUID();
         String subject = MailConfig.subject("[SIABUC] Caso #" + c.id() + " · " + eventLabel(eventType) + " · " + c.title());
-        String body = "SIABUC — Notificación de soporte\n\nCaso: #" + c.id() + "\nInstitución: " + c.institutionName()
+        String responsible = c.assignedName() != null ? c.assignedName()
+            : c.assignedId() == null ? "Sin administrativo asignado" : "Administrativo no disponible";
+        String body = "SIABUC — Notificación de soporte\n\nCaso: #" + c.id() + "\nInstitución cliente: " + c.institutionName()
+            + "\nAdministrativo que atiende: " + responsible
             + "\nTítulo: " + c.title() + "\nEstado: " + ("CLOSED".equals(c.status()) ? "Cerrado" : "Abierto")
             + "\nCanal principal: " + ("REMOTE".equals(c.channel()) ? "Escritorio remoto" : "Correo")
             + "\nEvento: " + eventLabel(eventType) + "\nRegistrado por: " + actor
             + (internal ? "\nVisibilidad: nota interna, sólo personal autorizado" : "")
-            + "\n\n" + description + "\n\nConsulte el historial del caso en el portal SIABUC.\n";
+            + "\n\nDescripción actual del caso:\n" + c.description()
+            + "\n\nDetalle de la actualización:\n" + description
+            + "\n\nPara mayor información, consulte la plataforma Helpdesk.\n";
         Set<String> recipients = new HashSet<>();
         if (!internal) enqueue(eventKey, caseId, null, eventType,
             new Recipient("INSTITUTION", c.institutionId(), c.institutionEmail(), "La institución no tiene un correo válido."),

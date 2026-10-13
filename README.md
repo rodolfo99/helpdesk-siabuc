@@ -1,4 +1,4 @@
-# SIABUC Helpdesk 1.3.1
+# SIABUC Helpdesk 1.3.2
 
 Sistema de atención técnica con servidor **Spring Boot 3.5.16 / Java 17**, cliente **Angular 21.2.25** y base de datos **PostgreSQL 17**. Conserva instituciones, usuarios, casos, pagos, actualizaciones descriptivas y auditoría. El tiempo por correo y por escritorio remoto se administra en **dos bolsas independientes de minutos enteros**.
 
@@ -23,6 +23,7 @@ Consulte las [notas de versión 1.3 y actualización](docs/VERSION-1.3.md) y el 
 - Asignación de un administrador responsable por institución y caso; correo de contacto por cuenta.
 - Registro de pagos y acreditación atómica de minutos, con referencias únicas y protección ante reintentos duplicados.
 - Avisos SMTP al cliente y responsable por cambios de casos, incluido el cierre; avisos de pagos y anulaciones, cola persistente y reintentos.
+- Cada aviso de caso identifica la institución cliente y el administrativo que atiende, incluye la descripción actual, el detalle de la actualización y el estado **Abierto** o **Cerrado**, e invita a consultar la plataforma Helpdesk.
 - Activación y pausa persistente del envío desde **Correo y notificaciones**, exclusiva de administradores, sin reiniciar: los avisos anteriores y los generados durante la pausa quedan sin envío; al reactivar sólo se notifican eventos nuevos.
 - Servidor SMTP Postfix interno configurado por defecto, cola persistente, entrega directa o relay saliente configurable. Sin buzones ni bandeja web.
 
@@ -157,7 +158,7 @@ Requiere JDK 17 o posterior, Maven 3.9, Node.js 24 LTS, npm, Python 3.10 y Docke
 
 `compilar.sh` ejecuta `mvn package`, `npm ci` y `npm run build`. Produce:
 
-- `backend/target/siabuc-helpdesk-1.3.1.jar`
+- `backend/target/siabuc-helpdesk-1.3.2.jar`
 - `frontend/dist/helpdesk/browser/`
 
 `iniciar-dev.sh` inicia PostgreSQL y Postfix con Docker, compila Spring, instala las dependencias de Angular y ejecuta Spring y `ng serve` en una terminal. Lee los mismos puertos y contraseñas de `.env`; ambos procesos escuchan en `127.0.0.1`. Los registros se guardan en `.runtime/`. **Ctrl+C** detiene Spring y Angular; después `./detener.sh` detiene PostgreSQL y Postfix. No ejecute el modo Docker completo y el modo de desarrollo al mismo tiempo sobre los mismos puertos.

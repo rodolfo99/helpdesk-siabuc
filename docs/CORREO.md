@@ -1,4 +1,4 @@
-# Correo y notificaciones · versión 1.2
+# Correo y notificaciones · versión 1.3.2
 
 El sistema guarda notificaciones junto con cada operación y las envía posteriormente por SMTP. **En instalaciones nuevas el envío usa Postfix interno por defecto**, con la IP local como dominio literal del remitente, por ejemplo `soporte@[192.168.1.50]`. Configure la IP real con `./configurar.sh --smtp-interno`. Los `.env` anteriores conservan su configuración y activación. Consulte [SMTP-INTERNO.md](SMTP-INTERNO.md) para el servidor Docker, su cola y las condiciones de recepción. Configurar el servidor no envía un mensaje de prueba; al activar `MAIL_ENABLED` y reiniciar, se procesa también la cola pendiente acumulada si no existe una pausa administrativa. Desde 1.3.1 puede [pausar el envío desde la aplicación](DESACTIVAR-CORREO.md).
 
@@ -111,9 +111,43 @@ Los usuarios institucionales no eligen destinatarios arbitrarios. **Notificacion
 
 Las direcciones se guardan al crear cada evento. Cambiar después el correo de una institución o cuenta no modifica las notificaciones `PENDING` ya creadas. Los reintentos de avisos `FAILED` conservan su destinatario original.
 
+### Contenido de los avisos de casos
+
+Desde 1.3.2 cada aviso de apertura, actualización, atención/comentario, anulación y cambio de estado incluye:
+
+- Número y título del caso, institución cliente y nombre del administrativo asignado que atiende.
+- Estado **Abierto** o **Cerrado**, canal principal y usuario que registró el evento. El responsable asignado puede ser distinto de quien registró la actualización.
+- **Descripción actual del caso**, tomada de la ficha en el momento del evento, y **Detalle de la actualización**, con el comentario, atención o motivo correspondiente.
+- La leyenda **«Para mayor información, consulte la plataforma Helpdesk.»**
+
+Ejemplo ilustrativo de un aviso de cierre:
+
+```text
+SIABUC — Notificación de soporte
+
+Caso: #123
+Institución cliente: Biblioteca de ejemplo
+Administrativo que atiende: Ana Pérez
+Título: Consulta de catálogo
+Estado: Cerrado
+Canal principal: Correo
+Evento: Cambio de estado
+Registrado por: administrador
+
+Descripción actual del caso:
+La búsqueda del catálogo no muestra los registros recientes.
+
+Detalle de la actualización:
+Se confirmó que la búsqueda funciona después de actualizar el índice.
+
+Para mayor información, consulte la plataforma Helpdesk.
+```
+
+Los datos del cuerpo quedan guardados con el evento: una edición posterior no reescribe avisos anteriores ni sus reintentos. Si no hay responsable, se indica «Sin administrativo asignado»; si la cuenta asignada ya está desactivada al registrar el evento, se conserva su nombre pero el nuevo aviso para esa cuenta queda omitido. Los avisos encolados antes de desactivar una cuenta mantienen su destinatario original. Las notas internas y sus anulaciones mantienen su visibilidad exclusiva para personal autorizado. Los avisos de pagos conservan su formato financiero, sin un estado de caso que no les corresponde.
+
 ## Cola, fallos y entrega
 
-Los estados son `PENDING`, `SENDING`, `SENT`, `FAILED` y `SKIPPED`. Guardar un caso, consumo o pago y crear su notificación se realiza en la misma transacción; una caída de SMTP no deshace una atención ni una acreditación. El envío se ejecuta fuera de esa transacción, con reintentos limitados y recuperación de bloqueos vencidos tras una caída.
+Los estados son `PENDING`, `SENDING`, `SENT`, `FAILED`, `SKIPPED` y `SUPPRESSED`. Guardar un caso, consumo o pago y crear su notificación se realiza en la misma transacción; una caída de SMTP no deshace una atención ni una acreditación. El envío se ejecuta fuera de esa transacción, con reintentos limitados y recuperación de bloqueos vencidos tras una caída.
 
 La semántica es **al menos una vez**: si SMTP aceptó el mensaje pero el proceso se detuvo antes de confirmar el resultado en PostgreSQL, un reintento puede producir un duplicado. `SENT` significa aceptación por el servidor SMTP; no certifica llegada a bandeja principal, lectura ni ausencia de rebote posterior. No hay recepción automática de rebotes ni sincronización IMAP.
 
