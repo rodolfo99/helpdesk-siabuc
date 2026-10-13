@@ -10,14 +10,22 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.bind.ServletRequestBindingException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 @RestControllerAdvice
 public class ApiErrorHandler {
     private static final Logger log = LoggerFactory.getLogger(ApiErrorHandler.class);
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<Map<String,String>> api(ApiException e) { return error(e.status(), e.getMessage()); }
-    @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
+    @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class,
+        ServletRequestBindingException.class, MissingServletRequestPartException.class})
     public ResponseEntity<Map<String,String>> input(Exception e) { return error(400, "Solicitud inválida: revise campos, tipos de datos y valores permitidos."); }
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String,String>> uploadLimit(MaxUploadSizeExceededException e) {
+        return error(413, "El archivo supera el límite de 10 MiB por adjunto.");
+    }
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String,String>> integrity(DataIntegrityViolationException e) {
         return error(409, "El registro entra en conflicto con datos existentes. Revise el usuario único y los valores de tiempo.");

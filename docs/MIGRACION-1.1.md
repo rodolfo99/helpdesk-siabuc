@@ -2,7 +2,7 @@
 
 La versión 1.1 añade cobranza, acreditación por pagos, asignación de responsables y notificaciones SMTP. Conserva instituciones, usuarios, casos, saldos, historiales y auditoría existentes. **No cambie ni elimine `V1__initial_schema.sql`**: Flyway aplica las nuevas migraciones V2 y V3 al iniciar el servidor actualizado.
 
-**Entrega actual 1.3:** también puede actualizar directamente de 1.0 a 1.3 con este procedimiento. El JAR generado será `siabuc-helpdesk-1.3.3.jar`; V1, V2 y V3 no cambian. Para pasar de 1.1 a 1.2 no hay migración adicional. La integración del nuevo Postfix y su remitente con IP se explica en [SMTP-INTERNO.md](SMTP-INTERNO.md#actualizar-una-instalación-anterior). Las referencias a 1.1 de esta guía describen la incorporación original del esquema.
+**Entrega actual 1.3:** también puede actualizar directamente de 1.0 a 1.3 con este procedimiento. El JAR generado será `siabuc-helpdesk-1.4.0.jar`; V1, V2 y V3 no cambian. Para pasar de 1.1 a 1.2 no hay migración adicional. La integración del nuevo Postfix y su remitente con IP se explica en [SMTP-INTERNO.md](SMTP-INTERNO.md#actualizar-una-instalación-anterior). Las referencias a 1.1 de esta guía describen la incorporación original del esquema.
 
 ## Procedimiento con Docker
 

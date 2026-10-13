@@ -22,14 +22,18 @@ public class HelpdeskService {
     private final JdbcTemplate db;
     private final PasswordEncoder passwords;
     private final NotificationService notifications;
+    private final CaseProfileService profiles;
+    private final PortalEventService portalEvents;
     private final String bootstrapUsername;
     private final String bootstrapPassword;
     private final String bootstrapEmail;
     public HelpdeskService(JdbcTemplate db, PasswordEncoder passwords, NotificationService notifications,
+            CaseProfileService profiles, PortalEventService portalEvents,
             @Value("${app.admin-username}") String bootstrapUsername,
             @Value("${app.admin-password}") String bootstrapPassword,
             @Value("${app.admin-email:}") String bootstrapEmail) {
         this.db = db; this.passwords = passwords; this.notifications = notifications;
+        this.profiles = profiles; this.portalEvents = portalEvents;
         this.bootstrapUsername = bootstrapUsername; this.bootstrapPassword = bootstrapPassword;
         this.bootstrapEmail = bootstrapEmail;
     }
@@ -119,6 +123,7 @@ public class HelpdeskService {
             """, Long.class, clean(input.name()), optional(input.contactName()), optional(input.email()), optional(input.phone()),
             optional(input.notes()), input.emailAllocatedMinutes(), input.remoteAllocatedMinutes(), input.supportAdminId());
         audit(actor.username(), "CREATE_INSTITUTION", "INSTITUTION", id, "Alta de institución; correo=" + input.emailAllocatedMinutes() + "; remoto=" + input.remoteAllocatedMinutes());
+        portalEvents.checkBalance(id);
         return institution(id, false);
     }
     @Transactional
@@ -134,6 +139,7 @@ public class HelpdeskService {
             """, clean(input.name()), optional(input.contactName()), optional(input.email()), optional(input.phone()), optional(input.notes()),
             input.active(), input.emailAllocatedMinutes(), input.remoteAllocatedMinutes(), supportAdminProvided ? input.supportAdminId() : old.supportAdminId(), id);
         audit(actor.username(), "UPDATE_INSTITUTION", "INSTITUTION", id, "Antes: " + old + "; después: " + institution(id, false));
+        portalEvents.checkBalance(id);
         return institution(id, false);
     }
     @Transactional
@@ -245,6 +251,7 @@ public class HelpdeskService {
         validateAdminAssignment(assigned);
         Long id = db.queryForObject("INSERT INTO support_cases(institution_id,title,description,channel,created_by,assigned_admin_id) VALUES (?,?,?,?,?,?) RETURNING id", Long.class,
             input.institutionId(), clean(input.title()), clean(input.description()), input.channel().name(), actor.id(), assigned);
+        profiles.initialize(id, input.profile());
         audit(actor.username(), "CREATE_CASE", "CASE", id, "Caso abierto; canal=" + input.channel());
         notifications.caseEvent(id, "CREATE_CASE", "Caso abierto: " + clean(input.title()) + "\n" + clean(input.description()), false, actor.username());
         return detail(authorizedCase(id, actor), actor);
@@ -290,6 +297,7 @@ public class HelpdeskService {
         if (locked.supportCase().status() == input.status()) return detail(locked.supportCase(), actor);
         if (input.status() == CaseStatus.OPEN) { requireActive(locked.institution()); requireBalance(locked.institution(), locked.supportCase().channel(), 1); }
         db.update("UPDATE support_cases SET status=?,updated_at=NOW() WHERE id=?", input.status().name(), id);
+        profiles.recordStatus(id, input.status());
         String description = (input.status() == CaseStatus.OPEN ? "Caso reabierto: " : "Caso cerrado: ") + clean(input.reason());
         insertEntry(id, description, null, 0, false, actor.id());
         audit(actor.username(), "CHANGE_CASE_STATUS", "CASE", id, description);
@@ -307,6 +315,7 @@ public class HelpdeskService {
         if (locked.supportCase().status() != CaseStatus.OPEN) throw ApiException.conflict("El caso está cerrado. Reábralo antes de registrar una atención.");
         if (input.minutes() > 0) { requireBalance(locked.institution(), input.channel(), input.minutes()); changeUsed(locked.institution().id(), input.channel(), input.minutes()); }
         long entryId = insertEntry(id, clean(input.description()), input.channel(), input.minutes(), input.internal(), actor.id());
+        if (actor.role() == Role.ADMIN && !input.internal()) profiles.recordPublicResponse(id, entryId);
         db.update("UPDATE support_cases SET updated_at=NOW() WHERE id=?", id);
         audit(actor.username(), "CREATE_ENTRY", "ENTRY", entryId, "Caso=" + id + "; minutos=" + input.minutes() + "; canal=" + input.channel() + "; interno=" + input.internal());
         notifications.caseEvent(id, "CREATE_ENTRY", clean(input.description()) + "\nMinutos: " + input.minutes() + "; canal: " + input.channel(), input.internal(), actor.username());
@@ -334,6 +343,7 @@ public class HelpdeskService {
     private void changeUsed(long id, Channel channel, long delta) {
         String column = channel == Channel.EMAIL ? "email_used_minutes" : "remote_used_minutes";
         db.update("UPDATE institutions SET " + column + "=" + column + "+?,updated_at=NOW() WHERE id=?", delta, id);
+        portalEvents.checkBalance(id);
     }
     private void requireActive(Institution i) { if (!i.active()) throw ApiException.conflict("La institución está dada de baja."); }
     private void requireBalance(Institution i, Channel channel, long required) {
@@ -374,6 +384,7 @@ public class HelpdeskService {
             java.sql.Date.valueOf(input.paidOn()), input.method().name(), input.emailMinutes(), input.remoteMinutes(), clean(input.notes()), actor.id());
         db.update("UPDATE institutions SET email_allocated_minutes=email_allocated_minutes+?,remote_allocated_minutes=remote_allocated_minutes+?,updated_at=NOW() WHERE id=?",
             input.emailMinutes(), input.remoteMinutes(), institution.id());
+        portalEvents.checkBalance(institution.id());
         audit(actor.username(), "CREATE_PAYMENT", "PAYMENT", id, "Institución=" + institution.id() + "; referencia=" + clean(input.reference())
             + "; importe=" + input.amount().toPlainString() + " " + input.currency() + "; correo=" + input.emailMinutes() + "; remoto=" + input.remoteMinutes());
         notifications.paymentEvent(id, "CREATE_PAYMENT", "Pago recibido y minutos acreditados. " + clean(input.notes()), actor.username());
@@ -391,6 +402,7 @@ public class HelpdeskService {
             throw ApiException.conflict("No quedan suficientes minutos disponibles en ambos canales para retirar toda la acreditación del pago.");
         db.update("UPDATE institutions SET email_allocated_minutes=email_allocated_minutes-?,remote_allocated_minutes=remote_allocated_minutes-?,updated_at=NOW() WHERE id=?",
             payment.emailMinutes(), payment.remoteMinutes(), institution.id());
+        portalEvents.checkBalance(institution.id());
         db.update("UPDATE payments SET voided=TRUE,void_reason=?,voided_by=?,voided_at=NOW() WHERE id=?", clean(input.reason()), actor.id(), id);
         audit(actor.username(), "VOID_PAYMENT", "PAYMENT", id, "Anulación; correo retirado=" + payment.emailMinutes() + "; remoto retirado="
             + payment.remoteMinutes() + "; motivo=" + clean(input.reason()));

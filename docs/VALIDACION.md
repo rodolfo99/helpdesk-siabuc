@@ -1,4 +1,22 @@
-# Validación de la versión 1.3.3
+# Validación de SIABUC Helpdesk
+
+## Versión 1.4.0 · 13 de octubre de 2026
+
+- **81 pruebas Java de integración distintas aprobadas y 5 unitarias de calendario**, sin fallos finales ni omisiones. Ejecución completa: 79 IT + 5 unitarias; después de añadir dos escenarios de concurrencia se ejecutaron las 9 IT de cronómetro/agenda y las 5 unitarias. Java 17 / Maven 3.9.9; JAR 1.4.0 generado.
+- Se cubren permisos por institución/rol, adjuntos internos, tipos y cuotas de archivos, idempotencia, calendario laboral/feriados/DST, snapshots SLA, avisos con correo pausado, ciclos de saldo bajo, cronómetro y cargo único, propuesta/confirmación/reprogramación y reservas superpuestas. Las exportaciones se abrieron con POI/PDFBox para comprobar XLSX real, texto no ejecutable como fórmula, acentos y PDF multipágina.
+- Spring, JDBC, sesiones y CSRF reales sobre PGlite efímero con SQL exacto V1–V8. Flyway desactivado sólo en el ensayo; pool de una conexión. Las solicitudes HTTP concurrentes se serializan en ese pool: **no demuestra contención de PostgreSQL 17 con varias conexiones**.
+- Se intentó preparar PostgreSQL 17.11 nativo con binarios oficiales verificados; el entorno sólo permite UID 0 y bloquea la creación del usuario/namespace no privilegiado requerido por PostgreSQL. No se eludió esa protección. Arranque nativo/Flyway real y contención con varias conexiones quedan pendientes.
+- `tests/migrations/upgrade-v14.mjs` pasó con fixtures anteriores a V5: conservación exacta de ocho tablas existentes, saldos, pagos, hashes, historial, auditoría, cola SMTP y pausa; reconstrucción de cinco casos abiertos/cerrados/reabiertos/desconocidos. Usa SQL exacto V1–V8 en otra base PGlite de memoria.
+- **43 escenarios Chromium con API simulada aprobados:** 16 de funciones 1.4, 17 de historial y toma de casos y 10 de pausa de correo. Incluyen perfil atómico de creación, filtros, adjuntos de caso/comentario, confirmación del cronómetro, agenda cliente/admin, campana, exportaciones, configuración y pantalla móvil de 390 px sin desbordamiento horizontal. Estos mocks no sustituyen las comprobaciones reales del servidor.
+- **48 pruebas Python** de operación, configuración SMTP, respaldo/restauración simulados y adaptaciones Windows aprobadas; **6 pruebas de lógica del cliente** aprobadas. Angular producción compilado. Capturas de escritorio/móvil revisadas; se corrigieron el ancho móvil y el icono de campana.
+- SMTP JavaMail validado con sockets de loopback, sin correo externo. Docker/Windows, arranque Compose y respaldo/restauración Docker reales no ejecutados. Las pruebas de Windows verifican lógica y argumentos; no acreditan ejecución nativa de `.bat` en Windows.
+- Código empaquetado con manifiesto SHA-256 y verificación CRC; incluye migraciones, pruebas y documentación, conserva `.sh` ejecutables y `.bat` CRLF. No incluye `.env`, datos, dependencias descargadas ni artefactos de QA.
+
+Para repetir las suites del servidor use una base **exclusiva de pruebas** con PostgreSQL y `mvn -Ppostgres-it verify`, según las instrucciones siguientes. Para Chromium consulte [Pruebas de navegador](../tests/e2e/README.md). La cabecera de `tests/migrations/upgrade-v14.mjs` explica su dependencia de PGlite y la variable `SIABUC_PGLITE_MODULE`.
+
+---
+
+# Registro histórico: versión 1.3.3
 
 ## Detalle de historiales y toma de casos · 13 de octubre de 2026
 

@@ -53,6 +53,7 @@ async function open({ role = 'ADMIN', config = {}, notifications = [], onPost } 
     const request = route.request();
     const path = new URL(request.url()).pathname;
     const reply = (body, status = 200) => route.fulfill({ status, json: body });
+    if (path === '/api/inbox') return reply({ items: [], unreadCount: 0, pendingReplies: [] });
     if (path === '/api/auth/csrf') return reply({ token: 'test-token' });
     if (path === '/api/auth/me') return reply({ id: 1, username: 'qa', displayName: 'Prueba', role, email: 'qa@example.test', institutionId: role === 'USER' ? 1 : null });
     if (['/api/institutions', '/api/cases', '/api/payments'].includes(path)) return reply([]);

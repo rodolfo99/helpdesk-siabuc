@@ -35,7 +35,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 @SpringBootTest(properties = {
         "app.admin-username=testadmin", "app.admin-password=PruebaSegura123!",
         "app.admin-email=testadmin@example.test", "app.mail.enabled=false",
-        "server.servlet.session.cookie.secure=false"
+        "server.servlet.session.cookie.secure=false", "app.reporting-time-zone=America/Mexico_City"
 })
 @AutoConfigureMockMvc
 abstract class ApiIntegrationSupport {

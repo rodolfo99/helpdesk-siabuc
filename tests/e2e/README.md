@@ -75,3 +75,27 @@ node mail-control.ui.mjs
 ```
 
 Estas pruebas interceptan la API con datos de prueba: no sustituyen `mvn -Ppostgres-it verify`, no conectan con PostgreSQL ni envían correo. Admiten las mismas variables E2E_PLAYWRIGHT_PATH, E2E_CHROMIUM_PATH y E2E_CHROMIUM_ARGS. E2E_REPORT_DIR permite conservar el informe y capturas de prueba fuera del paquete distribuido.
+
+## Funciones Helpdesk 1.4 con API simulada
+
+`helpdesk-v14.ui.mjs` ejecuta **16 escenarios** sobre Angular compilado: alta de caso con ficha técnica en una única solicitud; filtros combinados de categoría, prioridad y asignación; edición de ficha y manejo de errores; separación de adjuntos del caso y del elemento del historial; carga multipart y descarga; cronómetro con pausa, continuación y confirmación antes del consumo; propuesta administrativa y confirmación institucional de sesiones remotas; campana, lectura de avisos y navegación a otro caso; filtros de exportación; calendario, umbrales de saldo y permisos visibles de cada rol. La comprobación móvil usa 390 píxeles y rechaza el desbordamiento horizontal del caso.
+
+Desde la raíz del proyecto:
+
+```bash
+cd frontend
+npm ci
+npm run build
+cd ../tests/e2e
+npm ci
+npx playwright install chromium
+node helpdesk-v14.ui.mjs
+node history-detail.ui.mjs
+node mail-control.ui.mjs
+```
+
+Las tres suites comprueban respectivamente **16, 17 y 10 escenarios** de interfaz. Cada archivo levanta un servidor estático temporal en `127.0.0.1`, intercepta `/api` y utiliza únicamente datos sintéticos. No requiere una instalación de Spring, PostgreSQL ni cuentas reales. Las regresiones de historial y correo incluyen respuestas vacías para la nueva campana y los nuevos apartados; mantienen sus verificaciones anteriores.
+
+`E2E_REPORT_DIR` permite guardar siete capturas de la suite 1.4: ficha/SLA, adjuntos, cronómetro, agenda, reportes, configuración y campana móvil. Las capturas no forman parte del ZIP del proyecto. También admite `E2E_PLAYWRIGHT_PATH`, `E2E_CHROMIUM_PATH` y `E2E_CHROMIUM_ARGS`.
+
+**Alcance de la evidencia:** las simulaciones comprueban navegación, formularios, peticiones y estados de pantalla. No demuestran permisos del servidor, contenido binario válido de Excel/PDF, validación real de archivos, exactitud del reloj del servidor, concurrencia ni entrega de correo. Esas comprobaciones corresponden a las pruebas del servidor con base de datos. La prueba de cronómetro verifica que la interfaz no solicita el descuento hasta confirmar; no sustituye la comprobación transaccional e idempotente del servidor. No se conecta con un SMTP ni se envían mensajes reales.
