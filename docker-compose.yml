@@ -1,0 +1,136 @@
+name: ${COMPOSE_PROJECT_NAME:-siabuc-helpdesk}
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:?Configure DB_NAME}
+      POSTGRES_USER: ${DB_USER:?Configure DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Configure DB_PASSWORD}
+    ports:
+      - "${BIND_HOST:-127.0.0.1}:${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:?Configure DB_NAME}
+      DB_USER: ${DB_USER:?Configure DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD:?Configure DB_PASSWORD}
+      SERVER_PORT: 8080
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Configure ADMIN_PASSWORD}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      MAIL_ENABLED: ${MAIL_ENABLED:-false}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_AUTH: ${SMTP_AUTH:-true}
+      SMTP_SECURITY: ${SMTP_SECURITY:-STARTTLS}
+      MAIL_FROM: ${MAIL_FROM:-}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-SIABUC}
+      MAIL_REPLY_TO: ${MAIL_REPLY_TO:-}
+      MAIL_POLL_MS: ${MAIL_POLL_MS:-15000}
+      MAIL_MAX_ATTEMPTS: ${MAIL_MAX_ATTEMPTS:-5}
+    ports:
+      - "${BIND_HOST:-127.0.0.1}:${SERVER_PORT:-8080}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      smtp:
+        condition: service_healthy
+    networks:
+      - default
+      - smtp_net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "${BIND_HOST:-127.0.0.1}:${FRONTEND_PORT:-4200}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+  smtp:
+    build:
+      context: ./smtp
+    environment:
+      SMTP_HOSTNAME: ${SMTP_HOSTNAME:-mail.siabuc.internal}
+      SMTP_LOCAL_IP: ${SMTP_LOCAL_IP:-127.0.0.1}
+      SMTP_NETWORK_SUBNET: ${SMTP_NETWORK_SUBNET:-172.30.55.0/24}
+      SMTP_RELAY_HOST: ${SMTP_RELAY_HOST:-}
+      SMTP_RELAY_PORT: ${SMTP_RELAY_PORT:-587}
+      SMTP_RELAY_SECURITY: ${SMTP_RELAY_SECURITY:-STARTTLS}
+      SMTP_RELAY_USERNAME: ${SMTP_RELAY_USERNAME:-}
+      SMTP_RELAY_PASSWORD: ${SMTP_RELAY_PASSWORD:-}
+    ports:
+      - "127.0.0.1:${SMTP_INTERNAL_PORT:-2525}:25"
+    volumes:
+      - smtp_queue:/var/spool/postfix
+    networks:
+      - smtp_net
+    # HEALTHCHECK comes from smtp/Dockerfile and only performs SMTP EHLO/NOOP.
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:v1.27.4
+    profiles: ["mail-test"]
+    ports:
+      - "127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
+    environment:
+      MP_MAX_MESSAGES: 1000
+      MP_DATABASE: /data/mailpit.db
+    volumes:
+      - mailpit_data:/data
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  mailpit_data:
+  smtp_queue:
+
+networks:
+  default:
+  smtp_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${SMTP_NETWORK_SUBNET:-172.30.55.0/24}

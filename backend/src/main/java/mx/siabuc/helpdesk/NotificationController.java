@@ -1,0 +1,34 @@
+package mx.siabuc.helpdesk;
+
+import java.util.List;
+import java.util.Map;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/notifications")
+public class NotificationController {
+    private final NotificationService notifications;
+    private final HelpdeskService helpdesk;
+    public NotificationController(NotificationService notifications, HelpdeskService helpdesk) {
+        this.notifications = notifications; this.helpdesk = helpdesk;
+    }
+    private Models.User admin() {
+        Models.User actor = helpdesk.me();
+        if (actor.role() != Models.Role.ADMIN) throw ApiException.forbidden();
+        return actor;
+    }
+    @GetMapping public List<NotificationService.Notification> list() { admin(); return notifications.notifications(); }
+    @GetMapping("/config") public NotificationService.Configuration config() { admin(); return notifications.configuration(); }
+    @PostMapping("/{id}/retry") public NotificationService.Notification retry(@PathVariable long id,
+            @RequestBody(required = false) Map<String,Object> input) {
+        Models.User actor = admin(); requireEmpty(input); return notifications.retry(id, actor.username());
+    }
+    @PostMapping("/test") @ResponseStatus(HttpStatus.CREATED)
+    public NotificationService.Notification test(@RequestBody(required = false) Map<String,Object> input) {
+        Models.User actor = admin(); requireEmpty(input); return notifications.test(actor);
+    }
+    private static void requireEmpty(Map<String,Object> input) {
+        if (input != null && !input.isEmpty()) throw ApiException.bad("Este endpoint no permite elegir destinatarios ni contenido; envíe un objeto vacío.");
+    }
+}

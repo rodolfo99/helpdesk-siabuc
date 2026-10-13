@@ -1,0 +1,13 @@
+.env
+.runtime/
+backups/
+backend/target/
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+tests/e2e/node_modules/
+test-results/
+playwright-report/
+*.log
+__pycache__/
+.DS_Store

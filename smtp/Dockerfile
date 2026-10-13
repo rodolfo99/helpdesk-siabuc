@@ -1,0 +1,21 @@
+FROM debian:13-slim
+
+# Prevent package hooks from starting an SMTP process while building the image.
+RUN printf '#!/bin/sh\nexit 101\n' > /usr/sbin/policy-rc.d \
+    && chmod 755 /usr/sbin/policy-rc.d \
+    && printf 'postfix postfix/main_mailer_type select No configuration\n' | debconf-set-selections \
+    && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+       postfix postfix-lmdb ca-certificates libsasl2-modules python3 \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm /usr/sbin/policy-rc.d
+
+COPY entrypoint.py healthcheck.py /opt/siabuc-smtp/
+RUN chmod 755 /opt/siabuc-smtp/entrypoint.py /opt/siabuc-smtp/healthcheck.py
+
+VOLUME ["/var/spool/postfix"]
+EXPOSE 25
+HEALTHCHECK --interval=10s --timeout=8s --start-period=15s --retries=6 \
+    CMD ["python3", "/opt/siabuc-smtp/healthcheck.py"]
+STOPSIGNAL SIGTERM
+ENTRYPOINT ["python3", "/opt/siabuc-smtp/entrypoint.py"]
