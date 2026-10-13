@@ -21,8 +21,8 @@ public class NotificationService {
 
     public record Notification(long id, Long caseId, Long paymentId, String eventType, String recipient,
         String subject, String status, int attempts, String lastError, Instant createdAt, Instant sentAt) {}
-    public record Configuration(boolean enabled, String host, int port, String username, String fromAddress,
-        String fromName, String security, boolean auth, String replyTo, long pendingCount, long failedCount) {}
+    public record Configuration(boolean enabled, boolean configuredEnabled, boolean paused, String host, int port, String username, String fromAddress,
+        String fromName, String security, boolean auth, String replyTo, long pendingCount, long failedCount, long suppressedCount) {}
     private static final RowMapper<Notification> NOTIFICATION = (r, n) -> new Notification(r.getLong("id"),
         r.getObject("case_id", Long.class), r.getObject("payment_id", Long.class), r.getString("event_type"),
         r.getString("recipient"), r.getString("subject"), r.getString("status"), r.getInt("attempts"),
@@ -101,6 +101,8 @@ public class NotificationService {
     private long enqueue(UUID key, Long caseId, Long paymentId, String eventType, Recipient recipient,
             String subject, String body, boolean internal, Set<String> seen) {
         if (internal && !"USER".equals(recipient.type())) throw new IllegalStateException("Una nota interna sólo puede notificarse al personal.");
+        // Serialize event creation with pause/resume so a notice cannot cross the pause boundary.
+        boolean paused = deliveryPausedForUpdate();
         String address = MailConfig.email(recipient.address());
         if (address != null && !seen.add(address.toLowerCase(Locale.ROOT))) return -1;
         return db.queryForObject("""
@@ -108,17 +110,55 @@ public class NotificationService {
                 recipient,subject,body,internal,status,last_error)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id
             """, Long.class, key, caseId, paymentId, eventType, recipient.type(), recipient.id(), address == null ? "" : address,
-                subject, body, internal, address == null ? "SKIPPED" : "PENDING", address == null ? recipient.absentReason() : null);
+                subject, body, internal, paused ? "SUPPRESSED" : address == null ? "SKIPPED" : "PENDING",
+                paused ? "Envío desactivado al registrar el aviso. No se enviará al reactivar el correo."
+                    : address == null ? recipient.absentReason() : null);
     }
 
     public List<Notification> notifications() {
         return db.query("SELECT * FROM notification_outbox ORDER BY id DESC LIMIT 500", NOTIFICATION);
     }
     public Configuration configuration() {
+        boolean paused = db.queryForObject("SELECT paused FROM notification_settings WHERE id=1", Boolean.class);
         long pending = db.queryForObject("SELECT COUNT(*) FROM notification_outbox WHERE status IN ('PENDING','SENDING')", Long.class);
         long failed = db.queryForObject("SELECT COUNT(*) FROM notification_outbox WHERE status IN ('FAILED','SKIPPED')", Long.class);
-        return new Configuration(config.enabled, config.host, config.port, config.username, config.fromAddress, config.fromName,
-            config.security, config.auth, config.replyTo, pending, failed);
+        long suppressed = db.queryForObject("SELECT COUNT(*) FROM notification_outbox WHERE status='SUPPRESSED'", Long.class);
+        return new Configuration(config.enabled && !paused, config.enabled, paused, config.host, config.port, config.username, config.fromAddress, config.fromName,
+            config.security, config.auth, config.replyTo, pending, failed, suppressed);
+    }
+    @Transactional
+    public Configuration setPaused(boolean paused, String actor) {
+        // The dispatcher takes this same lock before every claim. Once this transaction
+        // commits, no new delivery can be claimed until another administrator resumes it.
+        // SMTP operations already in progress do not hold this lock and may still finish.
+        boolean previous = deliveryPausedForUpdate();
+        if (previous != paused) {
+            int suppressed = 0;
+            if (paused) {
+                // Keep claimed deliveries untouched, but remember the boundary: if they later
+                // fail or their lease expires, they must never be retried after resuming.
+                db.update("""
+                    UPDATE notification_settings SET paused=TRUE,suppressed_through_id=
+                        GREATEST(suppressed_through_id,(SELECT COALESCE(MAX(id),0) FROM notification_outbox)) WHERE id=1
+                    """);
+                suppressed = db.update("""
+                    UPDATE notification_outbox SET status='SUPPRESSED',
+                        last_error='Envío desactivado por administración. Este aviso anterior no se enviará al reactivar el correo.'
+                    WHERE status IN ('PENDING','FAILED','SKIPPED')
+                    """);
+            } else {
+                db.update("UPDATE notification_settings SET paused=FALSE WHERE id=1");
+            }
+            db.update("INSERT INTO audit_log(actor,action,entity_type,entity_id,details) VALUES (?,?, 'NOTIFICATION_CONFIG',1,?)",
+                actor, paused ? "PAUSE_NOTIFICATIONS" : "RESUME_NOTIFICATIONS", paused
+                    ? "Envío de correos desactivado. Avisos anteriores suprimidos: " + suppressed
+                        + ". Los envíos ya iniciados pueden finalizar; los avisos suprimidos no se reenviarán."
+                    : "Envío de correos reactivado sólo para eventos nuevos, si MAIL_ENABLED está activado. Los avisos anteriores no se envían.");
+        }
+        return configuration();
+    }
+    private boolean deliveryPausedForUpdate() {
+        return db.queryForObject("SELECT paused FROM notification_settings WHERE id=1 FOR UPDATE", Boolean.class);
     }
     private Notification notification(long id) {
         List<Notification> rows = db.query("SELECT * FROM notification_outbox WHERE id=?", NOTIFICATION, id);
@@ -128,6 +168,8 @@ public class NotificationService {
     private record RetryInfo(UUID key, String type, Long entityId, String recipient, String status, boolean internal, Long caseId) {}
     @Transactional
     public Notification retry(long id, String actor) {
+        if (deliveryPausedForUpdate())
+            throw ApiException.conflict("El envío de correos está desactivado. No pueden reintentarse avisos durante la pausa.");
         List<RetryInfo> rows = db.query("SELECT * FROM notification_outbox WHERE id=? FOR UPDATE", (r, n) -> new RetryInfo(
             r.getObject("event_key", UUID.class), r.getString("recipient_type"), r.getObject("recipient_entity_id", Long.class),
             r.getString("recipient"), r.getString("status"), r.getBoolean("internal"), r.getObject("case_id", Long.class)), id);
@@ -163,6 +205,8 @@ public class NotificationService {
     }
     @Transactional
     public Notification test(Models.User actor) {
+        if (deliveryPausedForUpdate())
+            throw ApiException.conflict("El envío de correos está desactivado. Reactívelo antes de solicitar una prueba.");
         String email = db.queryForObject("SELECT email FROM app_users WHERE id=? AND active AND role='ADMIN'", String.class, actor.id());
         if (MailConfig.email(email) == null) throw ApiException.conflict("Configure primero un correo válido en su propia cuenta administrativa.");
         long id = enqueue(UUID.randomUUID(), null, null, "TEST_MAIL", new Recipient("USER", actor.id(), email, ""),

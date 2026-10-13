@@ -42,20 +42,27 @@ class SmtpNotificationIT extends ApiIntegrationSupport {
     private NotificationDispatcher dispatcher;
     @Autowired JdbcTemplate db;
     @Autowired PlatformTransactionManager transactions;
+    @Autowired NotificationService notifications;
     private List<Map<String, Object>> deferredFixtures;
 
     @BeforeEach
     void configureLocalDispatcherWithoutOpeningAnotherDatabasePool() {
+        db.update("UPDATE notification_settings SET paused=FALSE WHERE id=1");
         dispatcher = localDispatcher("siabuc@example.test");
         SMTP.rejectMessages = false;
+        SMTP.beforeDataResponse = null;
         SMTP.accepted.clear();
-        // Keep earlier classes' durable fixtures unchanged: temporarily defer them,
-        // then restore their original timestamps after this scenario.
+        // Prevent delivery of earlier tests' fixtures by deferring their timestamps.
+        // Global pause scenarios may suppress them; their history is never deleted.
         deferredFixtures = db.queryForList("SELECT id,available_at FROM notification_outbox WHERE status='PENDING'");
         db.update("UPDATE notification_outbox SET available_at=NOW()+INTERVAL '1 day' WHERE status='PENDING'");
     }
 
     private NotificationDispatcher localDispatcher(String fromAddress) {
+        return new NotificationDispatcher(db, localMailConfig(fromAddress), transactions);
+    }
+
+    private MailConfig localMailConfig(String fromAddress) {
         var environment = new StandardEnvironment();
         environment.getPropertySources().addFirst(new MapPropertySource("local-smtp-test", Map.ofEntries(
                 Map.entry("app.mail.enabled", true), Map.entry("app.mail.host", "127.0.0.1"),
@@ -65,11 +72,13 @@ class SmtpNotificationIT extends ApiIntegrationSupport {
                 Map.entry("app.mail.max-attempts", 2), Map.entry("app.mail.poll-ms", 3_600_000))));
         // Use the real production dispatcher, JDBC template and transaction manager.
         // Only SMTP configuration differs; the shared Spring context remains intact.
-        return new NotificationDispatcher(db, new MailConfig(environment), transactions);
+        return new MailConfig(environment);
     }
 
     @AfterEach
     void restorePreviousFixtures() {
+        SMTP.beforeDataResponse = null;
+        db.update("UPDATE notification_settings SET paused=FALSE WHERE id=1");
         if (deferredFixtures == null) return;
         for (Map<String, Object> row : deferredFixtures)
             db.update("UPDATE notification_outbox SET available_at=? WHERE id=?", row.get("available_at"), row.get("id"));
@@ -166,6 +175,88 @@ class SmtpNotificationIT extends ApiIntegrationSupport {
         assertThat(decoded().get(0).to()).isEqualTo("testadmin@example.test");
     }
 
+    @Test
+    void pauseKeepsBusinessHistoryButSuppressesOldAndPausedEventsAndResumeOnlySendsNewEvents() throws Exception {
+        long institution = institution(50, 50);
+        long caseId = supportCase(institution, "EMAIL");
+        assertStatus(admin.post("/notifications/config", Map.of("paused", true)), 200);
+        // Case work continues normally, including balance usage and public history.
+        addEntry(admin, caseId, "Trabajo registrado durante la pausa", "EMAIL", 7, false, 200);
+        assertStatus(admin.post("/cases/" + caseId + "/status", Map.of("status", "CLOSED", "reason", "Solución durante pausa")), 200);
+        assertBalance(institution, 7, 43, 0, 50);
+        assertThat(json(institutionUser(institution).get("/cases/" + caseId)).toString())
+                .contains("Trabajo registrado durante la pausa", "Solución durante pausa");
+
+        var before = db.queryForList("SELECT id,status,attempts,available_at,subject,body,recipient FROM notification_outbox WHERE case_id=? ORDER BY id", caseId);
+        assertThat(before).hasSize(6);
+        assertThat(before).allSatisfy(row -> {
+            assertThat(row.get("status")).isEqualTo("SUPPRESSED");
+            assertThat(((Number) row.get("attempts")).intValue()).isZero();
+        });
+        var configured = new NotificationService(db, localMailConfig("siabuc@example.test")).configuration();
+        assertThat(configured.configuredEnabled()).isTrue();
+        assertThat(configured.paused()).isTrue();
+        assertThat(configured.enabled()).isFalse();
+        // A newly constructed dispatcher also honors the persisted pause.
+        dispatcher = localDispatcher("siabuc@example.test");
+        assertThat(dispatcher.dispatchPending()).isZero();
+        assertThat(dispatcher.dispatchPending()).isZero();
+        assertThat(SMTP.accepted).isEmpty();
+        assertThat(db.queryForList("SELECT id,status,attempts,available_at,subject,body,recipient FROM notification_outbox WHERE case_id=? ORDER BY id", caseId))
+                .isEqualTo(before);
+
+        assertStatus(admin.post("/notifications/config", Map.of("paused", false)), 200);
+        assertThat(new NotificationService(db, localMailConfig("siabuc@example.test")).configuration().enabled()).isTrue();
+        drainReady();
+        assertThat(forCase(caseId)).isEmpty();
+        assertThat(db.queryForList("SELECT status FROM notification_outbox WHERE case_id=?", String.class, caseId)).containsOnly("SUPPRESSED");
+        assertThat(db.queryForList("SELECT attempts FROM notification_outbox WHERE case_id=?", Integer.class, caseId)).containsOnly(0);
+        assertStatus(admin.post("/notifications/" + before.get(0).get("id") + "/retry", Map.of()), 409);
+        assertThat(db.queryForList("SELECT id FROM notification_outbox WHERE case_id=? ORDER BY id", Long.class, caseId))
+                .containsExactlyElementsOf(before.stream().map(row -> ((Number) row.get("id")).longValue()).toList());
+        long newCaseId = supportCase(institution, "EMAIL");
+        drainReady();
+        assertThat(forCase(newCaseId)).hasSize(2);
+        assertThat(forCase(caseId)).isEmpty();
+        assertThat(db.queryForList("SELECT status FROM notification_outbox WHERE case_id=?", String.class, newCaseId)).containsOnly("SENT");
+    }
+
+    @Test
+    void expiredPrePauseClaimIsSuppressedEvenWhenResumeHappensBeforeRecovery() throws Exception {
+        long id = success(admin.post("/notifications/test", Map.of())).path("id").asLong();
+        db.update("UPDATE notification_outbox SET status='SENDING',attempts=1,claim_token=?,claimed_until=NOW()-INTERVAL '1 minute' WHERE id=?", UUID.randomUUID(), id);
+        assertStatus(admin.post("/notifications/config", Map.of("paused", true)), 200);
+        assertStatus(admin.post("/notifications/config", Map.of("paused", false)), 200);
+        assertThat(dispatcher.dispatchPending()).isZero();
+        assertDeliveryState(id, "SUPPRESSED", 1);
+        assertThat(decoded()).isEmpty();
+        assertStatus(admin.post("/notifications/" + id + "/retry", Map.of()), 409);
+    }
+
+    @Test
+    void inFlightFailureAfterPauseAndResumeCannotRequeueAnOldEvent() throws Exception {
+        long oldId = success(admin.post("/notifications/test", Map.of())).path("id").asLong();
+        SMTP.rejectMessages = true;
+        // Pause and resume while the real SMTP socket is awaiting its DATA response.
+        // Both changes commit before the dispatcher receives the transient rejection.
+        SMTP.beforeDataResponse = () -> {
+            notifications.setPaused(true, "testadmin");
+            notifications.setPaused(false, "testadmin");
+        };
+        assertThat(dispatcher.dispatchPending()).isZero();
+        assertDeliveryState(oldId, "SUPPRESSED", 1);
+        assertThat(SMTP.accepted).isEmpty();
+        SMTP.beforeDataResponse = null;
+        SMTP.rejectMessages = false;
+        assertThat(dispatcher.dispatchPending()).isZero();
+        assertStatus(admin.post("/notifications/" + oldId + "/retry", Map.of()), 409);
+        long newId = success(admin.post("/notifications/test", Map.of())).path("id").asLong();
+        assertThat(dispatcher.dispatchPending()).isEqualTo(1);
+        assertDeliveryState(newId, "SENT", 1);
+        assertDeliveryState(oldId, "SUPPRESSED", 1);
+        assertThat(decoded()).hasSize(1);
+    }
+
     private void assertDeliveryState(long id, String status, int attempts) {
         Map<String, Object> row = db.queryForMap("SELECT status,attempts,sent_at FROM notification_outbox WHERE id=?", id);
         assertThat(row.get("status")).isEqualTo(status);
@@ -205,6 +296,7 @@ class SmtpNotificationIT extends ApiIntegrationSupport {
         private final ExecutorService workers = Executors.newCachedThreadPool(r -> { Thread t = new Thread(r, "local-smtp-test"); t.setDaemon(true); return t; });
         private final List<Envelope> accepted = new CopyOnWriteArrayList<>();
         private volatile boolean rejectMessages;
+        private volatile Runnable beforeDataResponse;
         private volatile boolean closed;
 
         private SmtpSink() throws IOException {
@@ -236,6 +328,8 @@ class SmtpNotificationIT extends ApiIntegrationSupport {
                         reply(writer, "354 End with dot on a line");
                         StringBuilder data = new StringBuilder();
                         while ((line = reader.readLine()) != null && !line.equals(".")) data.append(line.startsWith("..") ? line.substring(1) : line).append("\r\n");
+                        Runnable hook = beforeDataResponse;
+                        if (hook != null) hook.run();
                         if (rejectMessages) reply(writer, "451 temporary rejection for retry test");
                         else { accepted.add(new Envelope(sender, List.copyOf(recipients), data.toString().getBytes(StandardCharsets.UTF_8))); reply(writer, "250 message accepted"); }
                     } else if (upper.equals("QUIT")) { reply(writer, "221 bye"); return; }

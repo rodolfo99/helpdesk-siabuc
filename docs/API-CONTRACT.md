@@ -74,7 +74,7 @@ Los ADMIN conservan el ajuste directo del presupuesto institucional como operaci
 ## Notificaciones
 
 - GET `/notifications` ADMIN: últimos 500 avisos sin cuerpo del mensaje ni secretos. Campos `{id,caseId,paymentId,eventType,recipient,subject,status,attempts,lastError,createdAt,sentAt}`.
-- GET `/notifications/config` ADMIN: `{enabled,host,port,username,fromAddress,fromName,security,auth,replyTo,pendingCount,failedCount}`. Nunca incluye contraseña SMTP.
+- GET `/notifications/config` ADMIN: `{enabled,configuredEnabled,paused,host,port,username,fromAddress,fromName,security,auth,replyTo,pendingCount,failedCount,suppressedCount}`. Nunca incluye contraseña SMTP.
 - POST `/notifications/test` ADMIN: `{}`; HTTP 201, encola prueba exclusivamente al correo de la propia cuenta. Rechaza destinatarios o contenido arbitrarios.
 - POST `/notifications/{id}/retry` ADMIN: `{}`; sólo FAILED/SKIPPED. No permite reenviar SENT. Conserva el destinatario original; si faltaba su email, consulta el contacto actual de esa misma entidad. No permite elegir otro destinatario. Avisos sin responsable identificado requieren asignación para eventos futuros.
 
@@ -82,9 +82,13 @@ Eventos `CREATE_CASE`, `UPDATE_CASE`, `CHANGE_CASE_STATUS`, `CREATE_ENTRY`, `VOI
 
 Los mensajes públicos se envían por separado al correo institucional y al ADMIN asignado; direcciones idénticas se deduplican por evento. Los pagos se notifican a la institución y al ADMIN/BILLING autor del pago. Las notas del pago forman parte del aviso. Las direcciones se capturan al registrar el evento: cambiarlas no modifica mensajes ya pendientes. Las operaciones fallidas no dejan mensajes en la cola.
 
-Estados `PENDING`, `SENDING`, `SENT`, `FAILED`, `SKIPPED`. Correo deshabilitado conserva PENDING; dirección ausente o no válida deja SKIPPED visible. SENT significa aceptación por el servidor SMTP, no confirma entrega final ni lectura. Los reintentos automáticos son limitados (máximo cinco), con espera creciente y recuperación de bloqueos vencidos. La entrega es al menos una vez: una caída entre aceptación SMTP y confirmación en base puede duplicar un aviso.
+Estados `PENDING`, `SENDING`, `SENT`, `FAILED`, `SKIPPED`, `SUPPRESSED`. SUPPRESSED es terminal y no permite reintento. MAIL_ENABLED=false conserva PENDING si no hay pausa administrativa; esa pausa utiliza SUPPRESSED. Fuera de la pausa, una dirección ausente o no válida deja SKIPPED visible. SENT significa aceptación por el servidor SMTP, no confirma entrega final ni lectura. Los reintentos automáticos son limitados (máximo cinco), con espera creciente y recuperación de bloqueos vencidos. La entrega es al menos una vez: una caída entre aceptación SMTP y confirmación en base puede duplicar un aviso.
 
 Configuración, proveedores, puertos, TLS, pruebas locales y puesta en operación en [CORREO.md](CORREO.md). Migración sin borrar datos en [MIGRACION-1.1.md](MIGRACION-1.1.md).
 
 
 La versión 1.2 conserva este contrato y añade SMTP Postfix interno predeterminado en nuevas instalaciones. Su configuración de relay no se expone por la API; se administra con `--smtp-interno`. `/notifications/config` describe el primer salto de Spring (`smtp:25`), no el relay posterior de Postfix. Consulte [SMTP-INTERNO.md](SMTP-INTERNO.md).
+
+## Control de envío añadido en 1.3.1
+
+POST `/notifications/config` ADMIN: cuerpo exacto `{"paused":true}` para pausar o `{"paused":false}` para reactivar. Exige sesión y CSRF, rechaza campos extra y valores ausentes, null o distintos de boolean. Devuelve Configuration; `enabled` es el estado efectivo, `configuredEnabled` refleja MAIL_ENABLED al arranque y `paused` el estado persistido en PostgreSQL. Repetir el mismo valor no añade auditoría duplicada. Una pausa/reanudación real registra PAUSE_NOTIFICATIONS/RESUME_NOTIFICATIONS. El control no puede superar MAIL_ENABLED=false. Al pausar se suprimen PENDING/FAILED/SKIPPED existentes y los avisos nuevos se guardan SUPPRESSED. Al reactivar sólo se envían eventos nuevos; pruebas/reintentos se bloquean durante la pausa y ningún SUPPRESSED puede reintentarse. Los ya reclamados pueden terminar; véase [DESACTIVAR-CORREO.md](DESACTIVAR-CORREO.md).

@@ -16,7 +16,7 @@ En desarrollo, el servidor Angular ocupa el lugar de Nginx y su proxy toma `SERV
 
 Una **institución** contiene contacto, estado, responsable predeterminado y dos presupuestos. Un **usuario** tiene correo y pertenece a una institución cuando su rol es `USER`; `ADMIN` y `BILLING` no tienen institución. Cada **caso** pertenece a una institución y contiene título, descripción, canal inicial, estado, responsable asignado, autor y fechas. Cada **entrada** pertenece a un caso y describe una atención o comentario. Un **pago** contiene importe, referencia, institución, acreditación y trazabilidad de anulación. Una **notificación** conserva evento, destinatario individual, contenido y estado de entrega. Un **evento de auditoría** identifica actor, acción, entidad, detalle y fecha.
 
-El esquema concreto y sus restricciones se encuentran en `backend/src/main/resources/db/migration/`: V1 original, V2 de cobranza/contactos/asignaciones y V3 de notificaciones. No cambie una migración que ya se haya aplicado a una base existente; añada la siguiente migración versionada. Consulte [MIGRACION-1.1.md](MIGRACION-1.1.md).
+El esquema concreto y sus restricciones se encuentran en `backend/src/main/resources/db/migration/`: V1 original, V2 de cobranza/contactos/asignaciones y V3 de notificaciones y V4 de control persistente del envío. No cambie una migración que ya se haya aplicado a una base existente; añada la siguiente migración versionada. Consulte [MIGRACION-1.1.md](MIGRACION-1.1.md).
 
 ## Minutos e independencia de canales
 
@@ -70,3 +70,7 @@ Documentación primaria revisada durante la preparación de esta entrega:
 - [Bloqueos explícitos y bloqueos de filas en PostgreSQL 17](https://www.postgresql.org/docs/17/explicit-locking.html).
 
 Estas referencias sustentan las decisiones de compatibilidad y concurrencia. Los resultados de ejecución y sus límites se documentan por separado en [VALIDACION.md](VALIDACION.md).
+
+## Pausa administrativa del envío
+
+La fila única de notification_settings conserva paused y suppressed_through_id. El envío requiere MAIL_ENABLED=true y paused=false. La misma fila se bloquea para cambiar el control, encolar eventos y reclamar avisos; fija una frontera de desactivación. Los PENDING/FAILED/SKIPPED anteriores pasan a SUPPRESSED y los avisos nuevos durante la pausa nacen SUPPRESSED, terminal y sin reintento. Los SENDING en curso pueden completar, pero un fallo o lease vencido anterior a la frontera no vuelve a PENDING. No se mantiene el bloqueo durante SMTP ni se retiran mensajes de Postfix. El cambio se audita y se incluye en respaldos de PostgreSQL.

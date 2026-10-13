@@ -1,5 +1,6 @@
 package mx.siabuc.helpdesk;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,12 @@ public class NotificationController {
     }
     @GetMapping public List<NotificationService.Notification> list() { admin(); return notifications.notifications(); }
     @GetMapping("/config") public NotificationService.Configuration config() { admin(); return notifications.configuration(); }
+    @PostMapping("/config") public NotificationService.Configuration config(@RequestBody JsonNode input) {
+        Models.User actor = admin();
+        if (input == null || !input.isObject() || input.size() != 1 || !input.path("paused").isBoolean())
+            throw ApiException.bad("Envíe únicamente el campo paused con un valor booleano: true o false.");
+        return notifications.setPaused(input.get("paused").booleanValue(), actor.username());
+    }
     @PostMapping("/{id}/retry") public NotificationService.Notification retry(@PathVariable long id,
             @RequestBody(required = false) Map<String,Object> input) {
         Models.User actor = admin(); requireEmpty(input); return notifications.retry(id, actor.username());

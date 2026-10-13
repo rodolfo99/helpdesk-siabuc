@@ -123,3 +123,7 @@ Este recorrido es una guía de uso y de aceptación manual. Los resultados de co
 4. El cliente inicia sesión en el mismo portal y abre **Casos** para consultar los casos abiertos o cerrados y su historial público, fechas y consumos. Puede cambiar su contraseña desde **Mi cuenta**.
 
 Puede crear varias cuentas personales por institución; todas consultan el historial institucional. Spring restringe la consulta a la institución asociada incluso si alguien modifica el identificador del caso en una petición. Las notas internas quedan reservadas a administración. El agotamiento del saldo impide nuevas atenciones, pero no impide consultar el historial de una institución activa.
+
+## Desactivar o reactivar los correos (administración)
+
+En **Correo y notificaciones**, un administrador puede pausar o reactivar el envío sin reiniciar. La selección permanece en PostgreSQL y queda auditada. Al desactivar, los avisos pendientes y recuperables pasan a «No enviado por desactivación». Durante la pausa, casos, pagos e historial siguen funcionando y los avisos nuevos se guardan con ese estado. Al reactivar sólo se notifican eventos nuevos, sin enviar los anteriores ni permitir reintentarlos. Si MAIL_ENABLED=false, debe habilitarse primero en el servidor. Los usuarios institucionales y de cobranza no pueden cambiar esta opción. Los avisos ya en curso o aceptados por Postfix pueden terminar de entregarse. Consulte [Desactivar correo](DESACTIVAR-CORREO.md).
