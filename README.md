@@ -1,4 +1,4 @@
-# SIABUC Helpdesk 1.4.0
+# SIABUC Helpdesk 1.5.0
 
 Sistema de atención técnica con servidor **Spring Boot 3.5.16 / Java 17**, cliente **Angular 21.2.25** y base de datos **PostgreSQL 17**. Conserva instituciones, usuarios, casos, pagos, actualizaciones descriptivas y auditoría. El tiempo por correo y por escritorio remoto se administra en **dos bolsas independientes de minutos enteros**.
 
@@ -6,7 +6,7 @@ Para configurar Gmail institucional `@ucol.mx` como salida de Postfix, use `bash
 
 **Windows:** incluye scripts `.bat` para Docker Desktop con contenedores Linux. Consulte [Instalación en Windows](docs/WINDOWS.md). No necesita instalar Java, Maven ni Node en Windows.
 
-Consulte las [novedades e instalación de 1.4](docs/VERSION-1.4.md), el [manual de las nuevas funciones](docs/HELPDESK-1.4.md) y el [control administrativo de envío de correo](docs/DESACTIVAR-CORREO.md).
+Consulte las [novedades e instalación de 1.5](docs/VERSION-1.5.md), la guía de [pólizas y cobranza](docs/POLIZAS-COBRANZA.md), el [manual de las funciones de soporte](docs/HELPDESK-1.4.md) y el [control administrativo de envío de correo](docs/DESACTIVAR-CORREO.md).
 
 ## Funciones incluidas
 
@@ -34,6 +34,9 @@ Consulte las [novedades e instalación de 1.4](docs/VERSION-1.4.md), el [manual 
 - Cronómetro persistente: iniciar, pausar, finalizar y confirmar minutos antes de descontarlos.
 - Agenda de sesiones remotas: propuesta administrativa, confirmación del cliente y control de horarios ocupados.
 - Reportes por institución, administrativo, canal y periodo, con exportación real a Excel y PDF.
+- Pólizas por institución con vigencia, importe en MXN y horas contratadas; historial y seguimiento de parcialidades para Cobranza y Administración.
+- Pagos vinculados a la acreditación de minutos por canal, con límites de póliza, control de duplicados y reportes financieros por institución, método y periodo.
+- Comprobantes PDF/PNG/JPEG adjuntos a cada pago, protegidos para Cobranza y Administración e incluidos en respaldos.
 
 **Alcance:** registra la atención por correo y las sesiones remotas y envía avisos cuando se configura SMTP. No lee correos entrantes ni abre conexiones de escritorio remoto. Los minutos se confirman manualmente o con ayuda del cronómetro. Los pagos registran dinero recibido y acreditan minutos: no procesan cargos bancarios ni emiten facturas fiscales. Es una aplicación independiente de SIABUC.
 
@@ -167,7 +170,7 @@ Requiere JDK 17 o posterior, Maven 3.9, Node.js 24 LTS, npm, Python 3.10 y Docke
 
 `compilar.sh` ejecuta `mvn package`, `npm ci` y `npm run build`. Produce:
 
-- `backend/target/siabuc-helpdesk-1.4.0.jar`
+- `backend/target/siabuc-helpdesk-1.5.0.jar`
 - `frontend/dist/helpdesk/browser/`
 
 `iniciar-dev.sh` inicia PostgreSQL y Postfix con Docker, compila Spring, instala las dependencias de Angular y ejecuta Spring y `ng serve` en una terminal. Lee los mismos puertos y contraseñas de `.env`; ambos procesos escuchan en `127.0.0.1`. Los registros se guardan en `.runtime/`. **Ctrl+C** detiene Spring y Angular; después `./detener.sh` detiene PostgreSQL y Postfix. No ejecute el modo Docker completo y el modo de desarrollo al mismo tiempo sobre los mismos puertos.
@@ -225,6 +228,10 @@ La restauración detiene Spring, Angular y Postfix de Docker, valida el SHA-256 
 - [Avisos internos y saldos](docs/AVISOS-INTERNOS.md): campana, pendientes y umbrales.
 - [Reportes](docs/REPORTES.md): filtros, Excel, PDF y zona horaria.
 - [Actualizar a 1.4](docs/VERSION-1.4.md): pasos para Windows y Linux, migraciones y respaldo.
+- [Pólizas y cobranza](docs/POLIZAS-COBRANZA.md): contratación, abonos, acreditación de horas y permisos BILLING/ADMIN.
+- [Reportes de cobranza](docs/REPORTES-COBRANZA.md): ingresos, anulaciones, saldos de pólizas, Excel y PDF.
+- [Comprobantes de pago](docs/COMPROBANTES-PAGO.md): carga, descarga, historial y permisos de archivos financieros.
+- [Actualizar a 1.5](docs/VERSION-1.5.md): conservar pagos, horas y configuración.
 - [Operación y compilación](docs/OPERACION.md): instalación nativa, Docker, red, respaldo y resolución de problemas.
 - [Respaldo y restauración](docs/RESPALDO-RESTAURACION.md): `--nombre-respaldo`, ejemplos, recuperación paso a paso y alcance de las copias.
 - [Arquitectura y modelo de datos](docs/ARQUITECTURA.md): integridad, concurrencia, sesiones y límites.

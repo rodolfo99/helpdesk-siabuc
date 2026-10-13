@@ -99,3 +99,78 @@ Las tres suites comprueban respectivamente **16, 17 y 10 escenarios** de interfa
 `E2E_REPORT_DIR` permite guardar siete capturas de la suite 1.4: ficha/SLA, adjuntos, cronómetro, agenda, reportes, configuración y campana móvil. Las capturas no forman parte del ZIP del proyecto. También admite `E2E_PLAYWRIGHT_PATH`, `E2E_CHROMIUM_PATH` y `E2E_CHROMIUM_ARGS`.
 
 **Alcance de la evidencia:** las simulaciones comprueban navegación, formularios, peticiones y estados de pantalla. No demuestran permisos del servidor, contenido binario válido de Excel/PDF, validación real de archivos, exactitud del reloj del servidor, concurrencia ni entrega de correo. Esas comprobaciones corresponden a las pruebas del servidor con base de datos. La prueba de cronómetro verifica que la interfaz no solicita el descuento hasta confirmar; no sustituye la comprobación transaccional e idempotente del servidor. No se conecta con un SMTP ni se envían mensajes reales.
+
+## Pólizas, cobranza y soporte 1.5 con servidor real
+
+`billing-v15.e2e.mjs` usa la interfaz Angular y su API Spring real, sin interceptores ni respuestas simuladas. Requiere una instalación **1.5.0 o posterior**, migraciones aplicadas, una base **desechable** y `MAIL_ENABLED=false`. Esta última condición se verifica leyendo la configuración efectiva de arranque, aunque el correo ya estuviera pausado.
+
+La suite crea cuentas de Cobranza y cliente, instituciones y registros con nombres únicos. Activa la pausa administrativa de correo en esa instalación de pruebas y conserva los registros para inspección. **No debe ejecutarse en producción:** la variable `E2E_DISPOSABLE_DATABASE=true` confirma expresamente el uso de una base de pruebas, pero no sustituye esa separación. El administrador proporcionado se utiliza para preparar cuentas y atender el caso; su contraseña no se cambia ni se imprime.
+
+Con Docker Compose u otra instalación de pruebas ya iniciada, ejecutar en Linux:
+
+```bash
+cd tests/e2e
+npm ci
+npx playwright install chromium
+export E2E_BASE_URL=http://localhost:4200
+export E2E_DISPOSABLE_DATABASE=true
+read -r -p 'Usuario administrador de pruebas: ' E2E_ADMIN_USER
+export E2E_ADMIN_USER
+read -r -s -p 'Contraseña de pruebas: ' E2E_ADMIN_PASSWORD
+export E2E_ADMIN_PASSWORD
+node billing-v15.e2e.mjs
+unset E2E_ADMIN_PASSWORD
+```
+
+En PowerShell, después de instalar las dependencias y Chromium:
+
+```powershell
+$env:E2E_BASE_URL = 'http://localhost:4200'
+$env:E2E_DISPOSABLE_DATABASE = 'true'
+$env:E2E_ADMIN_USER = Read-Host 'Usuario administrador de pruebas'
+$qaPassword = Read-Host 'Contraseña de pruebas' -AsSecureString
+$env:E2E_ADMIN_PASSWORD = [System.Net.NetworkCredential]::new('', $qaPassword).Password
+try { node billing-v15.e2e.mjs }
+finally { Remove-Item Env:E2E_ADMIN_PASSWORD; Remove-Variable qaPassword }
+```
+
+Ajusta `E2E_BASE_URL` al puerto del cliente. Debe reenviar `/api` al servidor probado. El script utiliza sesiones, cookies y protección CSRF reales. Admite las variables de navegador y `E2E_REPORT_DIR` descritas arriba.
+
+Recorrido cubierto:
+
+- Alta de póliza en MXN sin crédito automático de minutos.
+- Abono sólo monetario, parcialidad con minutos explícitos, liquidación y liberación posterior de horas con importe cero.
+- Saldo antes/después, historial de contrato y pagos, reintento idempotente, rechazo de sobrepago y de moneda distinta de MXN en nuevos registros.
+- Comprobante PDF sintético adjunto al pago, descarga íntegra y separación de permisos respecto al cliente institucional.
+- Reporte financiero de la institución, importes separados por moneda y descargas reales XLSX/PDF. Los binarios deben tener firmas de archivo válidas; las pruebas Java verifican su estructura y contenido detallado.
+- Cliente sin menús ni acceso API financiero, apertura de caso con categoría/prioridad/ficha, archivo de diagnóstico y aislamiento institucional.
+- Administrativo toma el caso, recupera un cronómetro pausado y confirma sus minutos; no hay descuento antes de confirmar.
+- Propuesta y confirmación de sesión remota, historial con regreso al listado, alerta de saldo y campana interna con correo pausado.
+
+Cuando `E2E_REPORT_DIR` está definida se guarda `billing-v15-results.json`, capturas, archivos descargados y una captura ante fallo. Sólo deben contener datos sintéticos de pruebas. No se incluyen automáticamente en el ZIP distribuido.
+
+Estas pruebas pueden ejecutarse contra PostgreSQL de una instalación Docker de pruebas. La ejecución local de desarrollo mediante PGlite usa una base en memoria con el SQL exacto de las migraciones; debe identificarse como tal en los resultados y **no demuestra ejecución nativa de PostgreSQL 17 ni de Docker**. La suite no entrega correos, no cobra dinero ni contacta bancos. Las pruebas de servidor siguen siendo necesarias para concurrencia, reversión transaccional y validación exhaustiva de archivos.
+
+## Pólizas y cobranza 1.5 con API simulada
+
+`billing-v15.ui.mjs` comprueba **18 escenarios** sobre el cliente Angular compilado. Levanta un servidor estático temporal en `127.0.0.1` e intercepta `/api` con registros sintéticos; no requiere Spring, PostgreSQL ni cuentas reales.
+
+Desde la raíz del proyecto:
+
+```bash
+cd frontend
+npm ci
+npm run build
+cd ../tests/e2e
+npm ci
+npx playwright install chromium
+node billing-v15.ui.mjs
+```
+
+Puede ejecutarse también en Windows desde PowerShell con los mismos comandos. Admite `E2E_PLAYWRIGHT_PATH`, `E2E_CHROMIUM_PATH`, `E2E_CHROMIUM_ARGS` y `E2E_REPORT_DIR`. Esta última variable guarda cinco capturas: póliza, pago acreditado, reporte de cobranza, formulario móvil y comprobante de pago.
+
+La suite verifica creación de pólizas sin acreditar minutos, edición y cancelación según su historial, pagos vinculados, parcialidades sin minutos, liberación de horas ya pagadas sin un nuevo cobro, límites de póliza, saldo institucional antes/después y fechas civiles sin desfase por zona horaria. También prueba protección contra doble clic, identificador de reintento estable, métodos de pago, MXN en nuevos cobros, conservación de registros históricos en otras monedas, filtros y descargas del último reporte consultado, permisos visibles por rol y el formulario móvil a 390 píxeles.
+
+Los comprobantes se adjuntan y descargan tanto en pagos vigentes como anulados. La prueba comprueba que el archivo utiliza el mismo pago y que no se envía otra petición de cobro ni se vuelven a acreditar horas. Las simulaciones de las suites anteriores incluyen ahora `/policies` para conservar sus comprobaciones al cargar el resumen de Cobranza.
+
+**Límites:** los permisos comprobados aquí son los de la interfaz; el servidor necesita sus propias pruebas de autorización. Los archivos de descarga simulados no validan el contenido real de Excel/PDF, la persistencia de adjuntos, el control de concurrencia ni las transacciones. Esta suite no entrega correo, cobra dinero ni contacta bancos. Para esos comportamientos del servidor, ejecutar las pruebas de integración y `billing-v15.e2e.mjs` contra una base desechable.

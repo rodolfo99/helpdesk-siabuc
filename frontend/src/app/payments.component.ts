@@ -1,42 +1,53 @@
-import {Component,OnInit,inject,signal} from '@angular/core';
+import {Component,OnInit,effect,inject,input,signal,untracked} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {ApiService,PageState} from './api.service';
-import {Institution,Payment,PaymentMethod} from './models';
+import {Institution,Payment,PaymentMethod,PaymentOpenRequest,SupportPolicy} from './models';
 import {formatTime,toMinutes} from './time';
-import {money,parseAmount,newRequestId} from './payment-utils';
-@Component({selector:'app-payments',standalone:true,imports:[CommonModule,FormsModule],templateUrl:'./payments.component.html'})
+import {PaymentAttachmentsComponent} from './payment-attachments.component';
+import {money,parseAmount,newRequestId,amountTotals,PAYMENT_METHODS,paymentMethodName,calendarDate} from './payment-utils';
+@Component({selector:'app-payments',standalone:true,imports:[CommonModule,FormsModule,PaymentAttachmentsComponent],templateUrl:'./payments.component.html',styles:[`
+ .policy-payment-summary{padding:18px;border:1px solid #cbded9;background:#f4faf7;border-radius:10px;margin:18px 0}.policy-payment-summary p{margin:6px 0;font-size:12px}.payment-confirmation{padding:18px;border:1px solid #b3d1c8;border-radius:10px;background:#eef7f3;margin:18px 0}.payment-confirmation h3{color:#216a5a}.payment-confirmation p{margin:6px 0;font-size:12px}.payment-filters{display:flex;gap:15px;flex-wrap:wrap;padding:0 24px 20px}.payment-filters label{min-width:160px;flex:1}.payment-totals{display:flex;gap:18px;flex-wrap:wrap;padding:0 24px 18px;font-size:12px}.payment-totals strong{display:block;margin-top:5px}.receipt-change{margin:18px 0;padding:15px;border:1px solid #c6ded7;background:#f3faf6;border-radius:8px}.receipt-change p{margin:5px 0;font-size:12px}.form-actions .btn{white-space:normal}
+`]})
 export class PaymentsComponent extends PageState implements OnInit {
-  readonly api=inject(ApiService);readonly payments=signal<Payment[]>([]);readonly institutions=signal<Institution[]>([]);readonly creating=signal(false);readonly voidPayment=signal<Payment|null>(null);readonly selected=signal<Payment|null>(null);readonly time=formatTime;readonly money=money;
-  search='';institutionFilter:number|null=null;dateFrom='';dateTo='';statusFilter='all';reason='';form=this.blank();emailHours:number|null=0;emailMinutes:number|null=0;remoteHours:number|null=0;remoteMinutes:number|null=0;
-  private requestId=newRequestId();private submittedFingerprint:string|null=null;
-  blank(){const now=new Date();const day=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;return {institutionId:null as number|null,reference:'',amount:'',currency:'MXN',paidOn:day,method:'TRANSFER' as PaymentMethod,notes:''};}
-  ngOnInit(){this.load();}isAdmin(){return this.api.user()?.role==='ADMIN';}
-  load(){void this.perform(()=>this.refresh());}
-  async refresh(){const [payments,institutions]=await Promise.all([this.api.get<Payment[]>('/payments'),this.api.get<Institution[]>('/institutions')]);this.payments.set(payments);this.institutions.set(institutions);}
-  activeInstitutions(){return this.institutions().filter(i=>i.active);}
-  institution(id:number|null){return this.institutions().find(i=>i.id===id);}
-  filtered(){const q=this.search.trim().toLocaleLowerCase();return this.payments().filter(p=>(!this.institutionFilter||p.institutionId===this.institutionFilter)&&(!this.dateFrom||p.paidOn>=this.dateFrom)&&(!this.dateTo||p.paidOn<=this.dateTo)&&(this.statusFilter==='all'||p.voided===(this.statusFilter==='void'))&&`${p.id} ${p.reference} ${p.institutionName} ${p.notes} ${p.createdBy}`.toLocaleLowerCase().includes(q)).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));}
-  methodName(method:PaymentMethod){return {TRANSFER:'Transferencia',CASH:'Efectivo',CARD:'Tarjeta',OTHER:'Otro'}[method];}
-  creditedTotal(channel:'email'|'remote'){return this.payments().filter(p=>!p.voided).reduce((total,p)=>total+(channel==='email'?p.emailMinutes:p.remoteMinutes),0);}
-  create(){this.form=this.blank();this.emailHours=this.emailMinutes=this.remoteHours=this.remoteMinutes=0;this.requestId=newRequestId();this.submittedFingerprint=null;this.creating.set(true);this.selected.set(null);this.error.set('');this.success.set('');}
-  previewMinutes(channel:'email'|'remote'){try{return channel==='email'?toMinutes(this.emailHours,this.emailMinutes):toMinutes(this.remoteHours,this.remoteMinutes);}catch{return 0;}}
-  save(){void this.perform(async()=>{
-    if(!this.form.institutionId)throw new Error('Selecciona una institución activa.');
-    const institution=this.institution(this.form.institutionId);if(!institution?.active)throw new Error('La institución debe estar activa para acreditar soporte.');
-    const emailMinutes=toMinutes(this.emailHours,this.emailMinutes),remoteMinutes=toMinutes(this.remoteHours,this.remoteMinutes);
-    if(emailMinutes+remoteMinutes<=0)throw new Error('El pago debe acreditar al menos un minuto de correo o de escritorio remoto.');
-    if(emailMinutes+institution.emailAllocatedMinutes>1000000000||remoteMinutes+institution.remoteAllocatedMinutes>1000000000)throw new Error('La acreditación excedería el límite de tiempo asignado de la institución.');
-    const body={institutionId:this.form.institutionId,reference:this.form.reference.trim(),amount:parseAmount(this.form.amount),currency:this.form.currency.trim().toUpperCase(),paidOn:this.form.paidOn,method:this.form.method,emailMinutes,remoteMinutes,notes:this.form.notes.trim()};
-    if(!body.reference||!body.notes)throw new Error('Completa la referencia y la descripción del pago.');
-    if(!/^[A-Z]{3}$/.test(body.currency))throw new Error('La moneda debe ser un código de tres letras, por ejemplo MXN.');
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(body.paidOn))throw new Error('Selecciona la fecha del pago.');
-    const fingerprint=JSON.stringify(body);if(this.submittedFingerprint!==null&&this.submittedFingerprint!==fingerprint)this.requestId=newRequestId();this.submittedFingerprint=fingerprint;
-    const result=await this.api.post<Payment>('/payments',{...body,requestId:this.requestId});
-    this.creating.set(false);this.selected.set(result);this.requestId=newRequestId();this.submittedFingerprint=null;
-    await this.refresh();this.success.set('Pago registrado y tiempo acreditado. Los avisos de correo se procesarán en la cola de notificaciones.');
-  });}
-  canVoid(p:Payment){const i=this.institution(p.institutionId);return !!i&&!p.voided&&i.emailRemainingMinutes>=p.emailMinutes&&i.remoteRemainingMinutes>=p.remoteMinutes;}
-  requestVoid(p:Payment){this.reason='';this.error.set('');this.voidPayment.set(p);}
-  cancelPayment(){void this.perform(async()=>{const payment=this.voidPayment();if(!payment)return;if(!this.reason.trim())throw new Error('Escribe el motivo de la anulación.');if(!this.canVoid(payment))throw new Error('No hay saldo suficiente en ambos canales para retirar todo el tiempo acreditado por este pago.');const result=await this.api.post<Payment>('/payments/'+payment.id+'/void',{reason:this.reason.trim()});this.voidPayment.set(null);this.selected.set(result);await this.refresh();this.success.set('Pago anulado y acreditación retirada. El registro permanece en el historial.');});}
+ readonly api=inject(ApiService);readonly payments=signal<Payment[]>([]);readonly institutions=signal<Institution[]>([]);readonly policies=signal<SupportPolicy[]>([]);readonly creating=signal(false);readonly voidPayment=signal<Payment|null>(null);readonly selected=signal<Payment|null>(null);readonly time=formatTime;readonly money=money;readonly dateOnly=calendarDate;readonly methods=PAYMENT_METHODS;readonly methodName=paymentMethodName;readonly openRequest=input<PaymentOpenRequest|null>(null);
+ readonly receiptBefore=signal<{email:number;remote:number}|null>(null);private readonly ready=signal(false);private readonly requestedPolicy=signal<number|null>(null);
+ search='';institutionFilter:number|null=null;policyFilter:number|null=null;methodFilter='all';currencyFilter='all';dateFrom='';dateTo='';statusFilter='all';reason='';form=this.blank();emailHours:number|null=0;emailMinutes:number|null=0;remoteHours:number|null=0;remoteMinutes:number|null=0;
+ private requestId=newRequestId();private submittedFingerprint:string|null=null;
+ blank(){const now=new Date();const day=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;return {institutionId:null as number|null,policyId:null as number|null,reference:'',amount:'',currency:'MXN',paidOn:day,method:'TRANSFER' as PaymentMethod,notes:''};}
+ constructor(){super();effect(()=>{const request=this.openRequest();if(request&&Number.isSafeInteger(request.policyId)&&request.policyId>0)untracked(()=>this.requestedPolicy.set(request.policyId));});effect(()=>{const id=this.requestedPolicy(),ready=this.ready(),busy=this.busy();if(id!==null&&ready&&!busy)untracked(()=>{this.requestedPolicy.set(null);const p=this.policies().find(p=>p.id===id);if(!p||p.status!=='ACTIVE'||!this.institution(p.institutionId)?.active){this.error.set('La póliza no está disponible para registrar pagos.');return;}this.create();this.form.institutionId=p.institutionId;this.form.policyId=p.id;this.onPolicyChange();});});}
+ ngOnInit(){this.load();}isAdmin(){return this.api.user()?.role==='ADMIN';}
+ load(){void this.perform(async()=>{await this.refresh();this.ready.set(true);});}
+ async refresh(){const [payments,institutions,policies]=await Promise.all([this.api.get<Payment[]>('/payments'),this.api.get<Institution[]>('/institutions'),this.api.get<SupportPolicy[]>('/policies')]);this.payments.set(payments);this.institutions.set(institutions);this.policies.set(policies);}
+ activeInstitutions(){return this.institutions().filter(i=>i.active);}
+ institution(id:number|null){return this.institutions().find(i=>i.id===id);}
+ availablePolicies(){return this.policies().filter(p=>p.status==='ACTIVE'&&p.institutionId===this.form.institutionId&&(Number(p.remainingAmount)>0||p.remainingEmailMinutes>0||p.remainingRemoteMinutes>0));}
+ chosenPolicy(){return this.policies().find(p=>p.id===this.form.policyId&&p.institutionId===this.form.institutionId);}
+ onInstitutionChange(){this.form.policyId=null;}
+ onPolicyChange(){const p=this.chosenPolicy();if(p&&!this.form.amount.trim())this.form.amount=Number(p.remainingAmount).toFixed(2);}
+ usePolicyMinutes(){const p=this.chosenPolicy();if(!p||this.busy())return;this.emailHours=Math.floor(p.remainingEmailMinutes/60);this.emailMinutes=p.remainingEmailMinutes%60;this.remoteHours=Math.floor(p.remainingRemoteMinutes/60);this.remoteMinutes=p.remainingRemoteMinutes%60;}
+ currencies(){return [...new Set(this.payments().map(p=>p.currency))].sort();}
+ filtered(){const q=this.search.trim().toLocaleLowerCase();return this.payments().filter(p=>(!this.institutionFilter||p.institutionId===this.institutionFilter)&&(!this.policyFilter||p.policyId===this.policyFilter)&&(this.methodFilter==='all'||p.method===this.methodFilter)&&(this.currencyFilter==='all'||p.currency===this.currencyFilter)&&(!this.dateFrom||p.paidOn>=this.dateFrom)&&(!this.dateTo||p.paidOn<=this.dateTo)&&(this.statusFilter==='all'||p.voided===(this.statusFilter==='void'))&&`${p.id} ${p.reference} ${p.institutionName} ${p.notes} ${p.createdBy} ${p.policyFolio??''}`.toLocaleLowerCase().includes(q)).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));}
+ totals(){return amountTotals(this.filtered());}
+ creditedTotal(channel:'email'|'remote'){return this.payments().filter(p=>!p.voided).reduce((total,p)=>total+(channel==='email'?p.emailMinutes:p.remoteMinutes),0);}
+ create(){if(this.busy())return;this.form=this.blank();this.emailHours=this.emailMinutes=this.remoteHours=this.remoteMinutes=0;this.requestId=newRequestId();this.submittedFingerprint=null;this.creating.set(true);this.selected.set(null);this.receiptBefore.set(null);this.error.set('');this.success.set('');}
+ previewMinutes(channel:'email'|'remote'){try{return channel==='email'?toMinutes(this.emailHours,this.emailMinutes):toMinutes(this.remoteHours,this.remoteMinutes);}catch{return 0;}}
+ zeroAmount(){return this.form.amount.trim()!==''&&Number(this.form.amount)===0;}
+ hasMinutes(){return this.previewMinutes('email')+this.previewMinutes('remote')>0;}
+ saveLabel(){return this.zeroAmount()?'Registrar acreditación de horas':this.hasMinutes()?'Registrar pago y acreditar horas':'Registrar parcialidad';}
+ selectPayment(p:Payment){this.receiptBefore.set(null);this.selected.set(p);}
+ save(){void this.perform(async()=>{
+  if(!this.form.institutionId)throw new Error('Selecciona una institución activa.');const institution=this.institution(this.form.institutionId);if(!institution?.active)throw new Error('La institución debe estar activa para acreditar soporte.');
+  const emailMinutes=toMinutes(this.emailHours,this.emailMinutes),remoteMinutes=toMinutes(this.remoteHours,this.remoteMinutes),amount=parseAmount(this.form.amount,this.form.policyId!==null);const policy=this.chosenPolicy();
+  if(this.form.policyId!==null){if(!policy||policy.status!=='ACTIVE')throw new Error('Selecciona una póliza activa de esta institución.');if(Math.round(amount*100)>Math.round(Number(policy.remainingAmount)*100))throw new Error('El importe supera el saldo pendiente de la póliza.');if(emailMinutes>policy.remainingEmailMinutes||remoteMinutes>policy.remainingRemoteMinutes)throw new Error('Las horas a acreditar superan los minutos pendientes de la póliza.');if(amount===0&&Number(policy.remainingAmount)!==0)throw new Error('Para acreditar horas sin un nuevo cobro, la póliza debe estar completamente pagada.');if(amount===0&&emailMinutes+remoteMinutes===0)throw new Error('El registro debe incluir un importe o minutos a acreditar.');}
+  else if(emailMinutes+remoteMinutes<=0)throw new Error('Un pago sin póliza debe acreditar al menos un minuto de soporte.');
+  if(emailMinutes+institution.emailAllocatedMinutes>1000000000||remoteMinutes+institution.remoteAllocatedMinutes>1000000000)throw new Error('La acreditación excedería el límite de tiempo asignado de la institución.');
+  const body={institutionId:this.form.institutionId,policyId:this.form.policyId,reference:this.form.reference.trim(),amount,currency:'MXN',paidOn:this.form.paidOn,method:this.form.method,emailMinutes,remoteMinutes,notes:this.form.notes.trim()};
+  if(!body.reference||!body.notes)throw new Error('Completa la referencia y la descripción del pago.');if(!/^\d{4}-\d{2}-\d{2}$/.test(body.paidOn))throw new Error('Selecciona la fecha del pago.');
+  const fingerprint=JSON.stringify(body);if(this.submittedFingerprint!==null&&this.submittedFingerprint!==fingerprint)this.requestId=newRequestId();this.submittedFingerprint=fingerprint;const before={email:institution.emailRemainingMinutes,remote:institution.remoteRemainingMinutes};
+  const result=await this.api.post<Payment>('/payments',{...body,requestId:this.requestId});this.creating.set(false);this.selected.set(result);this.receiptBefore.set(before);this.requestId=newRequestId();this.submittedFingerprint=null;await this.refresh();this.success.set(amount===0?'Acreditación registrada. Se agregaron las horas indicadas sin cobrar un nuevo importe. Ahora puedes adjuntar los comprobantes.':emailMinutes+remoteMinutes>0?'Pago registrado y horas acreditadas en la misma operación. Saldos e historial actualizados. Ahora puedes adjuntar los comprobantes.':'Parcialidad registrada. Este movimiento no acreditó horas de soporte. Ahora puedes adjuntar los comprobantes.');
+ });}
+ canVoid(p:Payment){const i=this.institution(p.institutionId);return !!i&&!p.voided&&i.emailRemainingMinutes>=p.emailMinutes&&i.remoteRemainingMinutes>=p.remoteMinutes;}
+ requestVoid(p:Payment){this.reason='';this.error.set('');this.voidPayment.set(p);}
+ cancelPayment(){void this.perform(async()=>{const payment=this.voidPayment();if(!payment)return;if(!this.reason.trim())throw new Error('Escribe el motivo de la anulación.');if(!this.canVoid(payment))throw new Error('No hay saldo suficiente en ambos canales para retirar todo el tiempo acreditado por este pago.');const result=await this.api.post<Payment>('/payments/'+payment.id+'/void',{reason:this.reason.trim()});this.voidPayment.set(null);this.selectPayment(result);await this.refresh();this.success.set('Pago anulado y acreditación retirada. El registro permanece en el historial.');});}
 }

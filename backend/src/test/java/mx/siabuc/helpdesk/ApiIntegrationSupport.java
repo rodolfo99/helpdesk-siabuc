@@ -6,6 +6,13 @@ import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpMethod;
@@ -38,11 +45,36 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
         "server.servlet.session.cookie.secure=false", "app.reporting-time-zone=America/Mexico_City"
 })
 @AutoConfigureMockMvc
+@Import(ApiIntegrationSupport.FailureInjection.class)
 abstract class ApiIntegrationSupport {
     protected static final String PASSWORD = "UsuarioSeguro123!";
     @Autowired protected MockMvc mvc;
     @Autowired protected ObjectMapper mapper;
     protected Client admin;
+    @Autowired protected FaultInjectingNotifications faultNotifications;
+
+    // One shared test context/pool for all API tests. The real implementation runs by default.
+    @TestConfiguration(proxyBeanMethods=false)
+    static class FailureInjection {
+        @Bean @Primary
+        FaultInjectingNotifications policyFaultNotifications(JdbcTemplate db,MailConfig mail,PortalEventService portal) {
+            return new FaultInjectingNotifications(db,mail,portal);
+        }
+    }
+    static class FaultInjectingNotifications extends NotificationService {
+        private final JdbcTemplate faultDb;
+        private volatile Long failureInstitution;
+        FaultInjectingNotifications(JdbcTemplate db,MailConfig mail,PortalEventService portal){super(db,mail,portal);this.faultDb=db;}
+        public void forcePaymentFailureFor(long institutionId){failureInstitution=institutionId;}
+        public void resetPaymentFailure(){failureInstitution=null;}
+        @Override @Transactional(propagation=Propagation.MANDATORY)
+        public void paymentEvent(long id,String type,String description,String actor) {
+            super.paymentEvent(id,type,description,actor);
+            Long expected=failureInstitution;
+            if(expected!=null && expected.equals(faultDb.queryForObject("SELECT institution_id FROM payments WHERE id=?",Long.class,id)))
+                throw ApiException.conflict("Fallo controlado después de guardar el aviso de pago.");
+        }
+    }
 
     @BeforeEach
     void authenticateAdministrator() throws Exception {

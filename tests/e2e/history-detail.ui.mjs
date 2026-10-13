@@ -83,6 +83,7 @@ async function open({ section = 'notifications', role = 'ADMIN', notices = [noti
       return reply({ message: 'Unexpected mutation' }, 400);
     }
     if (path === '/api/inbox') return reply({ items: [], unreadCount: 0, pendingReplies: [] });
+    if (path === '/api/policies') return reply([]);
     if (path === '/api/auth/csrf') return reply({ token: 'test-token' });
     if (path === '/api/auth/me') return reply({ id: 1, username: 'qa', displayName: 'Administrativo Ejemplo', role, email: 'qa@example.test', institutionId: role === 'USER' ? 1 : null });
     if (path === '/api/institutions') return reply([institution]);

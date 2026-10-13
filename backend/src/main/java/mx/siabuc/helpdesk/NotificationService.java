@@ -39,7 +39,7 @@ public class NotificationService {
         Long assignedId, String assignedEmail, String assignedName, String title, String description, String status, String channel) {}
     private record PaymentInfo(long id, long institutionId, String institutionName, String institutionEmail,
         long authorId, String authorEmail, String reference, String amount, String currency, String paidOn,
-        String method, long emailMinutes, long remoteMinutes, boolean voided) {}
+        String method, long emailMinutes, long remoteMinutes, boolean voided, String policyFolio) {}
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void caseEvent(long caseId, String eventType, String description, boolean internal, String actor) {
@@ -85,21 +85,23 @@ public class NotificationService {
     @Transactional(propagation = Propagation.MANDATORY)
     public void paymentEvent(long paymentId, String eventType, String description, String actor) {
         PaymentInfo p = db.queryForObject("""
-            SELECT p.*,i.name AS institution_name,i.email AS institution_email,u.email AS author_email
+            SELECT p.*,i.name AS institution_name,i.email AS institution_email,u.email AS author_email,s.folio AS policy_folio
             FROM payments p JOIN institutions i ON i.id=p.institution_id
             LEFT JOIN app_users u ON u.id=p.created_by AND u.active AND u.role IN ('ADMIN','BILLING')
+            LEFT JOIN support_policies s ON s.id=p.policy_id
             WHERE p.id=?
             """, (r, n) -> new PaymentInfo(r.getLong("id"), r.getLong("institution_id"), r.getString("institution_name"),
                 r.getString("institution_email"), r.getLong("created_by"), r.getString("author_email"),
                 r.getString("reference"), r.getBigDecimal("amount").toPlainString(), r.getString("currency"),
                 r.getString("paid_on"), r.getString("method"), r.getLong("email_minutes"),
-                r.getLong("remote_minutes"), r.getBoolean("voided")), paymentId);
+                r.getLong("remote_minutes"), r.getBoolean("voided"), r.getString("policy_folio")), paymentId);
         if (p == null) throw ApiException.missing();
         UUID eventKey = UUID.randomUUID();
         String subject = MailConfig.subject("[SIABUC] Pago #" + p.id() + " · " + eventLabel(eventType));
         String body = "SIABUC — Notificación de pago\n\nPago: #" + p.id() + "\nInstitución: " + p.institutionName()
             + "\nReferencia: " + p.reference() + "\nMonto: " + p.amount() + " " + p.currency()
-            + "\nFecha de pago: " + p.paidOn() + "\nMétodo: " + p.method()
+            + "\nFecha de pago: " + p.paidOn() + "\nMétodo: " + PolicyService.methodLabel(Models.PaymentMethod.valueOf(p.method()))
+            + (p.policyFolio() == null ? "" : "\nPóliza: " + p.policyFolio())
             + "\nMinutos de correo: " + p.emailMinutes() + "\nMinutos de escritorio remoto: " + p.remoteMinutes()
             + "\nEstado: " + (p.voided() ? "Anulado" : "Registrado") + "\nRegistrado por: " + actor
             + "\n\n" + description + "\n\nEste aviso informa el registro administrativo; no es una factura fiscal.\n";

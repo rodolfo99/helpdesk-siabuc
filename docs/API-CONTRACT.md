@@ -136,3 +136,41 @@ La subida utiliza multipart, no JSON ni Base64, y no debe fijarse manualmente el
 La propuesta de agenda usa `{startsAt,endsAt,note,adminId?}` con fechas ISO-8601 que identifican un instante; el responsable predeterminado al crear es el administrativo actor. Reprogramar requiere confirmación nueva. [Cronómetro y agenda](CRONOMETRO-AGENDA.md) detalla transiciones y reintentos.
 
 Los informes devuelven 400 si exceden 366 días, 5,000 filas combinadas o sus límites de contenido; nunca se recortan silenciosamente. Excel utiliza el tipo MIME OOXML, PDF `application/pdf`; ambos usan descarga adjunta. Las fechas finales son inclusivas en `REPORTING_TIME_ZONE`. Consulte [Reportes](REPORTES.md) para la semántica exacta de filtros y anulaciones.
+
+
+## Pólizas y cobranza 1.5
+
+BILLING y ADMIN pueden gestionar pólizas y consultar reportes financieros. USER recibe 403. El acceso financiero no concede acceso a casos, notas internas, adjuntos ni reportes técnicos. Todas las escrituras conservan sesión y CSRF.
+
+| Método y ruta (prefijo `/api`) | Resultado |
+| --- | --- |
+| `GET /policies?institutionId=...` | Pólizas, con importes y minutos contratados, acreditados y pendientes. |
+| `POST /policies` | Crea póliza e historial; devuelve 201 con `PolicyDetail`. No acredita saldo. |
+| `GET /policies/{id}` | `{policy,history,payments}` con situación actual e histórico. |
+| `PUT /policies/{id}` | Edita sólo una póliza activa que nunca tuvo pagos, incluidos los anulados. |
+| `POST /policies/{id}/cancel` | `{reason}`; requiere motivo y ausencia de pagos vigentes. Conserva evidencia. |
+| `POST /payments` | Campos existentes más `policyId` opcional. Pago y acreditación comparten transacción. |
+| `GET /reports/billing`, `/reports/billing.xlsx`, `/reports/billing.pdf` | Reportes financieros para BILLING/ADMIN. |
+
+Entrada de póliza: `{institutionId,folio,description,validFrom,validUntil,agreedAmount,emailMinutes,remoteMinutes}`. La moneda es MXN; importe positivo con máximo dos decimales. Las fechas son `AAAA-MM-DD`, final igual o posterior al inicio. Debe contratarse tiempo en al menos un canal. El folio es único globalmente, sin distinguir mayúsculas ni espacios exteriores. La institución no cambia después de crear la póliza.
+
+El historial registra CREATE_POLICY, UPDATE_POLICY, CANCEL_POLICY, CREATE_PAYMENT y VOID_PAYMENT, con descripción, autor, fecha y pago asociado cuando corresponde. Los saldos de póliza se calculan con pagos no anulados de todas las fechas. `remainingEmailMinutes` y `remainingRemoteMinutes` son minutos aún no acreditados; no representan el saldo institucional después de consumir soporte.
+
+Los nuevos pagos usan MXN; los métodos son TRANSFER, DEPOSIT, CASH, CREDIT_CARD, DEBIT_CARD, CHECK y OTHER. CARD permanece compatible para datos anteriores. Las respuestas de pagos añaden `policyId` y `policyFolio`, ambos null en pagos libres/anteriores.
+
+Una parcialidad puede incluir importe sin minutos. La acreditación con importe cero sólo se permite vinculada a una póliza ya liquidada y con minutos pendientes; siempre debe existir un valor positivo entre importe y minutos. En pagos libres se mantienen importe y minutos positivos. Los importes/minutos vigentes acumulados nunca pueden superar la póliza. La vigencia es informativa; una póliza cancelada rechaza nuevos pagos. Reintentar la misma solicitud sólo devuelve el pago existente si también coincide `policyId`; no vuelve a acreditar.
+
+Se conserva `POST /payments/{id}/void` exclusivo ADMIN: si la institución no tiene suficientes minutos disponibles no se anula ni se modifica ninguna bolsa. Una anulación autorizada retira la acreditación, conserva la fila y actualiza los saldos derivados de la póliza dentro de la misma transacción.
+
+Cuando una póliza tiene acreditaciones vigentes de importe cero que dependen de su liquidación, primero deben anularse esas acreditaciones antes de anular un pago positivo que la deje sin liquidar. El servidor devuelve 409 y no cambia ningún saldo si se intenta alterar ese orden.
+
+Reportes financieros: filtros `institutionId`, `policyId`, `method`, `currency`, `status` (ALL/ACTIVE/VOIDED), `from`, `to`. Las fechas filtran `paidOn`, con extremos inclusivos. Se admiten hasta 3660 días y 5000 filas combinadas; un exceso se rechaza sin truncar. Los totales monetarios se separan por moneda. La situación actual de pólizas considera todo el histórico y se filtra sólo por institución/póliza; se presenta separada de los ingresos del periodo. Consulte [Pólizas y cobranza](POLIZAS-COBRANZA.md) y [Reportes financieros](REPORTES-COBRANZA.md).
+
+
+### Comprobantes de pago
+
+BILLING y ADMIN pueden `GET /api/payments/{id}/attachments`, subir mediante `POST` a la misma ruta con multipart `file` y `requestId` UUID, y descargar mediante `GET /api/payment-attachments/{id}/download`. USER recibe 403. Los adjuntos financieros no usan las rutas de expedientes de soporte.
+
+Se admiten PDF, PNG y JPEG; 10 MiB por archivo, 10 archivos y 50 MiB acumulados por pago. El servidor valida contenido, cuotas y nombre. Reintentar la misma solicitud no duplica el comprobante. La evidencia puede agregarse a pagos históricos, incluidos anulados y de instituciones inactivas. No cambia importes ni minutos. Las descargas requieren sesión autorizada y se entregan como archivo adjunto con protección de tipo/caché.
+
+El contenido binario se guarda en PostgreSQL. Se conservan autor, fecha y SHA-256; no hay borrado físico. Cuando el pago tiene póliza, la carga se registra también en su historial como `ATTACH_PAYMENT_PROOF`. Consulte [Comprobantes de pago](COMPROBANTES-PAGO.md).
