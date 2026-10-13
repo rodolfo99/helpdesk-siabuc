@@ -2,6 +2,22 @@
 
 Fecha: 13 de octubre de 2026 UTC. Esta entrega añade Postfix saliente en Docker y remitente con IP local configurable. No cambia el esquema V1/V2/V3 ni las operaciones de casos, saldos o pagos.
 
+## Corrección de arranque SMTP: manuales excluidos en Debian slim
+
+El 13 de octubre de 2026 el usuario comunicó un arranque real con PostgreSQL saludable y SMTP en reinicio. Los registros mostraron `chown: cannot access '/usr/share/man/man1/mailq.1.gz'` y salida 1 durante la preparación de Postfix. Este reporte identifica un fallo de la imagen original; no constituye una validación completa del conjunto Compose.
+
+La corrección añade una excepción `path-include=/usr/share/man/*` en `zz-postfix-manpages` antes de instalar paquetes. La [lista de exclusiones de Debian slim](https://github.com/debuerreotype/debuerreotype/blob/master/scripts/.slimify-excludes) incluye los manuales; [dpkg](https://manpages.debian.org/trixie/dpkg/dpkg.1.en.html) aplica la última regla coincidente. La construcción comprueba el manual real `sendmail.1.gz` y los destinos de `mailq.1.gz` y `newaliases.1.gz`. El ajuste de permisos y la comprobación de salud de Postfix continúan siendo obligatorios.
+
+Validación ejecutada para esta corrección:
+
+- **Regresión aislada con dpkg 1.22.6:** se construyó un paquete mínimo, sin scripts, con un manual no vacío y enlaces relativos de `mailq` y `newaliases`. Se desempaquetó en dos raíces temporales, sin alterar los paquetes del sistema. Con la exclusión de manuales falta el destino; al añadir después la excepción, el manual existe y ambos enlaces resuelven. Las reglas se pasaron por argumentos equivalentes a la configuración de dpkg; esta prueba no ejecuta los scripts de instalación del paquete Postfix de Debian 13.
+- **Sintaxis:** las tres instrucciones `RUN` del Dockerfile pasan `sh -n`; se comprobó que la excepción precede a la instalación y se revisaron los cambios y comandos de recuperación.
+- **Pendiente:** construir y arrancar la imagen corregida con Docker, comprobar SMTP saludable y completar el inicio de Spring/Angular. Docker no está disponible en el entorno de preparación. No se enviaron mensajes externos ni se repitieron las pruebas históricas del servidor, cliente o respaldos.
+
+El procedimiento de actualización conserva `.env`, PostgreSQL y la cola SMTP y está en [diagnóstico SMTP](SMTP-INTERNO.md#reinicio-por-mailq1gz-ausente).
+
+## Comprobaciones anteriores de la versión 1.2.0
+
 Revisión de texto posterior: se añadió al historial de atención un recordatorio para revisar la bandeja de entrada y el correo no deseado, visible únicamente para cuentas `USER`, en casos abiertos y cerrados. Se revisó la condición de la plantilla y se recompiló Angular correctamente (349.06 kB). Las pruebas de servidor y configuración de la tabla siguiente corresponden a la validación previa, sin cambios en ese código; no se repitieron para esta leyenda.
 
 Revisión posterior de respaldo/restauración: ambos scripts admiten `--nombre-respaldo ARCHIVO` y conservan su argumento posicional. Se ejecutaron **37/37 pruebas Python**, incluidas 12 nuevas de argumentos, nombres con espacios, ubicación de archivos, permisos 600, SHA-256, rechazo de sobrescritura, limpieza de copias incompletas y condiciones previas a restaurar. También se comprobó la ayuda de ambos wrappers y tres rechazos de argumentos desde otra carpeta. Se corrigió el manejo de un archivo SHA-256 vacío o mal formado para rechazarlo con un diagnóstico claro antes de detener servicios. Las pruebas de respaldo/restauración simulan la llamada a Docker Compose y comprueban archivos y flujos binarios locales; **no ejecutan `pg_dump` ni `pg_restore` reales**. La restauración Docker/PostgreSQL real sigue pendiente. No cambió el código Spring ni Angular en esta revisión.
