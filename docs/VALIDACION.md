@@ -1,4 +1,18 @@
-# Validación de la versión 1.3.0
+# Validación de la versión 1.3.1
+
+## Desactivación sin reenvío posterior · 13 de octubre de 2026
+
+- **38 pruebas Java de integración aprobadas**, sin fallos ni omisiones: 14 de Helpdesk, 4 de configuración de correo, 5 de outbox, 8 de SMTP y 7 de pagos. Maven `-Ppostgres-it verify` genera el JAR 1.3.1.
+- Spring, JDBC, sesiones y CSRF reales con PGlite temporal, una conexión y SQL exacto V1–V4. Flyway se desactivó sólo en ese ensayo. No equivale a validación de migración Flyway sobre PostgreSQL 17 ni a contención entre varias conexiones.
+- SMTP se verificó con JavaMail y socket local real: desactivar/reanudar mientras un envío espera respuesta DATA, rechazo 451 y ausencia de reintento posterior. No se enviaron correos externos.
+- La política comprobada convierte los avisos anteriores recuperables y los generados durante pausa en SUPPRESSED; reactivar sólo envía eventos nuevos. Incluye permisos, JSON estricto, auditoría idempotente, persistencia, conservación de negocio/historial, pruebas manuales bloqueadas y reclamaciones antiguas fallidas o vencidas sin reaparición.
+- **10 pruebas Chromium de interfaz aprobadas**, con API simulada (`tests/e2e/mail-control.ui.mjs`): confirmación, cancelación, reactivación, errores, permisos visibles, límite del servidor, filtros, bloqueo de acciones y pantalla móvil. No sustituyen la prueba de backend.
+- Angular producción compilado: **353.36 kB** antes de compresión.
+- **35 pruebas Python de operación y 13 de SMTP aprobadas**. Docker Desktop/Windows y la restauración real siguen fuera de este ensayo.
+- Paquete de fuentes 1.3.1 comprobado mediante CRC y manifiesto SHA-256; no incluye credenciales, respaldos, datos ni binarios compilados.
+
+## Evidencia histórica: versión 1.3.0
+
 
 ## Entrega Windows/Linux · 13 de octubre de 2026
 

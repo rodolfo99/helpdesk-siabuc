@@ -36,3 +36,7 @@ Cada entrada del manifiesto indica SHA-256 y ruta relativa dentro de `siabuc-hel
 - [Gmail opcional y límites](GMAIL-UCOL.md)
 - [Usuarios, instituciones e historial](MANUAL-USUARIO.md)
 - [Evidencia de pruebas](VALIDACION.md)
+
+## Actualización 1.3.1: pausa administrativa de correo
+
+Añade el control de pausa/reactivación desde Correo y notificaciones, persistencia PostgreSQL V4, auditoría y permiso exclusivo ADMIN. Conserva el historial y los scripts Windows/Linux; desactivar suprime los avisos anteriores recuperables y los nuevos durante la pausa. Reactivar sólo notifica eventos nuevos; los correos ya en curso o aceptados por SMTP pueden completar su entrega. MAIL_ENABLED=false permanece como límite del servidor. El artefacto Java pasa a siabuc-helpdesk-1.3.1.jar. Consulte [DESACTIVAR-CORREO.md](DESACTIVAR-CORREO.md) para actualizar, pausar y reanudar. La afirmación anterior de ausencia de migraciones nuevas corresponde a 1.3.0; 1.3.1 sí requiere V4.

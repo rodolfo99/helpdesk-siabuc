@@ -1,6 +1,6 @@
 # Respaldo y restauración de SIABUC Helpdesk
 
-Guía para la versión 1.3.0. En Windows utilice `respaldar.bat` y `restaurar.bat` con los mismos argumentos; consulte [WINDOWS.md](WINDOWS.md). Los scripts `respaldar.sh` y `restaurar.sh` operan sobre la base PostgreSQL del servicio Docker `db`, utilizando los valores de conexión de `.env`.
+Guía para la versión 1.3.1. En Windows utilice `respaldar.bat` y `restaurar.bat` con los mismos argumentos; consulte [WINDOWS.md](WINDOWS.md). Los scripts `respaldar.sh` y `restaurar.sh` operan sobre la base PostgreSQL del servicio Docker `db`, utilizando los valores de conexión de `.env`.
 
 ## 1. Preparar el entorno
 
@@ -133,3 +133,7 @@ La cola PostgreSQL puede contener avisos pendientes que vuelvan a enviarse al in
 La suite Python de esta revisión tiene **37 pruebas satisfactorias**, incluidas 12 de respaldo/restauración. Comprueba argumentos, archivos, permisos, SHA-256, protección de copias existentes, fallos y parámetros transaccionales con una llamada a Compose simulada. También se comprobó la ayuda de los scripts y el rechazo de argumentos inválidos desde otro directorio.
 
 **No se ejecutó una restauración real de PostgreSQL en Docker en el entorno de preparación.** Los detalles y resultados históricos están en [VALIDACION.md](VALIDACION.md). Para otras tareas de instalación y operación, consulte [OPERACION.md](OPERACION.md).
+
+## Pausa de correo desde 1.3.1
+
+Los respaldos con V4 incluyen notification_settings y su pausa administrativa. Revise ese valor y MAIL_ENABLED antes de reanudar. Para restaurar un respaldo anterior a V4 use una base nueva: el borrado selectivo de pg_restore no elimina objetos que el archivo antiguo no conoce. Consulte [Desactivar correo](DESACTIVAR-CORREO.md).

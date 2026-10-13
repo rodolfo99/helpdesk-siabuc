@@ -1,6 +1,6 @@
 # Correo y notificaciones · versión 1.2
 
-El sistema guarda notificaciones junto con cada operación y las envía posteriormente por SMTP. **En instalaciones nuevas el envío usa Postfix interno por defecto**, con la IP local como dominio literal del remitente, por ejemplo `soporte@[192.168.1.50]`. Configure la IP real con `./configurar.sh --smtp-interno`. Los `.env` anteriores conservan su configuración y activación. Consulte [SMTP-INTERNO.md](SMTP-INTERNO.md) para el servidor Docker, su cola y las condiciones de recepción. Configurar el servidor no envía un mensaje de prueba; al activar `MAIL_ENABLED` y reiniciar, se procesa también la cola pendiente acumulada.
+El sistema guarda notificaciones junto con cada operación y las envía posteriormente por SMTP. **En instalaciones nuevas el envío usa Postfix interno por defecto**, con la IP local como dominio literal del remitente, por ejemplo `soporte@[192.168.1.50]`. Configure la IP real con `./configurar.sh --smtp-interno`. Los `.env` anteriores conservan su configuración y activación. Consulte [SMTP-INTERNO.md](SMTP-INTERNO.md) para el servidor Docker, su cola y las condiciones de recepción. Configurar el servidor no envía un mensaje de prueba; al activar `MAIL_ENABLED` y reiniciar, se procesa también la cola pendiente acumulada si no existe una pausa administrativa. Desde 1.3.1 puede [pausar el envío desde la aplicación](DESACTIVAR-CORREO.md).
 
 ## Conectar Spring directamente a otro SMTP
 
@@ -16,7 +16,7 @@ No se realiza una conexión SMTP ni se envía correo durante el asistente. Reini
 
 | Variable | Predeterminado | Uso |
 | --- | --- | --- |
-| `MAIL_ENABLED` | `true` (instalación nueva) | Activa el procesamiento de la cola. |
+| `MAIL_ENABLED` | `true` (instalación nueva) | Habilita correo en el servidor; la pausa administrativa también debe estar desactivada. |
 | `SMTP_HOST` | `smtp` | Nombre SMTP o IPv4, sin `smtp://` ni puerto. |
 | `SMTP_PORT` | `25` | Puerto del servidor SMTP. |
 | `SMTP_SECURITY` | `NONE` (red interna) | `STARTTLS`, `SSL` o `NONE`. |
@@ -125,7 +125,7 @@ La configuración predeterminada utiliza IP local, por ejemplo `soporte@[192.168
 
 | Problema | Revisar |
 | --- | --- |
-| Pendientes sin intentos | `MAIL_ENABLED`, reinicio aplicado e intervalo `MAIL_POLL_MS`. |
+| Pendientes sin intentos | `MAIL_ENABLED`, pausa administrativa, reinicio aplicado e intervalo `MAIL_POLL_MS`. |
 | Autenticación rechazada | Usuario SMTP, secreto vigente, política del proveedor y si exige OAuth. |
 | Error TLS | Combinación puerto/STARTTLS/SSL, nombre del host y certificado del servidor. |
 | Registro `SKIPPED` | Corrija el correo de la entidad original o separe las direcciones para avisos internos. Si originalmente no había responsable identificado, asigne uno para eventos futuros; ese aviso anterior no se recupera. |
@@ -133,4 +133,8 @@ La configuración predeterminada utiliza IP local, por ejemplo `soporte@[192.168
 | Rechazo del remitente con IP | Política del receptor/relay para direcciones como `soporte@[IP]`; que admita sintaxis literal no garantiza recepción. |
 | Sólo falla desde Docker | Host SMTP accesible desde el contenedor; `localhost` apunta al propio contenedor. |
 
-La configuración de correo y los secretos se conservan en `.env`/entorno. La copia PostgreSQL incluye la cola del helpdesk y su historial, pero no la cola del volumen `smtp_queue` de Postfix; después de restaurar, revise `MAIL_ENABLED` antes de iniciar el procesamiento.
+La configuración de correo y los secretos se conservan en `.env`/entorno. La copia PostgreSQL incluye la cola del helpdesk y su historial, pero no la cola del volumen `smtp_queue` de Postfix; después de restaurar, revise `MAIL_ENABLED` y la pausa administrativa restaurada antes de iniciar el procesamiento.
+
+## Desactivar sin enviar avisos acumulados
+
+Desde 1.3.1 el control administrativo de [desactivación de correo](DESACTIVAR-CORREO.md) marca SUPPRESSED los avisos recuperables anteriores y los generados durante la pausa. Al reactivar sólo se envían eventos nuevos. Se conserva historial, no se permite reintentar SUPPRESSED y pruebas/reintentos están bloqueados mientras se pausa. Esto es distinto de MAIL_ENABLED=false por sí solo, que conserva la cola para un envío posterior.
