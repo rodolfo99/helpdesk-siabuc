@@ -2,6 +2,8 @@
 
 Sistema de atención técnica con servidor **Spring Boot 3.5.16 / Java 17**, cliente **Angular 21.2.25** y base de datos **PostgreSQL 17**. Conserva instituciones, usuarios, casos, pagos, actualizaciones descriptivas y auditoría. El tiempo por correo y por escritorio remoto se administra en **dos bolsas independientes de minutos enteros**.
 
+Para configurar Gmail institucional `@ucol.mx` como salida de Postfix, use `bash configurar-gmail.sh`. Consulte [Gmail UCOL](docs/GMAIL-UCOL.md) para crear la contraseña de aplicación y verificar la entrega.
+
 ## Funciones incluidas
 
 - Alta, edición y baja lógica de instituciones; contacto, notas y presupuestos separados para correo y remoto.
