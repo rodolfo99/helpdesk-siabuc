@@ -110,7 +110,7 @@ def package(output: Path) -> Path:
             continue
         if rel.suffix.lower() in {'.zip', '.dump', '.pyc', '.pem', '.key', '.p12', '.pfx'}:
             continue
-        if rel.name.startswith('.env.') and rel.name != '.env.example':
+        if rel.name.startswith('.env.') and rel.name not in {'.env.example', '.env.gmail.example'}:
             continue
         files.append((name, path.read_bytes()))
     output.mkdir(parents=True, exist_ok=True)
