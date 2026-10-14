@@ -5,15 +5,15 @@ la versión preliminar de requerimientos recibida por correo.
 
 ## Incluido
 
-- Preparación de accesos locales `/poliza` y `/poliza/admin`, manteniendo la
-  sesión y contraseña de Spring Security existentes; nunca se habilita ingreso
-  sólo con número de póliza y correo.
+- La SPA existente puede responder a rutas locales `/poliza` y `/poliza/admin`
+  por su fallback de Nginx. **No hay aún portales de autenticación separados**:
+  se conserva el inicio de sesión de Spring Security.
 - Bienvenida contextual, navegación diferenciada, enlaces de información pública
   existentes y acceso al centro de ayuda desde cualquier sección del cliente.
-- Guía de primeros pasos de consulta manual, sin guardar una preferencia
-  arbitraria por póliza/usuario ni mostrarla automáticamente.
-- Resumen de casos con folio y navegación al detalle; búsqueda y fechas en
-  la interfaz interna de soporte.
+- Guía de primeros pasos accesible manualmente desde el resumen del cliente,
+  sin guardar una preferencia arbitraria por póliza/usuario ni activación automática.
+- Resumen de casos existente y filtro local de fechas para el personal de soporte.
+  Queda pendiente vincular cada tarjeta del resumen a un folio concreto.
 - Creación de solicitudes cliente mediante `/api/client-portal/tickets`:
   longitud 5–150/20–5000 comprobada también por servidor, asignación automática
   de institución desde sesión y confirmación de folio; se conservan las reglas
