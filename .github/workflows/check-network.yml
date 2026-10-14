@@ -1,0 +1,68 @@
+name: Check private Docker services
+on:
+  pull_request:
+    paths:
+      - 'docker-compose*.yml'
+      - '.env.example'
+      - 'scripts/manage.py'
+      - 'frontend/nginx.conf'
+      - 'tests/ops/**'
+      - '.github/workflows/check-network.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  network:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test network and operations
+        run: python3 -m unittest discover -s tests/ops
+      - name: Validate Compose and published ports (legacy and explicit hosts)
+        env:
+          DB_NAME: siabuc_test
+          DB_USER: siabuc
+          DB_PASSWORD: DisposableDatabasePassword123
+          ADMIN_PASSWORD: DisposableAdminPassword123
+        run: |
+          for mode in legacy explicit; do
+            if [ "$mode" = legacy ]; then
+              export BIND_HOST=0.0.0.0 WEB_BIND_HOST=''
+            else
+              export BIND_HOST=127.0.0.1 WEB_BIND_HOST=0.0.0.0
+            fi
+            docker compose config --format json | python3 -c '
+          import json,sys
+          cfg=json.load(sys.stdin)
+          services=cfg["services"]
+          for name in ("db","backend","smtp"):
+              assert not services[name].get("ports"), (name,services[name].get("ports"))
+          web=services["frontend"].get("ports",[])
+          assert len(web)==1,web
+          assert str(web[0]["target"])=="80",web
+          assert web[0]["published"]=="4200",web
+          assert web[0]["host_ip"]=="0.0.0.0",web
+          nginx=open("frontend/nginx.conf",encoding="utf-8").read()
+          assert "location /api/" in nginx and "backend:8080" in nginx and "proxy_pass" in nginx
+          print("OK: only frontend published, internal /api/ proxy present")
+          '
+          done
+      - name: Check development binds only loopback
+        env:
+          DB_NAME: siabuc_test
+          DB_USER: siabuc
+          DB_PASSWORD: DisposableDatabasePassword123
+          ADMIN_PASSWORD: DisposableAdminPassword123
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml config --format json | python3 -c '
+          import json,sys
+          s=json.load(sys.stdin)["services"]
+          for name in ("db","smtp"):
+              ports=s[name].get("ports",[])
+              assert len(ports)==1, (name,ports)
+              assert ports[0]["host_ip"]=="127.0.0.1", (name,ports)
+          assert not s["backend"].get("ports")
+          print("OK: development ports bound to loopback")
+          '
