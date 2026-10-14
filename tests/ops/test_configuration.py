@@ -61,16 +61,16 @@ class OperationalConfigurationTests(unittest.TestCase):
                 return manage.config()
             return manage.set_internal_smtp_configuration(manage.config())
 
-    def test_new_installation_defaults_to_internal_smtp_with_private_env(self) -> None:
+    def test_new_installation_defaults_to_disabled_direct_gmail_with_private_env(self) -> None:
         values = manage.config(create=True)
-        self.assertEqual(values["MAIL_ENABLED"], "true")
-        self.assertEqual(values["SMTP_HOST"], "smtp")
-        self.assertEqual(values["SMTP_PORT"], "25")
-        self.assertEqual(values["SMTP_AUTH"], "false")
-        self.assertEqual(values["SMTP_SECURITY"], "NONE")
+        self.assertEqual(values["MAIL_ENABLED"], "false")
+        self.assertEqual(values["SMTP_HOST"], "smtp.gmail.com")
+        self.assertEqual(values["SMTP_PORT"], "587")
+        self.assertEqual(values["SMTP_AUTH"], "true")
+        self.assertEqual(values["SMTP_SECURITY"], "STARTTLS")
         self.assertEqual(values["SMTP_INTERNAL_PORT"], "2525")
         self.assertEqual(values["SMTP_LOCAL_IP"], "127.0.0.1")
-        self.assertEqual(values["MAIL_FROM"], "soporte@[127.0.0.1]")
+        self.assertEqual(values["MAIL_FROM"], "")
         self.assertGreaterEqual(len(values["DB_PASSWORD"]), 12)
         self.assertGreaterEqual(len(values["ADMIN_PASSWORD"]), 12)
         self.assertEqual(stat.S_IMODE(self.env.stat().st_mode), 0o600)
@@ -171,6 +171,7 @@ class OperationalConfigurationTests(unittest.TestCase):
     def test_native_environment_translates_only_container_hostnames(self) -> None:
         values = dict(manage.FRESH_DEFAULTS)
         values["SMTP_INTERNAL_PORT"] = "2626"
+        values["SMTP_HOST"] = "smtp"
         native = manage.native_environment(values)
         self.assertEqual(native["SMTP_HOST"], "127.0.0.1")
         self.assertEqual(native["SMTP_PORT"], "2626")
