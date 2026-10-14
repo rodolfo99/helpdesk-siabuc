@@ -6,6 +6,8 @@ import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpMethod;
@@ -39,6 +41,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
  * them so that audit/history preservation is also exercised.
  */
 class HelpdeskIntegrationIT extends ApiIntegrationSupport {
+    @Autowired JdbcTemplate db;
     @Test
     void requiresAuthenticationAndRealCsrfAndLogoutEndsSession() throws Exception {
         Client anonymous = new Client();
@@ -247,8 +250,12 @@ class HelpdeskIntegrationIT extends ApiIntegrationSupport {
     }
 
     @Test
+    @Transactional // Roll back temporary account state, never modify an operational database.
     void lastAdministratorCannotBeDeactivated() throws Exception {
         JsonNode current = json(admin.get("/auth/me"));
+        // Other integration tests intentionally leave additional administrators in their
+        // disposable database. Isolate this test's last-admin scenario transactionally.
+        db.update("UPDATE app_users SET active=FALSE WHERE role='ADMIN' AND active AND id<>?", current.path("id").asLong());
         int activeAdmins = 0;
         for (JsonNode user : json(admin.get("/users"))) {
             if (user.path("role").asText().equals("ADMIN") && user.path("active").asBoolean()) activeAdmins++;
