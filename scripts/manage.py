@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import re
 import secrets
+import shlex
 import shutil
 import signal
 import socket
@@ -701,9 +702,47 @@ def prepare_automatic_backup_directory(values: dict[str, str]) -> Path:
     destination = destination.resolve()
     if destination == ROOT or destination == Path(destination.anchor):
         fail("BACKUP_DIRECTORY debe ser una carpeta exclusiva de copias, no la raíz del disco ni del proyecto.")
+    # No se ajusta la propiedad ni los permisos de una carpeta existente.
     destination.mkdir(parents=True, exist_ok=True, mode=0o700)
     if not destination.is_dir():
         fail("BACKUP_DIRECTORY no es un directorio.")
+    return destination
+
+
+def verify_automatic_backup_permissions(values: dict[str, str]) -> Path:
+    """Verify the real Compose bind mount as the backup worker, without touching backups.
+
+    The Python worker runs as BACKUP_UID:BACKUP_GID, potentially different
+    from the host user. Host os.access() alone does not prove container access.
+    """
+    destination = prepare_automatic_backup_directory(values)
+    # A one-time, isolated container uses exactly the worker's user, bind mount,
+    # read-only root FS and capabilities. It does not start PostgreSQL or Spring.
+    compose(values, "build", "backup")
+    probe = (
+        "import os,tempfile; "
+        "fd,path=tempfile.mkstemp(prefix='.siabuc-write-check-',dir='/backups'); "
+        "os.close(fd); os.unlink(path)"
+    )
+    try:
+        compose(values, "run", "--rm", "--no-deps", "--entrypoint", "python3",
+                "backup", "-c", probe, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except subprocess.CalledProcessError:
+        location = shlex.quote(str(destination))
+        uid = values.get("BACKUP_UID", "0")
+        gid = values.get("BACKUP_GID", "0")
+        fail(
+            f"El contenedor backup no puede escribir en {destination} "
+            f"(BACKUP_UID={uid}, BACKUP_GID={gid}). "
+            "La carpeta puede haber heredado permisos al descomprimir el ZIP. "
+            "No se modificó ni eliminó ningún respaldo. "
+            "En Linux, si esta carpeta es el destino correcto y su administrador "
+            "autoriza el cambio, ejecute: "
+            f"sudo chown {uid}:{gid} {location} && sudo chmod 700 {location}. "
+            "En Windows revise los permisos de la carpeta compartida en Docker Desktop. "
+            "Después repita ./iniciar.sh."
+        )
+    print(f"Permisos de respaldo verificados desde Docker: {destination} (UID={values.get('BACKUP_UID', '0')}).")
     return destination
 
 
@@ -778,6 +817,8 @@ def main() -> None:
     configure = sub.add_parser("config")
     configure.add_argument("--password-bd", action="store_true",
                            help="Solicitar y confirmar DB_PASSWORD sin mostrarla; configura .env, no cambia una base existente.")
+    configure.add_argument("--verificar-respaldos", action="store_true",
+                           help="Verificar escritura del destino desde el contenedor backup sin alterar copias existentes.")
     mail_options = configure.add_mutually_exclusive_group()
     mail_options.add_argument("--correo", action="store_true", help="Configurar conexión SMTP y remitente sin enviar correo.")
     mail_options.add_argument("--smtp-interno", action="store_true", help="Usar Postfix opcional como SMTP interno o relay.")
@@ -830,6 +871,9 @@ def main() -> None:
             values = set_direct_gmail_configuration(values)
         if prompt_smtp:
             values = set_internal_smtp_configuration(values)
+        if args.verificar_respaldos:
+            docker_ready(values)
+            verify_automatic_backup_permissions(values)
         print(".env validado. Puede editar los puertos y volver a ejecutar este comando.")
         credentials(values)
     elif args.command == "start":
@@ -838,7 +882,7 @@ def main() -> None:
             compose(values, "up", "-d", "--wait", "--wait-timeout", "180", "db")
             print(f"PostgreSQL listo en 127.0.0.1:{values['DB_PORT']}.")
         else:
-            prepare_automatic_backup_directory(values)
+            verify_automatic_backup_permissions(values)
             compose(values, "up", "-d", "--build", "--wait", "--wait-timeout", "300")
             print(f"SIABUC Helpdesk web: http://{values['WEB_BIND_HOST']}:{values['FRONTEND_PORT']} (si usa 0.0.0.0, sustituya por su IP LAN).")
             credentials(values)
