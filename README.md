@@ -1,5 +1,8 @@
 # SIABUC Helpdesk 1.8.2
 
+**Corrección de instalación — permisos de respaldos:** al ejecutar `./iniciar.sh`, el instalador comprueba previamente que el contenedor `backup` pueda escribir en el destino configurado, sin cambiar la propiedad ni permisos de carpetas existentes. También puede ejecutarse `./configurar.sh --verificar-respaldos` para comprobarlo antes de iniciar. Si falla, recibirá el comando de corrección específico. [Guía de respaldos](docs/RESPALDOS-AUTOMATICOS.md).
+
+
 Sistema de atención técnica con servidor **Spring Boot 3.5.16 / Java 17**, cliente **Angular 21.2.25** y base de datos **PostgreSQL 17**. Conserva instituciones, usuarios, casos, pagos, actualizaciones descriptivas y auditoría. El tiempo por correo y por escritorio remoto se administra en **dos bolsas independientes de minutos enteros**.
 
 ## Estado de la versión 1.8.2
