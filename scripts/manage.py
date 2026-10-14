@@ -29,6 +29,7 @@ RUNTIME = ROOT / ".runtime"
 DEFAULTS = {
     "COMPOSE_PROJECT_NAME": "siabuc-helpdesk",
     "BIND_HOST": "127.0.0.1",
+    "WEB_BIND_HOST": "",
     "DB_PORT": "5432",
     "SERVER_PORT": "8080",
     "FRONTEND_PORT": "4200",
@@ -256,7 +257,15 @@ def config(create: bool = False, prompt_db_password: bool = False, prompt_mail: 
     if not re.fullmatch(r"[a-z0-9][a-z0-9_-]*", values["COMPOSE_PROJECT_NAME"]):
         fail("COMPOSE_PROJECT_NAME debe usar minúsculas, números, - o _.")
     if values["BIND_HOST"] not in {"127.0.0.1", "0.0.0.0"}:
-        fail("BIND_HOST debe ser 127.0.0.1 (local) o 0.0.0.0 (red).")
+        fail("BIND_HOST heredado debe ser 127.0.0.1 o 0.0.0.0.")
+    web_bind = values["WEB_BIND_HOST"] or values["BIND_HOST"]
+    try:
+        web_ip = ipaddress.IPv4Address(web_bind)
+    except ValueError:
+        fail("WEB_BIND_HOST debe ser IPv4, por ejemplo 127.0.0.1, 192.168.1.50 o 0.0.0.0.")
+    if web_ip.is_multicast or web_ip.is_reserved or (web_ip.is_unspecified and web_bind != "0.0.0.0"):
+        fail("WEB_BIND_HOST debe ser una IPv4 unicast o 0.0.0.0.")
+    values["WEB_BIND_HOST"] = web_bind
     ports = []
     for key in ("DB_PORT", "SERVER_PORT", "FRONTEND_PORT", "MAILPIT_SMTP_PORT", "MAILPIT_UI_PORT", "SMTP_INTERNAL_PORT"):
         value = values[key]
@@ -492,7 +501,13 @@ def native_environment(values: dict[str, str]) -> dict[str, str]:
 
 def compose(values: dict[str, str], *arguments: str, **kwargs):
     require("docker")
-    # Compose prioriza el entorno del proceso: fijamos los valores ya validados.
+    # Añade puertos loopback solo a comandos de desarrollo o administración.
+    extra_files = []
+    if arguments and arguments[0] in {"up", "exec"} and (
+        (arguments[0] == "up" and ("db" in arguments or "smtp" in arguments))
+        or (arguments[0] == "exec" and "db" in arguments)
+    ):
+        extra_files = ["-f", str(ROOT / "docker-compose.dev.yml")]
     env = os.environ.copy()
     env.update(values)
     backup_directory = Path(values.get("BACKUP_DIRECTORY", "./backups/automatic")).expanduser()
@@ -500,7 +515,7 @@ def compose(values: dict[str, str], *arguments: str, **kwargs):
         backup_directory = ROOT / backup_directory
     env["BACKUP_DIRECTORY"] = str(backup_directory.resolve())
     return run(["docker", "compose", "--project-directory", str(ROOT), "--env-file",
-                str(ENV_FILE), "-f", str(ROOT / "docker-compose.yml"), *arguments], env=env, **kwargs)
+                str(ENV_FILE), "-f", str(ROOT / "docker-compose.yml"), *extra_files, *arguments], env=env, **kwargs)
 
 
 def docker_ready(values: dict[str, str]) -> None:
@@ -773,11 +788,11 @@ def main() -> None:
         docker_ready(values)
         if args.solo_bd:
             compose(values, "up", "-d", "--wait", "--wait-timeout", "180", "db")
-            print(f"PostgreSQL listo en {values['BIND_HOST']}:{values['DB_PORT']}.")
+            print(f"PostgreSQL listo en 127.0.0.1:{values['DB_PORT']}.")
         else:
             prepare_automatic_backup_directory(values)
             compose(values, "up", "-d", "--build", "--wait", "--wait-timeout", "300")
-            print(f"SIABUC Helpdesk listo: http://127.0.0.1:{values['FRONTEND_PORT']}")
+            print(f"SIABUC Helpdesk web: http://{values['WEB_BIND_HOST']}:{values['FRONTEND_PORT']} (si usa 0.0.0.0, sustituya por su IP LAN).")
             credentials(values)
             smtp_information(values)
     elif args.command == "stop":

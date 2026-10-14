@@ -230,11 +230,23 @@ La recuperación usa `pg_restore --clean --if-exists --single-transaction --exit
 
 ## Acceso por red y HTTPS
 
-El valor inicial `BIND_HOST=127.0.0.1` sólo publica puertos locales. Para acceso desde otro equipo puede usar un túnel SSH al puerto del cliente, o un proxy HTTPS de su infraestructura que reenvíe a ese puerto. El frontend y `/api` deben permanecer bajo un mismo origen.
+En Docker normal solamente el servicio web frontend publica puerto en el anfitrión. PostgreSQL (db:5432), Spring Boot (backend:8080) y SMTP (smtp:25) son internos. Nginx enruta /api/ a backend:8080 a través de la red Docker.
 
-También puede configurar `BIND_HOST=0.0.0.0` para publicar en la red, pero ese ajuste afecta los tres puertos, incluido PostgreSQL. Restrinja por firewall los puertos de base de datos y servidor para que sólo accedan los equipos necesarios; normalmente los usuarios sólo necesitan el puerto web.
+Para habilitar únicamente Angular desde la LAN, edite su archivo privado .env (no lo suba a GitHub):
 
-Al terminar HTTPS en un proxy frontal, configure `COOKIE_SECURE=true`, mantenga el reenvío de `/api` y reinicie con `./iniciar.sh`. Con ese valor, el navegador no enviará la cookie de sesión por HTTP. Las credenciales y sesiones deben circular mediante HTTPS cuando se accede a través de una red no confiable. Esta entrega no emite certificados TLS ni instala un proxy público automáticamente.
+    WEB_BIND_HOST=192.168.1.50
+    FRONTEND_PORT=4200
+    COOKIE_SECURE=false
+
+Sustituya 192.168.1.50 por la IP real del anfitrión Docker. Puede utilizar WEB_BIND_HOST=0.0.0.0 para escuchar en todas las interfaces, pero limite el acceso por firewall a la LAN autorizada y no publique puertos en el router. El navegador accede a http://192.168.1.50:4200 y a http://192.168.1.50:4200/api/health; la IP es solamente un ejemplo, no una prueba real desde otra máquina.
+
+Seguridad y compatibilidad: WEB_BIND_HOST controla solamente frontend. Si no se define, BIND_HOST heredado controla únicamente frontend. Aunque BIND_HOST=0.0.0.0, ni PostgreSQL ni Spring se publican. SERVER_PORT y DB_PORT quedan reservados para desarrollo local; los volúmenes y COMPOSE_PROJECT_NAME permanecen intactos.
+
+Para HTTPS: coloque un proxy TLS con certificado válido delante de http://127.0.0.1:4200, incluyendo las rutas /api/. Mantenga WEB_BIND_HOST=127.0.0.1, redirija HTTP a HTTPS y establezca COOKIE_SECURE=true cuando todos los clientes utilicen HTTPS. La configuración Docker no proporciona certificados. No utilice HTTP LAN para contraseñas en redes no confiables.
+
+El modo ./iniciar-dev.sh inicia db y smtp con docker-compose.dev.yml, que publica PostgreSQL y SMTP exclusivamente en 127.0.0.1 para Java local. ./iniciar.sh --solo-bd publica solo db en 127.0.0.1 para mantenimiento. El despliegue ordinario no utiliza ese override. Para mantenimiento interno use docker compose exec db sin exponer su puerto. No utilice docker compose down -v.
+
+Valide puertos con docker compose ps y compruebe de forma autorizada el acceso remoto en una computadora distinta antes de declararlo probado. docker compose config expande secretos: no comparta su salida.
 
 ## Problemas habituales
 

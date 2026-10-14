@@ -22,7 +22,7 @@ docker compose version
 notepad .env
 ```
 
-El primer comando Docker debe responder `linux`. En `.env` configure los puertos publicados mediante DB_PORT, SERVER_PORT y FRONTEND_PORT. Si 8080 ya está ocupado, use SERVER_PORT=8081. Al guardar con un editor, conserve UTF-8 sin BOM y no cambie el nombre a `.env.txt`.
+El primer comando Docker debe responder `linux`. En `.env` solo FRONTEND_PORT se publica en el despliegue Docker normal. WEB_BIND_HOST controla la interfaz web (127.0.0.1 por defecto, o la IPv4 LAN real). PostgreSQL y Spring no publican puertos. DB_PORT y SERVER_PORT se reservan para desarrollo nativo y mantenimiento. Al guardar con un editor, conserve UTF-8 sin BOM y no cambie el nombre a `.env.txt`.
 
 6. Para elegir la contraseña de una **base nueva**, use ` .\configurar.bat --password-bd`. Cambiar DB_PASSWORD en `.env` no cambia la contraseña de una base ya inicializada. Con una instalación existente conserve sus credenciales.
 7. Inicie todo; la primera ejecución descarga imágenes y dependencias y compila:
@@ -31,7 +31,7 @@ El primer comando Docker debe responder `linux`. En `.env` configure los puertos
 .\iniciar.bat
 ```
 
-8. Abra http://127.0.0.1:4200 (o FRONTEND_PORT configurado). El usuario inicial y su contraseña están en ADMIN_USERNAME y ADMIN_PASSWORD de `.env`. Las cuentas cliente se crean desde Usuarios con rol USER e institución; consulte MANUAL-USUARIO.md.
+8. Abra http://127.0.0.1:4200 localmente o, después de configurar WEB_BIND_HOST con su IPv4 LAN y permitir solo FRONTEND_PORT en el firewall de Windows, http://IP-LAN:4200 desde otro equipo autorizado. Para acceso HTTPS consulte OPERACION.md. No abra 5432 ni 8080. El usuario inicial y su contraseña están en ADMIN_USERNAME y ADMIN_PASSWORD de `.env`. Las cuentas cliente se crean desde Usuarios con rol USER e institución; consulte MANUAL-USUARIO.md.
 
 Use las terminales para conservar los mensajes de error; no dependa del doble clic. Los `.bat` localizan Python 3.10+ y funcionan desde otra carpeta usando su ruta completa. Si se invocan desde otro archivo batch, use `call` según las reglas normales de CMD.
 
