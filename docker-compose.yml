@@ -7,8 +7,8 @@ services:
       POSTGRES_DB: ${DB_NAME:?Configure DB_NAME}
       POSTGRES_USER: ${DB_USER:?Configure DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?Configure DB_PASSWORD}
-    ports:
-      - "${BIND_HOST:-127.0.0.1}:${DB_PORT:-5432}:5432"
+    # PostgreSQL solo está disponible para los contenedores en la red Compose.
+    # Desarrollo y mantenimiento local: docker-compose.dev.yml (loopback).
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -46,8 +46,7 @@ services:
       MAIL_REPLY_TO: ${MAIL_REPLY_TO:-}
       MAIL_POLL_MS: ${MAIL_POLL_MS:-15000}
       MAIL_MAX_ATTEMPTS: ${MAIL_MAX_ATTEMPTS:-5}
-    ports:
-      - "${BIND_HOST:-127.0.0.1}:${SERVER_PORT:-8080}:8080"
+    # Spring Boot recibe /api desde Nginx por la red interna; sin puerto anfitrión.
     depends_on:
       db:
         condition: service_healthy
@@ -72,8 +71,10 @@ services:
   frontend:
     build:
       context: ./frontend
+    # Único servicio publicado por el despliegue ordinario.
+    # BIND_HOST es alias heredado SOLO para frontend si WEB_BIND_HOST no existe.
     ports:
-      - "${BIND_HOST:-127.0.0.1}:${FRONTEND_PORT:-4200}:80"
+      - "${WEB_BIND_HOST:-${BIND_HOST:-127.0.0.1}}:${FRONTEND_PORT:-4200}:80"
     depends_on:
       backend:
         condition: service_healthy
@@ -99,8 +100,7 @@ services:
       SMTP_RELAY_SECURITY: ${SMTP_RELAY_SECURITY:-STARTTLS}
       SMTP_RELAY_USERNAME: ${SMTP_RELAY_USERNAME:-}
       SMTP_RELAY_PASSWORD: ${SMTP_RELAY_PASSWORD:-}
-    ports:
-      - "127.0.0.1:${SMTP_INTERNAL_PORT:-2525}:25"
+    # SMTP accesible en smtp:25 desde Docker. Host loopback solo en desarrollo.
     volumes:
       - smtp_queue:/var/spool/postfix
     networks:
