@@ -37,3 +37,8 @@ Cada consulta filtra la institución de la cuenta autenticada. No se acepta un p
 | `GET /api/client-finance/payments/{id}/receipt.pdf` | USER habilitado; recibo propio |
 
 La migración V12 crea `client_finance_access`; la ausencia de fila equivale a deshabilitado. `ClientFinanceAccessService.requireClient()` centraliza rol USER, cuenta e institución activas y habilitación, y se reutiliza en solicitudes y recibos. Las rutas originales de administración/cobranza siguen denegadas al cliente, incluso con portal habilitado.
+
+
+## Estados de cuenta desde 1.7
+
+El portal habilitado incorpora la generación y descarga PDF del estado de cuenta de la propia institución. Cada folio preserva su emisión; los cambios posteriores no alteran ese documento. El corte usa el registro en plataforma y la historia temporal empieza con una apertura en V24. Consulte [Estados de cuenta](ESTADOS-CUENTA.md) para interpretar cargos, pagos, pendientes y movimientos de minutos. Deshabilitar el portal también bloquea la lectura y descarga de emisiones anteriores desde cuentas cliente.

@@ -57,6 +57,6 @@ public class RenewalService {
         LEFT JOIN renewal_notice_reads v ON v.notice_id=n.id AND v.user_id=? ORDER BY n.id DESC LIMIT 200
         """,(r,n)->new Notice(r.getLong("id"),r.getLong("policy_id"),r.getLong("institution_id"),r.getString("institution_name"),r.getString("policy_folio"),r.getDate("expiration_date").toLocalDate(),
             r.getTimestamp("created_at").toInstant(),r.getTimestamp("read_at")==null?null:r.getTimestamp("read_at").toInstant(),r.getBoolean("relevant")),actor);}
-    private Models.User actor(){Models.User user=helpdesk.me();if(user.role()==Models.Role.USER)throw ApiException.forbidden();return user;}
+    private Models.User actor(){Models.User user=helpdesk.me();if(user.role()!=Models.Role.ADMIN && user.role()!=Models.Role.BILLING)throw ApiException.forbidden();return user;}
     private static LocalDate today(){return LocalDate.now(ZoneId.of("America/Mexico_City"));}
 }

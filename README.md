@@ -1,8 +1,8 @@
-# SIABUC Helpdesk 1.6.0
+# SIABUC Helpdesk 1.7.0
 
 Sistema de atención técnica con servidor **Spring Boot 3.5.16 / Java 17**, cliente **Angular 21.2.25** y base de datos **PostgreSQL 17**. Conserva instituciones, usuarios, casos, pagos, actualizaciones descriptivas y auditoría. El tiempo por correo y por escritorio remoto se administra en **dos bolsas independientes de minutos enteros**.
 
-**Versión 1.6:** cotizaciones, solicitudes de pago por validar, renovación de pólizas, portal financiero institucional configurable, recibos PDF, base de conocimientos, encuestas y respaldos programados. Incluye todas las funciones de soporte y cobranza de 1.4/1.5.
+**Versión 1.7:** técnico de soporte, vistas guardadas, alertas previas al vencimiento de SLA, plantillas de respuesta, incidencias generales, catálogo de paquetes, calendario de parcialidades, conciliación bancaria CSV y estados de cuenta institucionales. Incluye las funciones de las versiones anteriores.
 
 **Los respaldos automáticos están desactivados por defecto**, también al actualizar desde 1.5. Sólo Administración puede activarlos expresamente, configurar su horario y retención o volver a desactivarlos. Los respaldos manuales y las copias existentes se conservan.
 
@@ -10,7 +10,7 @@ Sistema de atención técnica con servidor **Spring Boot 3.5.16 / Java 17**, cli
 
 | Necesito… | Guía |
 | --- | --- |
-| Instalar o actualizar conservando mis datos | [Versión 1.6](docs/VERSION-1.6.md) · [Windows](docs/WINDOWS.md) · [Operación Linux/Docker](docs/OPERACION.md) |
+| Instalar o actualizar conservando mis datos | [Versión 1.7](docs/VERSION-1.7.md) · [Windows](docs/WINDOWS.md) · [Operación Linux/Docker](docs/OPERACION.md) |
 | Atender casos, usar adjuntos, cronómetro y agenda | [Manual de uso](docs/MANUAL-USUARIO.md) · [Funciones de soporte](docs/HELPDESK-1.4.md) |
 | Registrar pólizas, pagos y horas adquiridas | [Pólizas y cobranza](docs/POLIZAS-COBRANZA.md) |
 | Cotizar, renovar o validar pagos pendientes | [Cotizaciones y renovaciones](docs/COTIZACIONES-RENOVACIONES.md) · [Solicitudes de pago](docs/SOLICITUDES-PAGO.md) |
@@ -21,21 +21,36 @@ Sistema de atención técnica con servidor **Spring Boot 3.5.16 / Java 17**, cli
 | Configurar copias programadas (apagadas por defecto) | [Respaldos automáticos](docs/RESPALDOS-AUTOMATICOS.md) |
 | Respaldar, restaurar o conocer las pruebas | [Respaldo y restauración](docs/RESPALDO-RESTAURACION.md) · [Validación y límites](docs/VALIDACION.md) |
 
+## Novedades de 1.7
+
+| Función | Guía |
+| --- | --- |
+| Técnico de soporte con permisos limitados | [Rol técnico](docs/ROL-TECNICO.md) |
+| Filtros personales y alertas antes del SLA | [Vistas y alertas](docs/VISTAS-ALERTAS.md) |
+| Instrucciones reutilizables con revisión previa | [Plantillas](docs/PLANTILLAS-RESPUESTA.md) |
+| Incidencias comunes e historiales privados | [Incidencias](docs/INCIDENCIAS.md) |
+| Tarifas MXN con versiones preservadas | [Paquetes](docs/PAQUETES-TARIFAS.md) |
+| Compromisos, vencimientos y asignación de abonos | [Parcialidades](docs/PARCIALIDADES.md) |
+| Movimientos bancarios sin acreditación automática | [Conciliación CSV](docs/CONCILIACION-BANCARIA.md) |
+| Documentos con corte y descarga autorizada | [Estados de cuenta](docs/ESTADOS-CUENTA.md) |
+
+Crear paquetes, cotizar, programar parcialidades, importar o conciliar movimientos bancarios **no acredita minutos**. La acreditación conserva su confirmación explícita en Pagos o al aprobar una solicitud. Los estados de cuenta preservan cada emisión y explican la apertura de datos anteriores.
+
 ## Funciones incluidas
 
 - Alta, edición y baja lógica de instituciones; contacto, notas y presupuestos separados para correo y remoto.
 - Tiempo asignado, utilizado y restante, presentado en horas y minutos; todo cálculo persistente usa minutos.
-- Usuarios con contraseña y roles `ADMIN` / `USER` / `BILLING` (Cobranza), vinculados a su institución cuando corresponde.
+- Usuarios con contraseña y roles `ADMIN` / `TECH` (Técnico) / `USER` / `BILLING` (Cobranza), vinculados a su institución cuando corresponde.
 - Casos abiertos/cerrados, descripción inicial y cronología de atenciones, comentarios, cambios de estado y anulaciones.
-- Registro administrativo de consumos, validación de saldo y rechazo transaccional de operaciones que lo excedan.
-- Comentarios públicos e internos: los internos sólo son visibles para administradores.
+- Registro de consumos por Administración y técnicos, validación de saldo y rechazo transaccional de operaciones que lo excedan.
+- Comentarios públicos e internos: los internos sólo son visibles para Administración y técnicos de soporte.
 - Portal del usuario para consultar saldo e historial de su institución, abrir casos y agregar comentarios públicos.
-- Los administrativos pueden **Tomar caso** cuando está abierto y sin responsable; la asignación queda en el historial y genera el aviso correspondiente. El listado permite filtrar casos sin responsable o propios.
+- Administración y técnicos pueden **Tomar caso** cuando está abierto y sin responsable; la asignación queda en el historial y genera el aviso correspondiente. El listado permite filtrar casos sin responsable o propios.
 - Detalle de cada elemento del historial de atención y de notificaciones, con **Volver al historial**; conserva filtros y posición del listado. Los avisos muestran su correo completo únicamente a administradores.
 - Auditoría administrativa de cambios; anular una atención reintegra sus minutos sin borrar su historia.
 - Inicio de sesión con cookies de sesión, protección CSRF y contraseñas BCrypt; cambio de contraseña desde la cuenta.
 - Inicio de PostgreSQL, Postfix, Spring y Angular con Docker Compose, puertos configurables, respaldo y restauración.
-- Asignación de un administrador responsable por institución y caso; correo de contacto por cuenta.
+- Asignación de un responsable ADMIN/TECH por institución y caso; correo de contacto por cuenta.
 - Registro de pagos y acreditación atómica de minutos, con referencias únicas y protección ante reintentos duplicados.
 - Avisos SMTP al cliente y responsable por cambios de casos, incluido el cierre; avisos de pagos y anulaciones, cola persistente y reintentos.
 - Cada aviso de caso identifica la institución cliente y el administrativo que atiende, incluye la descripción actual, el detalle de la actualización y el estado **Abierto** o **Cerrado**, e invita a consultar la plataforma Helpdesk.
@@ -65,12 +80,13 @@ Sistema de atención técnica con servidor **Spring Boot 3.5.16 / Java 17**, cli
 | Cuenta | Alcance |
 | --- | --- |
 | Administración (`ADMIN`) | Instituciones, usuarios, soporte, configuración, reportes técnicos y supervisión financiera. Puede anular pagos si las reglas de saldo lo permiten. |
+| Técnico (`TECH`) | Atiende, toma, edita, cierra y reabre casos; registra consumos y notas internas, usa cronómetro, adjuntos y agenda propia. Sin administración de cuentas, finanzas, configuración ni anulación de consumos. |
 | Cliente (`USER`) | Saldo, casos e historial público de su institución; abre solicitudes, comenta, adjunta archivos de soporte y confirma sesiones remotas. Sin notas internas. El acceso financiero propio requiere habilitación expresa de Administración. |
 | Cobranza (`BILLING`) | Saldos institucionales, pólizas, pagos, acreditación de horas, comprobantes y reportes financieros. Sin acceso a expedientes técnicos, administración de cuentas o anulación de pagos. |
 
 Los permisos se comprueban en el servidor. Los adjuntos de soporte respetan la institución y la visibilidad de la entrada; Administración/Cobranza consultan todos los comprobantes de pago; el portal financiero habilitado permite al cliente consultar sólo los de su institución. La campana sigue funcionando con el correo pausado y muestra a Cobranza sus avisos de saldo.
 
-Para actualizar desde una versión anterior, respalde primero y conserve `.env`, los volúmenes y las migraciones existentes. Siga [Actualizar a 1.6](docs/VERSION-1.6.md); las guías de [migración 1.0/1.1](docs/MIGRACION-1.1.md) y [SMTP interno](docs/SMTP-INTERNO.md#actualizar-una-instalación-anterior) conservan las particularidades de esas versiones. No es necesario cambiar una configuración SMTP que ya funciona.
+Para actualizar desde una versión anterior, respalde primero y conserve `.env`, los volúmenes y las migraciones existentes. Siga [Actualizar a 1.7](docs/VERSION-1.7.md); las guías de [migración 1.0/1.1](docs/MIGRACION-1.1.md) y [SMTP interno](docs/SMTP-INTERNO.md#actualizar-una-instalación-anterior) conservan las particularidades de esas versiones. No es necesario cambiar una configuración SMTP que ya funciona.
 
 ## Inicio rápido desde cero con Docker
 
@@ -225,7 +241,7 @@ Requiere JDK 17 o posterior, Maven 3.9, Node.js 24 LTS, npm, Python 3.10 y Docke
 
 `compilar.sh` ejecuta `mvn package`, `npm ci` y `npm run build`. Produce:
 
-- `backend/target/siabuc-helpdesk-1.6.0.jar`
+- `backend/target/siabuc-helpdesk-1.7.0.jar`
 - `frontend/dist/helpdesk/browser/`
 
 `iniciar-dev.sh` inicia PostgreSQL y Postfix con Docker, compila Spring, instala las dependencias de Angular y ejecuta Spring y `ng serve` en una terminal. Lee los mismos puertos y contraseñas de `.env`; ambos procesos escuchan en `127.0.0.1`. Los registros se guardan en `.runtime/`. **Ctrl+C** detiene Spring y Angular; después `./detener.sh` detiene PostgreSQL y Postfix. No ejecute el modo Docker completo y el modo de desarrollo al mismo tiempo sobre los mismos puertos.
@@ -291,7 +307,8 @@ La restauración detiene Spring, Angular y Postfix de Docker, valida el SHA-256 
 - [Reportes de cobranza](docs/REPORTES-COBRANZA.md): ingresos, anulaciones, saldos de pólizas, Excel y PDF.
 - [Comprobantes de pago](docs/COMPROBANTES-PAGO.md): carga, descarga, historial y permisos de archivos financieros.
 - [Actualizar a 1.5](docs/VERSION-1.5.md): guía histórica de esa versión.
-- [Instalar o actualizar a 1.6](docs/VERSION-1.6.md): recorrido comercial, portal y operación, conservando datos.
+- [Instalar o actualizar a 1.7](docs/VERSION-1.7.md): ocho mejoras de soporte y control financiero.
+- [Histórico: versión 1.6](docs/VERSION-1.6.md): recorrido comercial, portal y operación, conservando datos.
 - [Cotizaciones y renovaciones](docs/COTIZACIONES-RENOVACIONES.md): propuesta, constancias, conversión a póliza y avisos de vencimiento.
 - [Solicitudes y portal financiero](docs/SOLICITUDES-PAGO.md): habilitación institucional, comprobantes pendientes y aprobación.
 - [Recibos de pago](docs/RECIBOS-PAGO.md): PDF, folios, datos preservados y anulaciones.

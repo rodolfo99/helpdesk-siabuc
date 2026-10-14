@@ -29,7 +29,7 @@ public class PortalEventService {
         List<Long> recipients = db.queryForList("""
             SELECT u.id FROM app_users u JOIN institutions i ON i.id=?
             WHERE u.active AND u.username<>? AND
-              ((u.role='ADMIN' AND (?::BIGINT IS NULL OR u.id=?))
+              ((u.role IN ('ADMIN','TECH') AND (?::BIGINT IS NULL OR u.id=?))
                OR (u.role='USER' AND u.institution_id=i.id AND i.active AND NOT ?))
             """, Long.class, current.institutionId(), actor, current.assignedId(), current.assignedId(), internal);
         String title = "Caso #" + caseId + " · " + label(eventType) + " · " + current.title();
@@ -61,7 +61,7 @@ public class PortalEventService {
 
     private void lowBalance(long institutionId, String name, String channel, long remaining, long threshold) {
         List<Long> recipients = db.queryForList("""
-            SELECT id FROM app_users WHERE active AND (role IN ('ADMIN','BILLING') OR (role='USER' AND institution_id=?))
+            SELECT id FROM app_users WHERE active AND (role IN ('ADMIN','BILLING','TECH') OR (role='USER' AND institution_id=?))
             """,Long.class,institutionId);
         for (long recipient : recipients)
             insert(recipient,institutionId,null,"LOW_BALANCE",clip("Saldo bajo de " + channel + " · " + name,300),

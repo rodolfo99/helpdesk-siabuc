@@ -21,7 +21,7 @@ interface Inbox { items:InboxItem[]; unreadCount:number; pendingReplies:PendingR
         @if(error()){<p class="notice error" role="alert">{{error()}}</p>}
         <div class="inbox-actions"><button type="button" class="btn" [disabled]="loading()" (click)="refresh()">Actualizar</button><button type="button" class="btn" [disabled]="working() || !inbox().unreadCount" (click)="readAll()">Marcar todas como leídas</button></div>
         @if(user.role!=='BILLING'){
-          <h3>Respuestas pendientes de {{user.role==='ADMIN'?'atención':'tu institución'}}</h3>
+          <h3>Respuestas pendientes de {{['ADMIN','TECH'].includes(user.role)?'atención':'tu institución'}}</h3>
           @if(!inbox().pendingReplies.length){<p class="inbox-empty">No hay respuestas pendientes para tu cuenta.</p>}
           @for(pending of inbox().pendingReplies;track pending.caseId){
             <button type="button" class="pending-case" (click)="goToCase(pending.caseId)"><strong>#{{pending.caseId}} · {{pending.title}}</strong><span>{{pending.institutionName}}</span><small>Responsable: {{pending.assignedAdminName}}</small></button>
@@ -33,7 +33,7 @@ interface Inbox { items:InboxItem[]; unreadCount:number; pendingReplies:PendingR
           @for(item of inbox().items;track item.id){
             <li [class.unread]="!item.readAt">
               <div class="item-heading"><strong>{{item.title}}</strong>@if(!item.readAt){<span class="unread-dot" aria-label="Sin leer"></span>}</div>
-              @if(item.internal){<small class="internal-label">Sólo personal administrativo</small>}
+              @if(item.internal){<small class="internal-label">Sólo personal de soporte</small>}
               <p>{{item.description}}</p><time>{{item.createdAt|date:'dd/MM/yyyy HH:mm'}}</time>
               <div class="inbox-actions">@if(item.caseId!==null){<button type="button" class="btn" (click)="openItem(item)" [disabled]="working()">Ver caso</button>}@if(!item.readAt){<button type="button" class="btn" (click)="read(item.id)" [disabled]="working()">Marcar leída</button>}</div>
             </li>

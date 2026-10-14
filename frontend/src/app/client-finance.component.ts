@@ -1,3 +1,4 @@
+import {InstitutionStatementComponent} from './institution-statement.component';
 import {CommonModule} from '@angular/common';
 import {Component,OnInit,inject,signal} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
@@ -11,7 +12,7 @@ interface Policy extends RequestPolicy{validFrom:string;validUntil:string;agreed
 interface Payment{id:number;policyId:number|null;policyFolio:string|null;reference:string;amount:number;currency:string;paidOn:string;method:PaymentMethod;emailMinutes:number;remoteMinutes:number;voided:boolean;createdAt:string;}
 interface Summary{institutionId:number;institutionName:string;policies:Policy[];payments:Payment[];}
 interface Proof{id:number;paymentId:number;filename:string;contentType:string;sizeBytes:number;sha256:string;createdAt:string;}
-@Component({selector:'app-client-finance',standalone:true,imports:[CommonModule,PaymentRequestsComponent,PaymentReceiptComponent],template:`
+@Component({selector:'app-client-finance',standalone:true,imports:[InstitutionStatementComponent,CommonModule,PaymentRequestsComponent,PaymentReceiptComponent],template:`
 <section><div class="heading"><div><h2>Finanzas institucionales</h2><p>Consulta las pólizas, pagos y evidencias de tu institución; envía solicitudes para validación.</p></div><button class="btn secondary" (click)="load()" [disabled]="busy()">Actualizar información</button></div>
 @if(error()){<div class="notice error" role="alert">{{error()}}</div>}
 @if(loading()){<p role="status">Consultando acceso financiero…</p>}
@@ -23,7 +24,7 @@ interface Proof{id:number;paymentId:number;filename:string;contentType:string;si
 @for(p of s.payments;track p.id){<details class="payment" (toggle)="toggle(p.id,$event)"><summary>Pago #{{p.id}} · {{p.reference}} · {{money(p.amount,p.currency)}} · {{p.voided?'Anulado':'Registrado'}}</summary><p>{{date(p.paidOn)}} · {{method(p.method)}} · {{p.policyFolio || 'Sin póliza'}}. Minutos: {{p.emailMinutes}} correo y {{p.remoteMinutes}} remoto.</p>
 @if(expanded().has(p.id)){<h4>Comprobantes del pago</h4>@if(proofs()[p.id];as files){<ul>@for(file of files;track file.id){<li>{{file.filename}} · {{file.createdAt | date:'dd/MM/yyyy HH:mm'}} <button class="btn secondary" (click)="download(file)" [disabled]="busy()">Descargar {{file.filename}}</button></li>}@empty{<li>No hay archivos de evidencia adjuntos.</li>}</ul>}@else{<p>Cargando comprobantes…</p>}<app-payment-receipt [paymentId]="p.id" [clientMode]="true"/>}</details>
 }@empty{<p>No hay pagos registrados.</p>}
-<app-payment-requests [clientMode]="true" [institutionId]="s.institutionId" [clientPolicies]="s.policies"/>
+<app-institution-statement [clientMode]="true"/><app-payment-requests [clientMode]="true" [institutionId]="s.institutionId" [clientPolicies]="s.policies"/>
 }</section>`,styles:[`.heading{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}.table-wrap{overflow:auto;margin-bottom:1.5rem}.payment{padding:1rem;border:1px solid var(--line);border-radius:8px;margin:.8rem 0}.payment summary{cursor:pointer;font-weight:600}.payment p{line-height:1.6}.payment li{margin:.6rem 0;overflow-wrap:anywhere}.payment li button{margin:.5rem}th,td{min-width:130px}`]})
 export class ClientFinanceComponent extends PageState implements OnInit{
  private api=inject(ApiService);private http=inject(HttpClient);readonly enabled=signal(false);readonly loading=signal(true);readonly summary=signal<Summary|null>(null);readonly expanded=signal<Set<number>>(new Set());readonly proofs=signal<Record<number,Proof[]>>({});readonly money=money;readonly date=calendarDate;readonly method=paymentMethodName;

@@ -16,5 +16,5 @@ public class PolicyController {
     public PolicyService.Detail create(@RequestBody PolicyService.PolicyInput input){return policies.create(input,actor());}
     @PutMapping("/{id}") public PolicyService.Detail update(@PathVariable long id,@RequestBody PolicyService.PolicyInput input){return policies.update(id,input,actor());}
     @PostMapping("/{id}/cancel") public PolicyService.Detail cancel(@PathVariable long id,@RequestBody Models.VoidInput input){return policies.cancel(id,input.reason(),actor());}
-    private Models.User actor(){Models.User actor=helpdesk.me();if(actor.role()==Models.Role.USER)throw ApiException.forbidden();return actor;}
+    private Models.User actor(){Models.User actor=helpdesk.me();if(actor.role()!=Models.Role.ADMIN && actor.role()!=Models.Role.BILLING)throw ApiException.forbidden();return actor;}
 }

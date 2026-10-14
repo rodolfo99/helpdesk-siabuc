@@ -87,7 +87,7 @@ public class HelpdeskService {
     }
 
     public User activeUser(String username) {
-        List<User> users = db.query("SELECT u.* FROM app_users u LEFT JOIN institutions i ON i.id=u.institution_id WHERE u.username=? AND u.active AND (u.role IN ('ADMIN','BILLING') OR i.active)", USER, username);
+        List<User> users = db.query("SELECT u.* FROM app_users u LEFT JOIN institutions i ON i.id=u.institution_id WHERE u.username=? AND u.active AND (u.role IN ('ADMIN','BILLING','TECH') OR i.active)", USER, username);
         if (users.isEmpty()) throw new ApiException(401, "La cuenta no está activa o su institución está dada de baja.");
         return users.get(0);
     }
@@ -103,13 +103,14 @@ public class HelpdeskService {
     }
     private User admin() { User u = actor(); if (u.role() != Role.ADMIN) throw ApiException.forbidden(); return u; }
     private User supportActor() { User u = actor(); if (u.role() == Role.BILLING) throw ApiException.forbidden(); return u; }
-    private User billingActor() { User u = actor(); if (u.role() == Role.USER) throw ApiException.forbidden(); return u; }
+    private User billingActor() { User u = actor(); if (u.role() != Role.ADMIN && u.role() != Role.BILLING) throw ApiException.forbidden(); return u; }
+    private User supportStaff() { User u = actor(); if (!isSupportStaff(u.role())) throw ApiException.forbidden(); return u; }
     private void accountLock() { db.queryForObject("SELECT id FROM system_lock WHERE id=1 FOR UPDATE", Integer.class); }
 
     public List<Institution> institutions() {
         User u = actor();
         if (u.role() == Role.ADMIN) return db.query("SELECT * FROM institutions ORDER BY name,id", INSTITUTION);
-        List<Institution> institutions = u.role() == Role.BILLING ? db.query("SELECT * FROM institutions ORDER BY name,id", INSTITUTION)
+        List<Institution> institutions = (u.role() == Role.BILLING || u.role() == Role.TECH) ? db.query("SELECT * FROM institutions ORDER BY name,id", INSTITUTION)
             : db.query("SELECT * FROM institutions WHERE id=? AND active", INSTITUTION, u.institutionId());
         return institutions.stream()
             .map(i -> new Institution(i.id(), i.name(), i.contactName(), i.email(), i.phone(), "", i.active(),
@@ -158,11 +159,17 @@ public class HelpdeskService {
     private void validateInstitution(InstitutionInput i) {
         required(i.name(), "Nombre", 180); optionalLength(i.contactName(), "Contacto", 180);
         optionalLength(i.email(), "Correo", 254); optionalLength(i.phone(), "Teléfono", 60); optionalLength(i.notes(), "Notas", 10000);
-        validateEmail(i.email()); validateAdminAssignment(i.supportAdminId());
+        validateEmail(i.email()); validateSupportAssignment(i.supportAdminId());
         minutes(i.emailAllocatedMinutes()); minutes(i.remoteAllocatedMinutes());
     }
 
     public List<User> users() { admin(); return db.query("SELECT * FROM app_users ORDER BY username,id", USER); }
+    /** Names and identifiers for operational assignment; no account or contact details. */
+    public List<SupportStaff> supportStaffOptions() {
+        supportStaff();
+        return db.query("SELECT id,display_name,role FROM app_users WHERE active AND role IN ('ADMIN','TECH') ORDER BY display_name,id",
+            (r,n) -> new SupportStaff(r.getLong("id"),r.getString("display_name"),Role.valueOf(r.getString("role"))));
+    }
     @Transactional
     public User createUser(UserInput input) {
         User actor = admin(); accountLock(); validateUser(input, true);
@@ -201,7 +208,7 @@ public class HelpdeskService {
             if (i.institutionId() == null) throw ApiException.bad("Los usuarios requieren una institución.");
             Institution institution = institution(i.institutionId(), false);
             if (creating && !institution.active()) throw ApiException.conflict("No pueden crearse usuarios para una institución dada de baja.");
-        } else if (i.institutionId() != null) throw ApiException.bad("Administración y cobranza no deben tener institución asignada.");
+        } else if (i.institutionId() != null) throw ApiException.bad("Administración, soporte técnico y cobranza no deben tener institución asignada.");
     }
     @Transactional
     public void changePassword(PasswordInput input) {
@@ -215,7 +222,7 @@ public class HelpdeskService {
 
     public List<SupportCase> cases() {
         User actor = supportActor();
-        return actor.role() == Role.ADMIN ? db.query(CASE_SELECT + " ORDER BY c.updated_at DESC,c.id DESC", CASE)
+        return isSupportStaff(actor.role()) ? db.query(CASE_SELECT + " ORDER BY c.updated_at DESC,c.id DESC", CASE)
             : db.query(CASE_SELECT + " WHERE c.institution_id=? ORDER BY c.updated_at DESC,c.id DESC", CASE, actor.institutionId());
     }
     public CaseDetail caseDetail(long id) { User actor = supportActor(); return detail(authorizedCase(id, actor), actor); }
@@ -223,12 +230,12 @@ public class HelpdeskService {
         List<SupportCase> rows = db.query(CASE_SELECT + " WHERE c.id=?", CASE, id);
         if (rows.isEmpty()) throw ApiException.missing();
         SupportCase c = rows.get(0);
-        if (actor.role() != Role.ADMIN && !Objects.equals(actor.institutionId(), c.institutionId())) throw ApiException.missing();
+        if (actor.role() == Role.USER && !Objects.equals(actor.institutionId(), c.institutionId())) throw ApiException.missing();
         return c;
     }
     private CaseDetail detail(SupportCase c, User actor) {
         List<Entry> entries = db.query("SELECT e.*,u.username AS creator FROM case_entries e JOIN app_users u ON u.id=e.created_by WHERE e.case_id=?" +
-            (actor.role() == Role.ADMIN ? "" : " AND NOT e.internal") + " ORDER BY e.id", ENTRY, c.id());
+            (isSupportStaff(actor.role()) ? "" : " AND NOT e.internal") + " ORDER BY e.id", ENTRY, c.id());
         return new CaseDetail(c.id(), c.institutionId(), c.institutionName(), c.title(), c.description(), c.channel(), c.status(),
             c.createdBy(), c.createdAt(), c.updatedAt(), c.totalMinutes(), entries, c.assignedAdminId(), c.assignedAdminName());
     }
@@ -244,13 +251,16 @@ public class HelpdeskService {
     public CaseDetail createCase(CaseInput input) {
         User actor = supportActor(); validateCase(input.title(), input.description(), input.channel());
         if (input.institutionId() == null) throw ApiException.bad("Indique la institución del caso.");
-        if (actor.role() != Role.ADMIN && !Objects.equals(actor.institutionId(), input.institutionId())) throw ApiException.forbidden();
+        if (actor.role() == Role.USER && !Objects.equals(actor.institutionId(), input.institutionId())) throw ApiException.forbidden();
         Institution institution = institution(input.institutionId(), true); requireActive(institution); requireBalance(institution, input.channel(), 1);
         if (actor.role() == Role.USER && input.assignedAdminId() != null) throw ApiException.forbidden();
-        Long assigned = input.assignedAdminId() != null ? input.assignedAdminId() : institution.supportAdminId();
-        if (input.assignedAdminId() == null && assigned != null && !activeAdmin(assigned)) assigned = null;
-        if (assigned == null && actor.role() == Role.ADMIN) assigned = actor.id();
-        validateAdminAssignment(assigned);
+        if (actor.role() == Role.TECH && input.assignedAdminId() != null && input.assignedAdminId() != actor.id())
+            throw ApiException.forbidden();
+        Long assigned = actor.role() == Role.TECH ? Long.valueOf(actor.id())
+            : input.assignedAdminId() != null ? input.assignedAdminId() : institution.supportAdminId();
+        if (input.assignedAdminId() == null && assigned != null && !activeSupportStaff(assigned)) assigned = null;
+        if (assigned == null && isSupportStaff(actor.role())) assigned = actor.id();
+        validateSupportAssignment(assigned);
         Long id = db.queryForObject("INSERT INTO support_cases(institution_id,title,description,channel,created_by,assigned_admin_id) VALUES (?,?,?,?,?,?) RETURNING id", Long.class,
             input.institutionId(), clean(input.title()), clean(input.description()), input.channel().name(), actor.id(), assigned);
         profiles.initialize(id, input.profile());
@@ -260,7 +270,7 @@ public class HelpdeskService {
     }
     @Transactional
     public CaseDetail claimCase(long id) {
-        User actor = admin();
+        User actor = supportStaff();
         LockedCase locked = lockCase(id, actor);
         requireActive(locked.institution());
         SupportCase current = locked.supportCase();
@@ -268,9 +278,9 @@ public class HelpdeskService {
             throw ApiException.conflict("El caso está cerrado. Reábralo antes de tomarlo.");
         if (Objects.equals(current.assignedAdminId(), actor.id())) return detail(current, actor);
         if (current.assignedAdminId() != null)
-            throw ApiException.conflict("Otro administrativo ya es responsable de este caso. Actualice el listado para consultar la asignación.");
+            throw ApiException.conflict("Otro integrante de soporte ya es responsable de este caso. Actualice el listado para consultar la asignación.");
         db.update("UPDATE support_cases SET assigned_admin_id=?,updated_at=NOW() WHERE id=?", actor.id(), id);
-        String description = "Caso tomado por " + actor.displayName() + " (" + actor.username() + "). El administrativo es ahora responsable de la atención.";
+        String description = "Caso tomado por " + actor.displayName() + " (" + actor.username() + "). Es ahora responsable de la atención.";
         insertEntry(id, description, null, 0, false, actor.id());
         audit(actor.username(), "CLAIM_CASE", "CASE", id, description);
         notifications.caseEvent(id, "CLAIM_CASE", description, false, actor.username());
@@ -278,10 +288,12 @@ public class HelpdeskService {
     }
     @Transactional
     public CaseDetail updateCase(long id, CaseEdit input, boolean assignedAdminProvided) {
-        User actor = admin(); validateCase(input.title(), input.description(), input.channel());
+        User actor = supportStaff(); validateCase(input.title(), input.description(), input.channel());
         LockedCase locked = lockCase(id, actor);
         Long assigned = assignedAdminProvided ? input.assignedAdminId() : locked.supportCase().assignedAdminId();
-        if (assignedAdminProvided) validateAdminAssignment(assigned);
+        if (actor.role() == Role.TECH && !Objects.equals(assigned, locked.supportCase().assignedAdminId()))
+            throw ApiException.forbidden();
+        if (assignedAdminProvided && actor.role() == Role.ADMIN) validateSupportAssignment(assigned);
         db.update("UPDATE support_cases SET title=?,description=?,channel=?,assigned_admin_id=?,updated_at=NOW() WHERE id=?", clean(input.title()), clean(input.description()), input.channel().name(), assigned, id);
         audit(actor.username(), "UPDATE_CASE", "CASE", id, "Antes: " + locked.supportCase() + "; después: " + authorizedCase(id, actor));
         String description = "Datos del caso actualizados: " + clean(input.title()) + "\n" + clean(input.description())
@@ -292,7 +304,7 @@ public class HelpdeskService {
     }
     @Transactional
     public CaseDetail changeStatus(long id, StatusInput input) {
-        User actor = admin();
+        User actor = supportStaff();
         if (input.status() == null) throw ApiException.bad("Indique el estado del caso.");
         required(input.reason(), "Motivo del cambio de estado", 10000);
         LockedCase locked = lockCase(id, actor);
@@ -312,12 +324,12 @@ public class HelpdeskService {
         if (input.internal() == null) throw ApiException.bad("Indique si el registro es interno.");
         if ((input.minutes() == 0 && input.channel() != null) || (input.minutes() > 0 && input.channel() == null))
             throw ApiException.bad("Un comentario usa 0 minutos y canal vacío; una atención requiere minutos positivos y canal.");
-        if (actor.role() != Role.ADMIN && (input.minutes() != 0 || input.channel() != null || input.internal())) throw ApiException.forbidden();
+        if (!isSupportStaff(actor.role()) && (input.minutes() != 0 || input.channel() != null || input.internal())) throw ApiException.forbidden();
         LockedCase locked = lockCase(id, actor); requireActive(locked.institution());
         if (locked.supportCase().status() != CaseStatus.OPEN) throw ApiException.conflict("El caso está cerrado. Reábralo antes de registrar una atención.");
         if (input.minutes() > 0) { requireBalance(locked.institution(), input.channel(), input.minutes()); changeUsed(locked.institution().id(), input.channel(), input.minutes()); }
         long entryId = insertEntry(id, clean(input.description()), input.channel(), input.minutes(), input.internal(), actor.id());
-        if (actor.role() == Role.ADMIN && !input.internal()) profiles.recordPublicResponse(id, entryId);
+        if (isSupportStaff(actor.role()) && !input.internal()) profiles.recordPublicResponse(id, entryId);
         db.update("UPDATE support_cases SET updated_at=NOW() WHERE id=?", id);
         audit(actor.username(), "CREATE_ENTRY", "ENTRY", entryId, "Caso=" + id + "; minutos=" + input.minutes() + "; canal=" + input.channel() + "; interno=" + input.internal());
         notifications.caseEvent(id, "CREATE_ENTRY", clean(input.description()) + "\nMinutos: " + input.minutes() + "; canal: " + input.channel(), input.internal(), actor.username());
@@ -452,13 +464,13 @@ public class HelpdeskService {
             && p.notes().equals(clean(i.notes())) && Objects.equals(p.policyId(), i.policyId());
     }
 
-    private void validateAdminAssignment(Long id) {
+    private void validateSupportAssignment(Long id) {
         if (id == null) return;
-        if (!activeAdmin(id))
-            throw ApiException.bad("El responsable debe ser un administrador activo.");
+        if (!activeSupportStaff(id))
+            throw ApiException.bad("El responsable debe ser un administrador o técnico de soporte activo.");
     }
-    private boolean activeAdmin(long id) {
-        return db.queryForObject("SELECT COUNT(*) FROM app_users WHERE id=? AND role='ADMIN' AND active", Long.class, id) == 1;
+    private boolean activeSupportStaff(long id) {
+        return db.queryForObject("SELECT COUNT(*) FROM app_users WHERE id=? AND role IN ('ADMIN','TECH') AND active", Long.class, id) == 1;
     }
     private void validateEmail(String email) {
         optionalLength(email, "Correo electrónico", 254);

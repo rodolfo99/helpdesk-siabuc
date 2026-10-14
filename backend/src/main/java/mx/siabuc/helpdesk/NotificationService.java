@@ -48,7 +48,7 @@ public class NotificationService {
             SELECT c.*,i.name AS institution_name,i.email AS institution_email,
                 CASE WHEN u.active THEN u.email END AS assigned_email,u.display_name AS assigned_name
             FROM support_cases c JOIN institutions i ON i.id=c.institution_id
-            LEFT JOIN app_users u ON u.id=c.assigned_admin_id AND u.role='ADMIN'
+            LEFT JOIN app_users u ON u.id=c.assigned_admin_id AND u.role IN ('ADMIN','TECH')
             WHERE c.id=?
             """, (r, n) -> new CaseInfo(r.getLong("id"), r.getLong("institution_id"), r.getString("institution_name"),
                 r.getString("institution_email"), r.getObject("assigned_admin_id", Long.class), r.getString("assigned_email"),
@@ -218,7 +218,7 @@ public class NotificationService {
                 if (row.internal()) throw ApiException.forbidden();
                 emails = db.query("SELECT email FROM institutions WHERE id=?", (r, n) -> r.getString(1), row.entityId());
             } else {
-                String role = row.internal() || row.caseId() != null ? "role='ADMIN'" : "role IN ('ADMIN','BILLING')";
+                String role = row.internal() || row.caseId() != null ? "role IN ('ADMIN','TECH')" : "role IN ('ADMIN','BILLING')";
                 emails = db.query("SELECT email FROM app_users WHERE id=? AND active AND " + role, (r, n) -> r.getString(1), row.entityId());
             }
             address = emails.isEmpty() ? null : MailConfig.email(emails.get(0));

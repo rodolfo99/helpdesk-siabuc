@@ -43,9 +43,10 @@ public class CaseProfileService {
         return settings();
     }
     public List<Summary> summaries(Models.User actor) {
+        if(!Models.isSupportStaff(actor.role()) && actor.role()!=Models.Role.USER) throw ApiException.forbidden();
         String sql="SELECT p.case_id,p.category,p.priority FROM case_profiles p JOIN support_cases c ON c.id=p.case_id";
         var mapper=(org.springframework.jdbc.core.RowMapper<Summary>)(r,n)->new Summary(r.getLong(1),Category.valueOf(r.getString(2)),Priority.valueOf(r.getString(3)));
-        return actor.role()==Models.Role.ADMIN ? db.query(sql+" ORDER BY p.case_id",mapper)
+        return Models.isSupportStaff(actor.role()) ? db.query(sql+" ORDER BY p.case_id",mapper)
             : db.query(sql+" WHERE c.institution_id=? ORDER BY p.case_id",mapper,actor.institutionId());
     }
     @Transactional(propagation=Propagation.MANDATORY)
@@ -70,7 +71,7 @@ public class CaseProfileService {
         db.update("""
             UPDATE case_profiles p SET first_responded_at=e.created_at,updated_at=NOW()
             FROM case_entries e JOIN app_users u ON u.id=e.created_by
-            WHERE p.case_id=? AND e.id=? AND e.case_id=p.case_id AND NOT e.internal AND u.role='ADMIN'
+            WHERE p.case_id=? AND e.id=? AND e.case_id=p.case_id AND NOT e.internal AND u.role IN ('ADMIN','TECH')
               AND p.first_responded_at IS NULL
             """,caseId,entryId);
     }
@@ -83,9 +84,11 @@ public class CaseProfileService {
     public Profile profile(long caseId) { return view(row(caseId)); }
     @Transactional
     public Profile update(long caseId,ProfileInput input,Models.User actor) {
+        if(!Models.isSupportStaff(actor.role()) && actor.role()!=Models.Role.USER) throw ApiException.forbidden();
         validate(input);
         // Match the application order: institution -> case -> profile. No profile path locks a case afterwards.
         Long institutionId=db.queryForObject("SELECT institution_id FROM support_cases WHERE id=?",Long.class,caseId);
+        if(actor.role()==Models.Role.USER && !Objects.equals(actor.institutionId(),institutionId)) throw ApiException.missing();
         Boolean active=db.queryForObject("SELECT active FROM institutions WHERE id=? FOR UPDATE",Boolean.class,institutionId);
         db.queryForObject("SELECT id FROM support_cases WHERE id=? FOR UPDATE",Long.class,caseId);
         if(!Boolean.TRUE.equals(active)) throw ApiException.conflict("La institución está dada de baja.");

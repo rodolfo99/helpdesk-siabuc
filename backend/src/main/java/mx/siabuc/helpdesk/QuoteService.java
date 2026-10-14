@@ -14,7 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class QuoteService {
     public record Input(Long institutionId,String folio,String description,LocalDate expiresOn,LocalDate validFrom,LocalDate validUntil,
-        BigDecimal agreedAmount,Long emailMinutes,Long remoteMinutes,Long previousPolicyId) {}
+        BigDecimal agreedAmount,Long emailMinutes,Long remoteMinutes,Long previousPolicyId,Long packageVersionId,String packageOverrideReason) {
+        public Input(Long institutionId,String folio,String description,LocalDate expiresOn,LocalDate validFrom,LocalDate validUntil,BigDecimal agreedAmount,Long emailMinutes,Long remoteMinutes,Long previousPolicyId){this(institutionId,folio,description,expiresOn,validFrom,validUntil,agreedAmount,emailMinutes,remoteMinutes,previousPolicyId,null,null);}
+    }
     public record Evidence(String evidence) {}
     public record Decision(String decision,String contactName,String evidence,LocalDate decidedOn) {}
     public record Conversion(String policyFolio) {}
@@ -24,9 +26,9 @@ public class QuoteService {
         String createdBy,Instant createdAt,Instant updatedAt,Instant sentAt,String sentEvidence,String decisionContact,
         String decisionEvidence,LocalDate decidedOn,String decisionRecordedBy,Instant decisionRecordedAt,boolean expired) {}
     public record History(long id,long quoteId,String action,String description,String createdBy,Instant createdAt) {}
-    public record Detail(Quote quote,List<History> history) {}
-    private final JdbcTemplate db;private final HelpdeskService helpdesk;private final PolicyService policies;
-    public QuoteService(JdbcTemplate db,HelpdeskService helpdesk,PolicyService policies){this.db=db;this.helpdesk=helpdesk;this.policies=policies;}
+    public record Detail(Quote quote,List<History> history,SupportPackageService.Version packageSnapshot,String packageOverrideReason) {}
+    private final JdbcTemplate db;private final HelpdeskService helpdesk;private final PolicyService policies;private final SupportPackageService packages;
+    public QuoteService(JdbcTemplate db,HelpdeskService helpdesk,PolicyService policies,SupportPackageService packages){this.db=db;this.helpdesk=helpdesk;this.policies=policies;this.packages=packages;}
     private static final ZoneId ZONE=ZoneId.of("America/Mexico_City");
     private static final String SELECT="""
         SELECT q.*,i.name AS institution_name,u.username AS creator,a.username AS decision_actor,
@@ -47,7 +49,7 @@ public class QuoteService {
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Detail detail(long id){actor();return detailData(id);}
     private Detail detailData(long id){return new Detail(quote(id),db.query("SELECT h.*,u.username AS creator FROM quote_history h JOIN app_users u ON u.id=h.created_by WHERE h.quote_id=? ORDER BY h.id DESC",
-        (r,n)->new History(r.getLong("id"),r.getLong("quote_id"),r.getString("action"),r.getString("description"),r.getString("creator"),instant(r.getTimestamp("created_at"))),id));}
+        (r,n)->new History(r.getLong("id"),r.getLong("quote_id"),r.getString("action"),r.getString("description"),r.getString("creator"),instant(r.getTimestamp("created_at"))),id),packages.snapshot(packageVersion(id)),db.queryForObject("SELECT package_override_reason FROM support_quotes WHERE id=?",String.class,id));}
     @Transactional
     public Detail create(Input input){Models.User actor=actor();validate(input);lockInstitution(input.institutionId(),true);checkPrevious(input.previousPolicyId(),input.institutionId());unique(input.folio(),null);
         Long id=db.queryForObject("""
@@ -55,14 +57,14 @@ public class QuoteService {
             VALUES(?,?,?,?,?,?,?,?,?,?,?) RETURNING id
             """,Long.class,input.institutionId(),clean(input.folio()),clean(input.description()),date(input.expiresOn()),date(input.validFrom()),date(input.validUntil()),
             input.agreedAmount(),input.emailMinutes(),input.remoteMinutes(),input.previousPolicyId(),actor.id());
-        event(id,"CREATE_QUOTE",actor,"Borrador creado. "+snapshot(input));return detailData(id);}
+        applyPackage(id,input,null);event(id,"CREATE_QUOTE",actor,"Borrador creado. "+snapshot(input)+packageDescription(id));return detailData(id);}
     @Transactional
     public Detail update(long id,Input input){Models.User actor=actor();validate(input);Quote q=lock(id,true);
         if(q.institutionId()!=input.institutionId()||!Objects.equals(q.previousPolicyId(),input.previousPolicyId()))throw ApiException.conflict("La institución y póliza anterior no pueden cambiarse. Cree otra cotización.");
         require(q,"DRAFT");unique(input.folio(),id);
         db.update("UPDATE support_quotes SET folio=?,description=?,expires_on=?,valid_from=?,valid_until=?,agreed_amount=?,email_minutes=?,remote_minutes=?,updated_at=NOW() WHERE id=?",
             clean(input.folio()),clean(input.description()),date(input.expiresOn()),date(input.validFrom()),date(input.validUntil()),input.agreedAmount(),input.emailMinutes(),input.remoteMinutes(),id);
-        event(id,"UPDATE_QUOTE",actor,"Borrador actualizado. Antes: "+snapshot(asInput(q))+"\nDespués: "+snapshot(input));return detailData(id);}
+        applyPackage(id,input,packageVersion(id));event(id,"UPDATE_QUOTE",actor,"Borrador actualizado. Antes: "+snapshot(asInput(q))+"\nDespués: "+snapshot(input)+packageDescription(id));return detailData(id);}
     @Transactional
     public Detail send(long id,Evidence input){Models.User actor=actor();required(input==null?null:input.evidence(),"Constancia de emisión",10000);Quote q=lock(id,true);require(q,"DRAFT");
         if(q.expiresOn().isBefore(today()))throw ApiException.conflict("La oferta ya venció. Actualice la fecha del borrador antes de emitirla.");
@@ -88,6 +90,13 @@ public class QuoteService {
         if(q.previousPolicyId()!=null)db.update("INSERT INTO policy_renewals(institution_id,previous_policy_id,new_policy_id,quote_id,created_by) VALUES(?,?,?,?,?)",q.institutionId(),q.previousPolicyId(),policyId,id,actor.id());
         event(id,"CONVERT_QUOTE",actor,"Póliza "+created.policy().folio()+" creada desde cotización aceptada"+(q.previousPolicyId()==null?"":"; renueva la póliza "+q.previousPolicyFolio())+". No se registraron pagos ni se acreditaron minutos.");
         return detailData(id);}
+    private Long packageVersion(long id){return db.queryForObject("SELECT package_version_id FROM support_quotes WHERE id=?",Long.class,id);}
+    private void applyPackage(long id,Input input,Long retained){Long requested=input.packageVersionId()==null?retained:input.packageVersionId();if(requested==null){if(input.packageOverrideReason()!=null&&!input.packageOverrideReason().isBlank())throw ApiException.bad("El motivo de ajuste requiere un paquete.");return;}
+        SupportPackageService.Version v=packages.forQuote(requested,retained);boolean changed=v.amount().compareTo(input.agreedAmount())!=0||v.emailMinutes()!=input.emailMinutes()||v.remoteMinutes()!=input.remoteMinutes()||!v.description().equals(clean(input.description()));
+        String reason=clean(input.packageOverrideReason());if(changed)required(reason,"Motivo de ajuste a los términos del paquete",2000);else if(reason.length()>2000)throw ApiException.bad("El motivo admite hasta 2000 caracteres.");
+        db.update("UPDATE support_quotes SET package_version_id=?,package_override_reason=? WHERE id=?",requested,changed?reason:null,id);
+    }
+    private String packageDescription(long id){SupportPackageService.Version v=packages.snapshot(packageVersion(id));if(v==null)return "";String reason=db.queryForObject("SELECT package_override_reason FROM support_quotes WHERE id=?",String.class,id);return " Paquete: "+v.code()+" revisión "+v.revision()+"; tarifa original $"+v.amount()+" MXN, correo "+v.emailMinutes()+" min, remoto "+v.remoteMinutes()+" min."+(reason==null?" Sin ajustes.":" Términos ajustados: "+reason);}
     private Quote quote(long id){List<Quote> rows=db.query(SELECT+" WHERE q.id=?",ROW,id);if(rows.isEmpty())throw ApiException.missing();return rows.get(0);}
     private Quote lock(long id,boolean active){Quote q=quote(id);lockInstitution(q.institutionId(),active);checkPrevious(q.previousPolicyId(),q.institutionId());db.queryForObject("SELECT id FROM support_quotes WHERE id=? FOR UPDATE",Long.class,id);return quote(id);}
     private void lockInstitution(long id,boolean active){List<Boolean> rows=db.query("SELECT active FROM institutions WHERE id=? FOR UPDATE",(r,n)->r.getBoolean(1),id);if(rows.isEmpty())throw ApiException.missing();if(active&&!rows.get(0))throw ApiException.conflict("La institución está dada de baja.");}
@@ -96,7 +105,7 @@ public class QuoteService {
         :db.queryForObject("SELECT COUNT(*) FROM support_quotes WHERE LOWER(BTRIM(folio))=LOWER(?) AND id<>?",Long.class,clean(folio),except);if(count>0)throw ApiException.conflict("El folio de cotización ya existe.");}
     private void event(long id,String action,Models.User actor,String description){db.update("INSERT INTO quote_history(quote_id,action,description,created_by) VALUES(?,?,?,?)",id,action,description,actor.id());
         db.update("INSERT INTO audit_log(actor,action,entity_type,entity_id,details) VALUES(?,?,'QUOTE',?,?)",actor.username(),action,id,description);}
-    private Models.User actor(){Models.User u=helpdesk.me();if(u.role()==Models.Role.USER)throw ApiException.forbidden();return u;}
+    private Models.User actor(){Models.User u=helpdesk.me();if(u.role()!=Models.Role.ADMIN&&u.role()!=Models.Role.BILLING)throw ApiException.forbidden();return u;}
     private static void require(Quote q,String status){if(!q.status().equals(status))throw ApiException.conflict("Esta operación no corresponde al estado actual de la cotización.");}
     private static void validate(Input i){if(i==null||i.institutionId()==null||i.institutionId()<=0)throw ApiException.bad("Seleccione la institución.");required(i.folio(),"Folio",100);required(i.description(),"Descripción",10000);
         validDate(i.expiresOn());validDate(i.validFrom());validDate(i.validUntil());if(i.validUntil().isBefore(i.validFrom()))throw ApiException.bad("La vigencia final no puede ser anterior al inicio.");

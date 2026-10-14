@@ -141,3 +141,12 @@ La retención se aplica sólo después de un respaldo programado exitoso, con ca
 El dump incluye datos y adjuntos BYTEA, recibos JSONB y configuración de módulos. No incluye `.env`, certificados, imágenes Docker o cola de Postfix; requieren conservación aparte. Se mantienen `respaldar.sh`/`.bat` y `restaurar.sh`/`.bat`; la copia manual desde la plataforma también funciona con calendario desactivado si el destino está confirmado y el worker disponible. La programación corresponde al despliegue Compose; el inicio nativo de desarrollo no levanta ese worker.
 
 Una comprobación de hash y catálogo no sustituye restaurar en una base aislada. El procedimiento documentado no utiliza el volumen productivo. Consulte [Respaldos automáticos](RESPALDOS-AUTOMATICOS.md), [Respaldo y restauración manual](RESPALDO-RESTAURACION.md) y [Validación](VALIDACION.md); describir la arquitectura no afirma una ejecución de Docker o restauración que no conste allí.
+
+
+## Extensiones de 1.7
+
+V17–V24 son migraciones aditivas; V1–V16 permanecen intactas. TECH es un rol operativo sin poderes administrativos o financieros. Las vistas pertenecen a una cuenta; los filtros se validan como datos y nunca como SQL. Las plantillas sólo insertan un borrador editable. Las incidencias tienen una proyección pública explícita, separada de vínculos e historiales privados.
+
+El catálogo conserva versiones; las cotizaciones referencian una versión inmutable. Las parcialidades asignan pagos existentes dentro de sus importes y no generan dinero o minutos. La conciliación importa con hashes y exige confirmación de una relación uno a uno con un pago existente. Los estados de cuenta usan apertura temporal y versiones públicas de filas desde V24; cada emisión conserva una instantánea, sin reconstruir historia previa que la aplicación no registró.
+
+Los avisos de SLA se publican en la campana; los recordatorios de parcialidades se consultan en su propia pantalla. Ambos mecanismos son internos e independientes de SMTP. Ninguna extensión modifica la pausa de correo ni activa el calendario de respaldos.

@@ -1,5 +1,21 @@
 # Validación de SIABUC Helpdesk
 
+## Versión 1.7.0 · 14 de octubre de 2026
+
+- **213 pruebas Java de integración y 10 unitarias aprobadas.** Se ejecutó el conjunto completo; una prueba nueva de plantillas esperaba 201 donde el contrato existente devuelve 200. Corregida esa expectativa, se repitieron sus cinco pruebas con resultado satisfactorio. Los informes finales de las 213 pruebas distintas no tienen errores, fallos ni omisiones. Java 17 / Maven 3.9.9; JAR `siabuc-helpdesk-1.7.0.jar` generado.
+- Incluyen TECH y denegaciones administrativas/financieras, notas y archivos por institución, vistas privadas, SLA con correo pausado, revisiones de plantillas, incidencias sin filtración, tarifas no retroactivas, parcialidades y asignaciones, importación/conciliación sin crédito, cortes de estados de cuenta, emisiones inmutables y PDF autorizado.
+- **Angular compilado:** bundle inicial 791.31 kB; seis pruebas de lógica del cliente aprobadas. La búsqueda de plantillas limpia opciones anteriores antes de consultar y descarta respuestas de vista previa que ya no correspondan a la selección.
+- **8/8 recorridos reales de navegador aprobados**, incluido el montaje desechable, sin interceptar la API y sin errores JavaScript. Cubren técnico y SLA, vistas persistentes, plantilla sin publicación automática, incidencias entre instituciones, tarifa histórica, parcialidades, CSV y PDF institucional autorizado. Se revisaron capturas de escritorio y móvil (390 px), con desplazamiento horizontal interno en tablas.
+- **`upgrade-v17.mjs`: 1,646 comprobaciones aprobadas.** Se conservaron 38 tablas y 26 secuencias de 1.6 a través de V17–V24, incluidos contraseñas, pagos, saldos, adjuntos, correo pausado y configuración de respaldos. Las 16 migraciones anteriores conservan exactamente sus bytes. También se verificaron TECH, vistas, publicaciones, versiones de tarifa, conciliación única y apertura temporal.
+- **`statements-v17.mjs`: 26 comprobaciones SQL aprobadas**, incluidas apertura anterior, monedas separadas, inmutabilidad, reversión transaccional y timestamp común para no dividir el pago y su crédito al cruzar la fecha de corte.
+- **62 pruebas Python aprobadas:** 49 de configuración/operación/respaldos y 13 de SMTP. Confirman respaldo automático desactivado por defecto y conservación de configuración; estas pruebas no ejecutan Docker ni restauran una base productiva.
+- Las pruebas Java y los recorridos reales usan Spring, JDBC, sesiones y CSRF sobre **PGlite efímero con SQL exacto V1–V24 y una conexión**. En este ensayo se desactiva Flyway y se usa el modo simple de consultas JDBC para el adaptador PGwire. La primera ejecución con protocolo extendido produjo respuestas de columnas desincronizadas; se descartó como evidencia final. La configuración de producción no cambia.
+- **Pendiente en el entorno de destino:** PostgreSQL 17 nativo, ejecución real de Flyway, contención entre varias conexiones, arranque completo Docker, respaldo/restauración real y scripts bajo Windows nativo. Los scripts y procedimientos existen, pero no se atribuyen estas validaciones a PGlite o a pruebas simuladas.
+
+El PDF institucional incluye DejaVu Sans regular/negrita y su licencia en los recursos del servidor para conservar la tipografía sin depender del sistema operativo. Los recorridos de navegador se ejecutaron antes de este ajuste tipográfico; se repitieron después las ocho pruebas de estados de cuenta, incluida la comprobación de fuentes embebidas, y se revisó el PDF renderizado.
+
+Los scripts de navegador simulados `statements-v17.ui.mjs` se incluyen como herramientas adicionales, sin atribuirles una ejecución realizada en esta entrega. La evidencia histórica que sigue corresponde exclusivamente a cada versión anterior.
+
 ## Versión 1.6.0 · 13 de octubre de 2026
 
 - **155 pruebas Java de integración y 5 unitarias aprobadas**, sin fallos, errores ni omisiones en la ejecución final completa. Java 17 / Maven 3.9.9, perfil `postgres-it`; JAR `siabuc-helpdesk-1.6.0.jar` generado.
