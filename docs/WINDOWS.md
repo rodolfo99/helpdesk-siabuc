@@ -97,3 +97,7 @@ Se verifican mediante pruebas automatizadas la conservación de datos binarios d
 
 - Docker Desktop Windows: https://docs.docker.com/desktop/setup/install/windows-install/
 - Integración WSL2: https://docs.docker.com/desktop/features/wsl/
+
+## Gmail directo con Helpdesk 1.8.2
+
+En CMD o PowerShell use `configurar.bat --gmail-directo`: ingrese la cuenta de Google y una contraseña de aplicación nueva. El SMTP directo no necesita iniciar el contenedor Postfix. Si `.env` contiene `SMTP_HOST=smtp`, se conserva Postfix automáticamente. Revise antes su cola sin borrar volúmenes. [Detalles](VERSION-1.8.2.md).
