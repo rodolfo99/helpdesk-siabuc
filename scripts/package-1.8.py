@@ -11,13 +11,14 @@ EXCLUDE_DIRS = {".git", ".github-cache", ".venv", "node_modules", "target", "dis
                 "__pycache__", ".angular", ".runtime", "backups", "smtp_queue"}
 EXCLUDE_FILES = {".env", "MANIFEST-SHA256.txt", NAME}
 EXCLUDE_SUFFIXES = {".pyc", ".p12", ".pfx", ".pem", ".key", ".dump", ".sql.gz"}
-TEXT_SENSITIVE = {"password", "secret", "credential", "token"}
 
 def include(path: Path) -> bool:
     rel = path.relative_to(ROOT)
     if any(part in EXCLUDE_DIRS for part in rel.parts):
         return False
     if path.is_symlink() or not path.is_file() or rel.name in EXCLUDE_FILES:
+        return False
+    if rel.name in {".npmrc", ".pypirc", "id_rsa", "id_ed25519"}:
         return False
     if path.suffix.lower() in EXCLUDE_SUFFIXES:
         return False
