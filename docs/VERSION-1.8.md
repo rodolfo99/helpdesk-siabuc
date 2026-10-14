@@ -50,6 +50,13 @@ validar la distribución real de recursos y rutas.
 5. Ejecutar pruebas del backend y frontend contra una base desechable,
    usando las instrucciones de `docs/VALIDACION.md`.
 
+Para generar el ZIP completo de fuentes en cualquier copia de esta rama use
+`python3 scripts/package-1.8.py` (Windows: `py scripts/package-1.8.py`).
+El empaquetador crea un manifiesto SHA-256 nuevo dentro del ZIP y valida su CRC.
+El archivo histórico `MANIFEST-SHA256.txt` de la raíz corresponde a 1.7;
+no se utiliza para validar esta entrega. **El ZIP creado no es una compilación
+ni certifica pruebas de ejecución.**
+
 El ZIP de fuentes `SIABUC-Helpdesk-1.8.0.zip` no debe contener credenciales,
 entornos locales, datos productivos, `node_modules`, `target` o `dist`.
 
