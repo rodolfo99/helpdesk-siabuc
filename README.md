@@ -2,11 +2,29 @@
 
 Sistema de atención técnica con servidor **Spring Boot 3.5.16 / Java 17**, cliente **Angular 21.2.25** y base de datos **PostgreSQL 17**. Conserva instituciones, usuarios, casos, pagos, actualizaciones descriptivas y auditoría. El tiempo por correo y por escritorio remoto se administra en **dos bolsas independientes de minutos enteros**.
 
-**Novedades de 1.8:** Ayuda visible desde el encabezado del cliente, alta de tickets con validación propia y revisión previa, nuevas categorías editoriales y filtros locales de fecha para soporte. Las rutas existentes mantienen el formulario único de contraseña. Los mecanismos institucionales no aprobados permanecen pendientes. Véase [Versión 1.8.1](docs/VERSION-1.8.1.md). Para crear el ZIP completo `SIABUC-Helpdesk-1.8.1.zip` ejecute `python3 scripts/package-1.8.py`; el paquete crea un manifiesto SHA-256 nuevo.
+## Estado de la versión 1.8.1
 
-**Versión 1.8.1:** versión y rutas de compilación coherentes, corrección de categorías del centro de conocimientos y manual extendido; las pruebas de integración tienen dos incidencias pendientes documentadas en [Validación 1.8.1](docs/VALIDACION-1.8.1.md). No se considera homologada para producción.
+**Código integrado en `main`.** Evolución de 1.7 con mejoras del portal institucional, categorías editoriales, guía de primeros pasos y correcciones de compilación. Conserva los mecanismos de autenticación y las reglas de soporte, pólizas, minutos y cobranza.
 
-**Versión 1.7:** técnico de soporte, vistas guardadas, alertas previas al vencimiento de SLA, plantillas de respuesta, incidencias generales, catálogo de paquetes, calendario de parcialidades, conciliación bancaria CSV y estados de cuenta institucionales. Incluye las funciones de las versiones anteriores.
+| Componente | Estado de 1.8.1 |
+| --- | --- |
+| Acceso | Usuario y contraseña, sesión con cookie y protección CSRF; **sin** acceso por póliza/correo ni Federación UCOL. |
+| Casos cliente | Revisión previa del formulario, comprobación en servidor de asunto (5–150 caracteres) y descripción (20–5,000), folio al registrar y asociación institucional derivada de la sesión. |
+| Atención | Los estados continúan siendo **Abierto** y **Cerrado**; crear o reabrir exige saldo del canal. El tiempo se descuenta sólo al confirmar atenciones. |
+| Ayuda | Enlace visible para usuarios, guía manual de primeros pasos y nuevas categorías editoriales. Los contenidos siguen requiriendo publicación administrativa. |
+| Base de datos | Migración aditiva Flyway **V25**. Conserva las migraciones y los datos anteriores; exige respaldo y comprobación previa en un entorno de pruebas. |
+| Compilación | Tipos de categorías Angular separados y JAR `siabuc-helpdesk-1.8.1.jar` consistente en Maven, Docker y scripts. |
+| Calidad | Compilación Angular correcta; **223 de 225 pruebas Java satisfactorias** y **dos fallidas**. **La ejecución general de CI falló**; no se declara apta para producción. |
+
+La prueba `HelpdeskIntegrationIT.lastAdministratorCannotBeDeactivated` requiere revisar aislamiento y cuentas preparadas por la suite. `InstitutionStatementIntegrationIT.concurrentDuplicateEmissionReturnsOneDocumentOrExplicitRetryConflict` recibió HTTP **503** en una prueba de concurrencia que esperaba **200** o **409**. No se ocultan ni se atribuyen sin evidencia a fallos exclusivamente del entorno.
+
+**Lecturas recomendadas:** [manual extendido por rol](docs/MANUAL-EXTENDIDO-1.8.1.md) · [cambios de 1.8.1](docs/VERSION-1.8.1.md) · [validación y limitaciones](docs/VALIDACION-1.8.1.md) · [contrato API](docs/API-CONTRACT.md).
+
+### Funciones reservadas a decisiones institucionales
+
+La versión **no** implementa todavía licencias SIABUC9 ni descargas oficiales de instaladores, Federación de Identidades UCOL, ingreso únicamente con número de póliza/correo, recuperación mediante clave de licencia, modificación verificada de correo de licencia, cinco estados de ticket, cambios a las reglas de atención sin saldo, publicación HTTPS institucional, Google Analytics ni importación automática de sistemas anteriores. Que el frontend pueda mostrar una ruta como `/poliza` no significa que exista ya una integración institucional o un sistema de autenticación distinto.
+
+**Funciones heredadas de 1.7 preservadas:** rol de técnico, vistas guardadas y alertas SLA, plantillas de respuesta, incidencias generales, catálogo de paquetes y tarifas, calendario de parcialidades, conciliación bancaria CSV y estados de cuenta institucionales.
 
 **Los respaldos automáticos están desactivados por defecto**, también al actualizar desde 1.5. Sólo Administración puede activarlos expresamente, configurar su horario y retención o volver a desactivarlos. Los respaldos manuales y las copias existentes se conservan.
 
@@ -14,7 +32,7 @@ Sistema de atención técnica con servidor **Spring Boot 3.5.16 / Java 17**, cli
 
 | Necesito… | Guía |
 | --- | --- |
-| Instalar o actualizar conservando mis datos | [Versión 1.7](docs/VERSION-1.7.md) · [Windows](docs/WINDOWS.md) · [Operación Linux/Docker](docs/OPERACION.md) |
+| Instalar o actualizar conservando mis datos | [Actualización 1.8.1](docs/VERSION-1.8.1.md) · [Windows](docs/WINDOWS.md) · [Operación Linux/Docker](docs/OPERACION.md) |
 | Atender casos, usar adjuntos, cronómetro y agenda | [Manual extendido 1.8.1](docs/MANUAL-EXTENDIDO-1.8.1.md) · [Manual anterior](docs/MANUAL-USUARIO.md) · [Funciones de soporte](docs/HELPDESK-1.4.md) |
 | Registrar pólizas, pagos y horas adquiridas | [Pólizas y cobranza](docs/POLIZAS-COBRANZA.md) |
 | Cotizar, renovar o validar pagos pendientes | [Cotizaciones y renovaciones](docs/COTIZACIONES-RENOVACIONES.md) · [Solicitudes de pago](docs/SOLICITUDES-PAGO.md) |
@@ -23,9 +41,9 @@ Sistema de atención técnica con servidor **Spring Boot 3.5.16 / Java 17**, cli
 | Consultar consumos o ingresos y exportarlos | [Reportes técnicos](docs/REPORTES.md) · [Reportes de cobranza](docs/REPORTES-COBRANZA.md) |
 | Configurar o pausar los avisos por correo | [SMTP interno](docs/SMTP-INTERNO.md) · [Pausa de envío](docs/DESACTIVAR-CORREO.md) |
 | Configurar copias programadas (apagadas por defecto) | [Respaldos automáticos](docs/RESPALDOS-AUTOMATICOS.md) |
-| Respaldar, restaurar o conocer las pruebas | [Respaldo y restauración](docs/RESPALDO-RESTAURACION.md) · [Validación y límites](docs/VALIDACION.md) |
+| Respaldar, restaurar o conocer las pruebas | [Respaldo y restauración](docs/RESPALDO-RESTAURACION.md) · [Pruebas 1.8.1](docs/VALIDACION-1.8.1.md) · [Historial de validación](docs/VALIDACION.md) |
 
-## Novedades de 1.7
+## Novedades incorporadas desde 1.7
 
 | Función | Guía |
 | --- | --- |
@@ -90,7 +108,19 @@ Crear paquetes, cotizar, programar parcialidades, importar o conciliar movimient
 
 Los permisos se comprueban en el servidor. Los adjuntos de soporte respetan la institución y la visibilidad de la entrada; Administración/Cobranza consultan todos los comprobantes de pago; el portal financiero habilitado permite al cliente consultar sólo los de su institución. La campana sigue funcionando con el correo pausado y muestra a Cobranza sus avisos de saldo.
 
-Para actualizar desde una versión anterior, respalde primero y conserve `.env`, los volúmenes y las migraciones existentes. Siga [Actualizar a 1.7](docs/VERSION-1.7.md); las guías de [migración 1.0/1.1](docs/MIGRACION-1.1.md) y [SMTP interno](docs/SMTP-INTERNO.md#actualizar-una-instalación-anterior) conservan las particularidades de esas versiones. No es necesario cambiar una configuración SMTP que ya funciona.
+Para actualizar desde una versión anterior, respalde primero y conserve `.env`, `COMPOSE_PROJECT_NAME`, los volúmenes y las migraciones existentes. Siga la [guía de 1.8.1](docs/VERSION-1.8.1.md); las guías de [1.7](docs/VERSION-1.7.md), [migración 1.0/1.1](docs/MIGRACION-1.1.md) y [SMTP interno](docs/SMTP-INTERNO.md#actualizar-una-instalación-anterior) siguen disponibles para instalaciones históricas. No cambie una configuración SMTP que ya funciona sin necesidad comprobada.
+
+## Actualizar una instalación existente a 1.8.1
+
+La actualización conserva usuarios, casos, pólizas y registros **únicamente si se utiliza la misma base de datos**. Copiar `.env` por sí solo no copia PostgreSQL; tampoco incluye respaldos ni colas SMTP. Para actualizar desde una instalación previa:
+
+1. **Antes de reemplazar nada**, cree y compruebe un respaldo con `./respaldar.sh`. Almacénelo fuera del servidor. Pruebe la restauración **en una instalación desechable** y no en la base en uso.
+2. Descomprima el código 1.8.1 en **otra carpeta**. Copie allí su `.env` sin compartirlo ni subirlo al repositorio. Conserve los mismos identificadores `COMPOSE_PROJECT_NAME`, `DB_NAME`, `DB_USER` y parámetros efectivos de conexión; revise `BACKUP_DIRECTORY` si usa una ruta relativa.
+3. Para detectar errores antes del arranque, ejecute `./compilar.sh --docker` en la carpeta nueva. Este paso **no aplica las migraciones** a la base ni implica que las pruebas de integración hayan pasado.
+4. Después de validar en una **base de pruebas**, detenga la instalación anterior con `./detener.sh` y, desde la carpeta nueva, ejecute `./iniciar.sh`. Flyway aplicará **V25** a la base conectada; no modifique ni borre los scripts V1–V24.
+5. Verifique inicio de sesión, aislamiento de instituciones, saldos, casos, pólizas, cobranza, adjuntos, correo y respaldos. **No actualice una base productiva sin resolver las dos pruebas fallidas de 1.8.1** y completar la validación del entorno.
+
+No ejecute `docker compose down -v` ni destruya el volumen de PostgreSQL. La operación `./restaurar.sh` **reemplaza datos** y no forma parte de una actualización normal. Consulte [respaldo y restauración](docs/RESPALDO-RESTAURACION.md).
 
 ## Inicio rápido desde cero con Docker
 
@@ -166,7 +196,7 @@ Edite `.env` **antes del primer inicio**. Puede usar, por ejemplo, `DB_PORT=5433
 | `DB_PORT` | `5432` | Puerto de PostgreSQL publicado en el anfitrión. |
 | `SERVER_PORT` | `8080` | Puerto de Spring publicado en el anfitrión. |
 | `FRONTEND_PORT` | `4200` | Puerto de la aplicación web en el anfitrión. |
-| `BIND_HOST` | `127.0.0.1` | Dirección de publicación de los tres servicios; `0.0.0.0` permite acceso por red. |
+| `BIND_HOST` | `127.0.0.1` | Dirección compartida para publicar **PostgreSQL, Spring y Angular**; cambiarla a `0.0.0.0` expone los tres servicios. Mantener en localhost salvo despliegue de red revisado. |
 | `DB_NAME` | `siabuc_helpdesk` | Nombre de base de datos inicial. |
 | `DB_USER` | `siabuc` | Cuenta PostgreSQL creada en el primer arranque. |
 | `DB_PASSWORD` | Aleatoria | Contraseña de esa cuenta. |
@@ -185,6 +215,20 @@ Los puertos deben ser diferentes, enteros entre 1 y 65535. Dentro de Docker, Pos
 El formato admite `VARIABLE=valor` sencillo o `VARIABLE='valor literal'` para espacios y símbolos como `$` o `#`; no admite comilla simple dentro del valor, controles ni barra inversa final. Los scripts **no ejecutan `.env`** ni expanden su contenido. El asistente PostgreSQL exige al menos 12 caracteres y admite letras, números y `. _ / : @ % + = , - !`. Use `./configurar.sh --password-bd` para elegirla. `DB_NAME` y `DB_USER` admiten minúsculas, números y guion bajo, comenzando por letra o guion bajo. Las opciones SMTP y sus límites se explican en [Correo](docs/CORREO.md).
 
 Cambiar `ADMIN_PASSWORD` en `.env` **no cambia la contraseña de una cuenta existente**. Use **Mi cuenta** o la administración de usuarios. Cambiar `DB_PASSWORD` después de inicializar el volumen tampoco cambia la contraseña almacenada en PostgreSQL; consulte [Operación](docs/OPERACION.md).
+
+### Acceso desde otra computadora de la red local
+
+La instalación Docker predeterminada publica Angular en `127.0.0.1:4200`, accesible **sólo en la computadora anfitriona**. Para pruebas desde otra computadora de una red local de confianza, publique **únicamente el servicio `frontend`** en la IP LAN real del servidor; por ejemplo:
+
+```yaml
+# Fragmento de docker-compose.yml → services.frontend
+ports:
+  - "192.168.1.50:${FRONTEND_PORT:-4200}:80"
+```
+
+Sustituya `192.168.1.50` por la IP real de la máquina Docker, conserve `BIND_HOST=127.0.0.1` en `.env` y vuelva a crear el frontend tras el cambio. Entonces podrá abrir `http://192.168.1.50:4200` desde un equipo autorizado de esa LAN, sujeto a las reglas de red y cortafuegos. Nginx ya remite `/api/` a Spring mediante la red interna de Docker. **No** abra PostgreSQL (`5432`) ni el puerto Spring (`8080`) por este motivo.
+
+Este ejemplo **no configura HTTPS ni protege la aplicación para Internet**. Para uso institucional o acceso público se necesita un proxy TLS con autenticación, reglas de red, protección de cookies y revisión de seguridad adecuados.
 
 ## Correo, responsables y pagos
 
@@ -245,12 +289,25 @@ Requiere JDK 17 o posterior, Maven 3.9, Node.js 24 LTS, npm, Python 3.10 y Docke
 
 `compilar.sh` ejecuta `mvn package`, `npm ci` y `npm run build`. Produce:
 
-- `backend/target/siabuc-helpdesk-1.7.0.jar`
+- `backend/target/siabuc-helpdesk-1.8.1.jar`
 - `frontend/dist/helpdesk/browser/`
 
 `iniciar-dev.sh` inicia PostgreSQL y Postfix con Docker, compila Spring, instala las dependencias de Angular y ejecuta Spring y `ng serve` en una terminal. Lee los mismos puertos y contraseñas de `.env`; ambos procesos escuchan en `127.0.0.1`. Los registros se guardan en `.runtime/`. **Ctrl+C** detiene Spring y Angular; después `./detener.sh` detiene PostgreSQL y Postfix. No ejecute el modo Docker completo y el modo de desarrollo al mismo tiempo sobre los mismos puertos.
 
 Para ejecutar todo sin Docker, conectar un PostgreSQL propio o servir los archivos compilados, consulte las instrucciones completas en [Operación](docs/OPERACION.md).
+
+## Guía rápida de uso por rol
+
+El [manual extendido 1.8.1](docs/MANUAL-EXTENDIDO-1.8.1.md) detalla procedimientos, pantallas, permisos y casos prácticos. Este resumen permite comenzar según la cuenta:
+
+| Rol | Primeras acciones | Restricciones importantes |
+| --- | --- | --- |
+| **Cliente (`USER`)** | Revisar saldo; abrir «Casos de soporte»; indicar asunto, descripción y canal; **revisar y confirmar** para obtener el folio; consultar historial, comentarios públicos y ayuda. | Solo su institución. No puede leer notas internas. La consulta financiera propia está desactivada salvo habilitación administrativa. |
+| **Técnico (`TECH`)** | Consultar casos pendientes, tomar los que no tienen responsable, registrar atención y minutos; gestionar agenda, plantillas e incidencias. | No administra usuarios, tarifas, pagos ni respaldos. |
+| **Cobranza (`BILLING`)** | Registrar pólizas, revisar abonos y solicitudes de pago, acreditar minutos autorizados, consultar parcialidades y conciliaciones. | No accede al historial privado de soporte ni acredita horas sólo por importar un CSV. |
+| **Administración (`ADMIN`)** | Crear instituciones y cuentas; designar responsables; supervisar soporte, finanzas, auditoría, correo y respaldo. | Debe verificar permisos de portal financiero, mantener respaldo y justificar anulaciones. |
+
+**Ejemplo de ticket cliente:** asunto «Error al importar registros» (5–150 caracteres), descripción técnica con pasos reproducibles (20–5,000) y canal con saldo. La institución proviene de la **sesión**; el cliente no puede elegir una institución distinta enviando un identificador en la API. El folio se muestra tras guardar. Los archivos se agregan desde el caso y no se convierten en descargas oficiales de SIABUC.
 
 ## Flujo inicial recomendado
 
@@ -300,7 +357,10 @@ La restauración detiene Spring, Angular y Postfix de Docker, valida el SHA-256 
 
 ## Documentación y pruebas
 
-- [Manual de administradores y usuarios](docs/MANUAL-USUARIO.md): permisos, instituciones, minutos y casos.
+- **[Manual extendido SIABUC Helpdesk 1.8.1](docs/MANUAL-EXTENDIDO-1.8.1.md)**: guía principal paso a paso para cliente, soporte, cobranza y administración.
+- [Manual de administradores y usuarios anterior](docs/MANUAL-USUARIO.md): documentación histórica de permisos, instituciones, minutos y casos.
+- [Novedades, instalación y alcance 1.8.1](docs/VERSION-1.8.1.md): evolución desde 1.7, requisitos reservados y advertencias.
+- [Validación 1.8.1 y pruebas fallidas](docs/VALIDACION-1.8.1.md): 223/225 Java, compilación Angular y limitaciones.
 - [Funciones Helpdesk 1.4](docs/HELPDESK-1.4.md): adjuntos, cronómetro, agenda y permisos.
 - [Cronómetro y agenda](docs/CRONOMETRO-AGENDA.md): confirmación de minutos y sesiones con el cliente.
 - [Clasificación, ficha técnica y SLA](docs/CLASIFICACION-SLA.md): prioridades y calendario laboral.
@@ -328,9 +388,9 @@ La restauración detiene Spring, Angular y Postfix de Docker, valida el SHA-256 
 - [Migración de 1.0 a 1.1](docs/MIGRACION-1.1.md): actualización conservando datos, cuentas y saldos.
 - [Contrato de API](docs/API-CONTRACT.md): endpoints, estructuras y errores.
 - [Pruebas de navegador](tests/e2e/README.md): instalación y ejecución del recorrido completo Angular → Spring → PostgreSQL en un entorno desechable.
-- [Validación realizada](docs/VALIDACION.md): resultados efectivamente ejecutados y comprobaciones pendientes.
+- [Historial de validación](docs/VALIDACION.md): evidencia heredada y enlace al estado específico de 1.8.1.
 
-Las pruebas de integración contra PostgreSQL se ejecutan con `mvn -Ppostgres-it verify` y una **base exclusiva de pruebas, vacía al primer uso**, donde la suite crea su administrador `testadmin`; no forman parte del empaquetado normal con `mvn package`. La suite crea y modifica registros sin limpiar sus datos al finalizar: los datos de prueba persistirán. No use una base productiva ni una base inicializada con otro administrador. Consulte [Operación](docs/OPERACION.md) para preparar la base aislada. Para las pruebas de lógica del cliente, ejecute `npm test` dentro de `frontend`.
+Las pruebas de integración contra PostgreSQL se ejecutan con `mvn -Ppostgres-it verify` y una **base exclusiva de pruebas, vacía al primer uso**, donde la suite crea su administrador `testadmin`; no forman parte del empaquetado normal con `mvn package`. La suite crea y modifica registros que persistirán al finalizar. No use una base productiva ni una base con otros administradores. Consulte [Operación](docs/OPERACION.md) para preparar el entorno aislado. Para la lógica del cliente, ejecute `npm test` dentro de `frontend`. **La corrida de 1.8.1 terminó con dos fallos Java; compilación satisfactoria no equivale a aprobación de despliegue.**
 
 ## Estructura
 
@@ -340,7 +400,7 @@ siabuc-helpdesk/
   frontend/               Angular, proxy de desarrollo y Nginx
   smtp/                   Dockerfile y configuración Postfix de salida
   backup/                 Servicio de copias PostgreSQL programadas, inicialmente apagadas
-  docs/                   Manuales, contrato API y validación
+  docs/                   Manual extendido 1.8.1, guías, API y validación
   scripts/manage.py       Operación y lectura segura de configuración
   docker-compose.yml      PostgreSQL + Postfix + Spring + Nginx
   .env.example            Plantilla sin contraseñas utilizables
@@ -351,4 +411,5 @@ siabuc-helpdesk/
   compilar.sh / .bat      Compilar imágenes; .sh también permite compilación local
   respaldar.sh / .bat     Crear copia PostgreSQL
   restaurar.sh / .bat     Recuperar copia PostgreSQL
+  scripts/package-1.8.py Empaquetar fuentes con nombre 1.8.1 y manifiesto SHA-256
 ```
