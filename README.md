@@ -189,46 +189,20 @@ Restaurar reemplaza los datos actuales y deja la aplicación detenida. Para recu
 
 ## Puertos y configuración
 
-Edite `.env` **antes del primer inicio**. Puede usar, por ejemplo, `DB_PORT=5433`, `SERVER_PORT=8081` y `FRONTEND_PORT=4201` si ya tiene aplicaciones en los valores predeterminados.
+En Docker normal solamente se publica la web Angular/Nginx. Spring Boot, PostgreSQL y Postfix se comunican dentro de Docker sin puertos del host; /api/ se reenvía por frontend/nginx.conf.
 
-| Variable | Predeterminado | Significado |
+| Variable | Predeterminado | Uso |
 | --- | --- | --- |
-| `DB_PORT` | `5432` | Puerto de PostgreSQL publicado en el anfitrión. |
-| `SERVER_PORT` | `8080` | Puerto de Spring publicado en el anfitrión. |
-| `FRONTEND_PORT` | `4200` | Puerto de la aplicación web en el anfitrión. |
-| `BIND_HOST` | `127.0.0.1` | Dirección compartida para publicar **PostgreSQL, Spring y Angular**; cambiarla a `0.0.0.0` expone los tres servicios. Mantener en localhost salvo despliegue de red revisado. |
-| `DB_NAME` | `siabuc_helpdesk` | Nombre de base de datos inicial. |
-| `DB_USER` | `siabuc` | Cuenta PostgreSQL creada en el primer arranque. |
-| `DB_PASSWORD` | Aleatoria | Contraseña de esa cuenta. |
-| `SMTP_INTERNAL_PORT` | `2525` | Puerto de Postfix, publicado siempre sólo en localhost. |
-| `SMTP_LOCAL_IP` | `127.0.0.1` | IPv4 del anfitrión para el remitente literal y la identificación SMTP. Configure su IP LAN mediante el asistente. |
-| `ADMIN_USERNAME` | `admin` | Nombre del administrador de arranque. |
-| `ADMIN_PASSWORD` | Aleatoria | Contraseña utilizada sólo al crear el administrador inicial. |
-| `COOKIE_SECURE` | `false` | `true` cuando el navegador accede por HTTPS. |
-| `REPORTING_TIME_ZONE` | `America/Mexico_City` | Zona de fechas en los reportes. El calendario de SLA se administra en la plataforma. |
-| `BACKUP_DIRECTORY` | `./backups/automatic` | Carpeta privada para el servicio de respaldos; configurarla no activa el calendario. |
-| `BACKUP_UID` / `BACKUP_GID` | Usuario actual en Linux; `0` en Windows | Propietario del proceso que escribe las copias. |
-| `COMPOSE_PROJECT_NAME` | `siabuc-helpdesk` | Identidad del proyecto y del volumen de Docker. |
+| WEB_BIND_HOST | 127.0.0.1 o BIND_HOST heredado | Dirección web. IP LAN o 0.0.0.0 para acceso remoto. |
+| FRONTEND_PORT | 4200 | Único puerto publicado para usuarios. |
+| BIND_HOST | 127.0.0.1 | Compatibilidad con .env antiguos: aplica solo a frontend. |
+| DB_PORT / SERVER_PORT | 5432 / 8080 | Reservados para el modo de desarrollo nativo. |
+| SMTP_INTERNAL_PORT | 2525 | Solo loopback mediante override de desarrollo. |
+| COOKIE_SECURE | false | true al publicar mediante HTTPS. |
 
-Los puertos deben ser diferentes, enteros entre 1 y 65535. Dentro de Docker, PostgreSQL mantiene `5432`, Spring `8080` y Nginx `80`; los cambios de `.env` afectan los puertos del anfitrión y se aplican automáticamente al proxy en desarrollo. El navegador siempre accede a `/api` desde el mismo origen de Angular.
+Para acceso web LAN, cambie únicamente WEB_BIND_HOST a la IP real del anfitrión en su .env privado; por ejemplo WEB_BIND_HOST=192.168.1.50. Tras aplicar la nueva configuración en una ventana de mantenimiento, acceda desde otro equipo autorizado a http://192.168.1.50:4200. Mantenga el firewall restringido y no abra puertos de Spring/PostgreSQL. WEB_BIND_HOST=0.0.0.0 permite escuchar en todas las interfaces, no implica publicación en Internet. Para HTTPS, utilice un proxy con certificado que reenvíe el sitio completo (incluido /api/) a frontend local y configure COOKIE_SECURE=true.
 
-El formato admite `VARIABLE=valor` sencillo o `VARIABLE='valor literal'` para espacios y símbolos como `$` o `#`; no admite comilla simple dentro del valor, controles ni barra inversa final. Los scripts **no ejecutan `.env`** ni expanden su contenido. El asistente PostgreSQL exige al menos 12 caracteres y admite letras, números y `. _ / : @ % + = , - !`. Use `./configurar.sh --password-bd` para elegirla. `DB_NAME` y `DB_USER` admiten minúsculas, números y guion bajo, comenzando por letra o guion bajo. Las opciones SMTP y sus límites se explican en [Correo](docs/CORREO.md).
-
-Cambiar `ADMIN_PASSWORD` en `.env` **no cambia la contraseña de una cuenta existente**. Use **Mi cuenta** o la administración de usuarios. Cambiar `DB_PASSWORD` después de inicializar el volumen tampoco cambia la contraseña almacenada en PostgreSQL; consulte [Operación](docs/OPERACION.md).
-
-### Acceso desde otra computadora de la red local
-
-La instalación Docker predeterminada publica Angular en `127.0.0.1:4200`, accesible **sólo en la computadora anfitriona**. Para pruebas desde otra computadora de una red local de confianza, publique **únicamente el servicio `frontend`** en la IP LAN real del servidor; por ejemplo:
-
-```yaml
-# Fragmento de docker-compose.yml → services.frontend
-ports:
-  - "192.168.1.50:${FRONTEND_PORT:-4200}:80"
-```
-
-Sustituya `192.168.1.50` por la IP real de la máquina Docker, conserve `BIND_HOST=127.0.0.1` en `.env` y vuelva a crear el frontend tras el cambio. Entonces podrá abrir `http://192.168.1.50:4200` desde un equipo autorizado de esa LAN, sujeto a las reglas de red y cortafuegos. Nginx ya remite `/api/` a Spring mediante la red interna de Docker. **No** abra PostgreSQL (`5432`) ni el puerto Spring (`8080`) por este motivo.
-
-Este ejemplo **no configura HTTPS ni protege la aplicación para Internet**. Para uso institucional o acceso público se necesita un proxy TLS con autenticación, reglas de red, protección de cookies y revisión de seguridad adecuados.
+No es necesario editar docker-compose.yml ni cambiar el nombre del proyecto. Los .env anteriores conservan BIND_HOST, pero ya no pueden publicar db/backend desde el despliegue normal. El override docker-compose.dev.yml permite acceso a db y smtp exclusivamente desde localhost en desarrollo. Consulte [Operación](docs/OPERACION.md).
 
 ## Correo, responsables y pagos
 
