@@ -1,4 +1,4 @@
-# Contrato de integración (v1.7)
+# Contrato de integración (v1.8)
 
 Base `/api`. Instantes ISO 8601 UTC; fechas civiles de pagos y pólizas `YYYY-MM-DD`, sin conversión de zona horaria. Identificadores numéricos. Unidad de soporte: minutos enteros (no flotantes). Roles `ADMIN`, `TECH`, `USER` y `BILLING`; canales `EMAIL` y `REMOTE`; estados `OPEN` y `CLOSED`.
 
@@ -194,3 +194,16 @@ Las guías de cada módulo enumeran DTOs, rutas, estados, límites y errores: [c
 `TECH` opera casos y sus recursos técnicos. No administra usuarios, instituciones, cobranza, respaldos o configuración. En un caso nuevo queda asignado a sí mismo; puede tomar uno sin responsable. Sólo ADMIN reasigna a otro responsable y anula consumos. `GET /support-staff` (ADMIN/TECH) devuelve exclusivamente `{id,displayName,role}` de responsables activos. Todos los permisos se verifican en servidor, incluso al invocar la API directamente.
 
 Los contratos adicionales se documentan junto con sus reglas y ejemplos en [vistas y alertas](VISTAS-ALERTAS.md), [plantillas](PLANTILLAS-RESPUESTA.md), [incidencias](INCIDENCIAS.md), [paquetes](PAQUETES-TARIFAS.md), [parcialidades](PARCIALIDADES.md), [conciliación](CONCILIACION-BANCARIA.md) y [estados de cuenta](ESTADOS-CUENTA.md). Las mutaciones exigen sesión y CSRF. Importar/conciliar un CSV no invoca la acreditación de horas.
+
+
+## Alta asistida de solicitudes de clientes — 1.8
+
+`POST /api/client-portal/tickets` (rol USER, sesión y CSRF): JSON
+`{title, description, channel, profile?}`. Asunto: 5–150 caracteres;
+descripción: 20–5,000. La institución se obtiene exclusivamente del usuario
+autenticado, no se admite seleccionar responsable y la transacción reutiliza
+`HelpdeskService.createCase`: saldo previo obligatorio, id único, historial,
+auditoría y notificación existentes. Respuesta 201 con `CaseDetail`.
+`POST /api/cases` se conserva para compatibilidad; los clientes de 1.8 deben
+utilizar la nueva ruta al crear solicitudes. No implica aprobación de nuevos
+catálogos de tipo/producto/módulo, estados o autenticación por póliza.

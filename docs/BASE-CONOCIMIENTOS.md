@@ -1,6 +1,6 @@
 # Base de conocimientos y soluciones de casos
 
-Disponible desde la versión 1.6. Reúne procedimientos de SIABUC en texto plano, con búsqueda por título, resumen o contenido y filtros por categoría y versión. Las categorías son Instalación, Catalogación, Préstamos, Reportes, Importación / exportación y Otro. La versión es texto descriptivo; por ejemplo, `SIABUC 9.1` o `SIABUC 8 y 9`. Dejarla vacía indica una solución general.
+Disponible desde la versión 1.6. Reúne procedimientos de SIABUC en texto plano, con búsqueda por título, resumen o contenido y filtros por categoría y versión. Las categorías originales (Instalación, Catalogación, Préstamos, Reportes, Importación / exportación y Otro) se conservan. La versión 1.8 agrega Guías y primeros pasos, Preguntas frecuentes, Soporte técnico, Pólizas y licencias, Cursos y capacitación y Contacto, sin publicar automáticamente contenidos no aprobados. La versión es texto descriptivo; por ejemplo, `SIABUC 9.1` o `SIABUC 8 y 9`. Dejarla vacía indica una solución general.
 
 ## Accesos
 

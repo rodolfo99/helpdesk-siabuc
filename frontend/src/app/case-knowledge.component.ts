@@ -2,8 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, Output, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService, PageState, errorMessage } from './api.service';
-import { CASE_CATEGORIES, CaseCategory } from './case-profile.component';
-import { KnowledgeArticle, KnowledgeLink, KnowledgePage, KnowledgeSummary, knowledgeStatusLabel } from './knowledge-models';
+import { KNOWLEDGE_CATEGORIES, KnowledgeCategory, KnowledgeArticle, KnowledgeLink, KnowledgePage, KnowledgeSummary, knowledgeStatusLabel } from './knowledge-models';
 
 @Component({selector:'app-case-knowledge',standalone:true,imports:[CommonModule,FormsModule],template:`
 <section class="panel" aria-label="Soluciones de la base de conocimientos">
@@ -26,10 +25,10 @@ import { KnowledgeArticle, KnowledgeLink, KnowledgePage, KnowledgeSummary, knowl
 `]})
 export class CaseKnowledgeComponent extends PageState implements OnChanges {
  @Input({required:true}) caseId!:number;@Output() updated=new EventEmitter<void>();
- readonly api=inject(ApiService);readonly categories=CASE_CATEGORIES;readonly statusLabel=knowledgeStatusLabel;
+ readonly api=inject(ApiService);readonly categories=KNOWLEDGE_CATEGORIES;readonly statusLabel=knowledgeStatusLabel;
  readonly links=signal<KnowledgeLink[]>([]);readonly selected=signal<KnowledgeArticle|null>(null);readonly options=signal<KnowledgePage|null>(null);
- readonly loading=signal(false);readonly searching=signal(false);readonly opening=signal(false);query='';category:CaseCategory|''='';private sequence=0;private searchSequence=0;private openSequence=0;
- admin(){return ['ADMIN','TECH'].includes(this.api.user()?.role??'');}categoryLabel(value:CaseCategory){return this.categories.find(item=>item.value===value)?.label||value;}
+ readonly loading=signal(false);readonly searching=signal(false);readonly opening=signal(false);query='';category:KnowledgeCategory|''='';private sequence=0;private searchSequence=0;private openSequence=0;
+ admin(){return ['ADMIN','TECH'].includes(this.api.user()?.role??'');}categoryLabel(value:KnowledgeCategory){return this.categories.find(item=>item.value===value)?.label||value;}
  ngOnChanges(){this.selected.set(null);this.options.set(null);this.query='';this.category='';this.openSequence++;this.opening.set(false);this.searchSequence++;this.searching.set(false);void this.load();}
  async load(){const sequence=++this.sequence;const id=this.caseId;this.loading.set(true);this.links.set([]);this.error.set('');this.success.set('');try{const links=await this.api.get<KnowledgeLink[]>('/cases/'+id+'/knowledge-links');if(sequence===this.sequence&&id===this.caseId)this.links.set(links);}catch(e){if(sequence===this.sequence)this.error.set(errorMessage(e));}finally{if(sequence===this.sequence)this.loading.set(false);}}
  async search(){if(!this.admin())return;const sequence=++this.searchSequence,id=this.caseId;this.searching.set(true);this.error.set('');const params=new URLSearchParams({status:'PUBLISHED',q:this.query,pageSize:'20'});if(this.category)params.set('category',this.category);try{const options=await this.api.get<KnowledgePage>('/knowledge?'+params);if(sequence===this.searchSequence&&id===this.caseId)this.options.set(options);}catch(e){if(sequence===this.searchSequence&&id===this.caseId)this.error.set(errorMessage(e));}finally{if(sequence===this.searchSequence)this.searching.set(false);}}

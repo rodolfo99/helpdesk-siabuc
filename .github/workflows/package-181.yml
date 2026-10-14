@@ -1,0 +1,109 @@
+name: SIABUC 1.8.1 build and source package
+on:
+  push:
+    branches: ['release/siabuc-helpdesk-1.8.1']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: siabuc_test
+          POSTGRES_USER: siabuc
+          POSTGRES_PASSWORD: OnlyDisposableDatabase181
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U siabuc -d siabuc_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DB_HOST: localhost
+      DB_PORT: '5432'
+      DB_NAME: siabuc_test
+      DB_USER: siabuc
+      DB_PASSWORD: OnlyDisposableDatabase181
+      MAIL_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Prepare source distribution
+        run: |
+          python3 scripts/prepare-package181.py
+          python3 scripts/release-1.8.1.py --package --output release-output/source
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SIABUC-1.8.1-source-snapshot
+          path: release-output/source/*
+          if-no-files-found: error
+          retention-days: 7
+      - name: Frontend build and tests
+        id: frontend
+        continue-on-error: true
+        working-directory: frontend
+        run: |
+          npm ci
+          npm test
+          npm run build
+      - name: Backend compile and PostgreSQL integration tests
+        id: backend
+        continue-on-error: true
+        working-directory: backend
+        run: mvn -B -ntp -Ppostgres-it verify
+      - name: Python operational tests
+        id: python_tests
+        continue-on-error: true
+        run: |
+          python3 -m unittest discover -s tests/ops
+          python3 -m unittest discover -s tests/smtp
+      - name: Package with exact validation results
+        if: always()
+        env:
+          FRONTEND_RESULT: ${{ steps.frontend.outcome }}
+          BACKEND_RESULT: ${{ steps.backend.outcome }}
+          PYTHON_RESULT: ${{ steps.python_tests.outcome }}
+        run: |
+          python3 - <<'PY'
+          import datetime, json, os, pathlib, xml.etree.ElementTree as ET
+          counts=[]
+          for report in pathlib.Path('backend/target').glob('*reports/TEST-*.xml'):
+              tree=ET.parse(report).getroot()
+              counts.append({'report':report.name, **{k:int(tree.get(k,'0')) for k in ['tests','failures','errors','skipped']}})
+          result={'version':'1.8.1','date':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'source_commit':os.environ['GITHUB_SHA'],'run_id':os.environ['GITHUB_RUN_ID'],
+            'frontend':os.environ['FRONTEND_RESULT'],'backend':os.environ['BACKEND_RESULT'],
+            'python_tests':os.environ['PYTHON_RESULT'],'java_reports':counts,
+            'scope':'GitHub hosted runner; Java 17; Node 24; PostgreSQL 17 native service; Flyway enabled; no production data or external SMTP',
+            'not_tested':['full Docker Compose startup','native Windows','production deployment','backup and restore on target']}
+          pathlib.Path('docs/VALIDACION-1.8.1.json').write_text(json.dumps(result,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          PY
+          python3 scripts/release-1.8.1.py --package --output release-output/final
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: SIABUC-Helpdesk-1.8.1
+          path: |
+            release-output/final/*
+            docs/VALIDACION-1.8.1.json
+            backend/target/surefire-reports/*.xml
+            backend/target/failsafe-reports/*.xml
+          if-no-files-found: error
+          retention-days: 14
+      - name: Require successful checks
+        if: always()
+        env:
+          FRONTEND_RESULT: ${{ steps.frontend.outcome }}
+          BACKEND_RESULT: ${{ steps.backend.outcome }}
+          PYTHON_RESULT: ${{ steps.python_tests.outcome }}
+        run: test "$FRONTEND_RESULT" = success && test "$BACKEND_RESULT" = success && test "$PYTHON_RESULT" = success
