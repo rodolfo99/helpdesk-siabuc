@@ -1,0 +1,42 @@
+name: Verify 1.8.1 backend regressions
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/verify-backend-181.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backend-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: siabuc_test
+          POSTGRES_USER: siabuc
+          POSTGRES_PASSWORD: DisposableBackend181
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U siabuc -d siabuc_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DB_HOST: localhost
+      DB_PORT: '5432'
+      DB_NAME: siabuc_test
+      DB_USER: siabuc
+      DB_PASSWORD: DisposableBackend181
+      MAIL_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: PostgreSQL 17 integration and unit tests
+        working-directory: backend
+        run: mvn -B -ntp -Ppostgres-it verify

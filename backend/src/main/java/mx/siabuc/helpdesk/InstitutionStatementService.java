@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.dao.CannotSerializeTransactionException;
+import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -68,7 +68,7 @@ public class InstitutionStatementService {
         String snapshot=encode(document);if(snapshot.length()>4_000_000)throw ApiException.bad("El documento supera el tamaño permitido; no se han omitido registros.");
         List<Long> ids;
         try{ids=db.queryForList("INSERT INTO institution_statements(institution_id,request_id,cutoff,created_by,snapshot) VALUES(?,?,?,?,?::jsonb) ON CONFLICT(request_id) DO NOTHING RETURNING id",Long.class,institution,input.requestId(),Date.valueOf(cutoff),actor.id(),snapshot);}
-        catch(CannotSerializeTransactionException e){throw ApiException.conflict("Otra solicitud está conservando la misma emisión. Reintente con el mismo identificador para recuperarla.");}
+        catch(ConcurrencyFailureException e){throw ApiException.conflict("Otra solicitud está conservando la misma emisión. Reintente con el mismo identificador para recuperarla.");}
         if(ids.isEmpty())throw ApiException.conflict("Solicitud concurrente: reintente con el mismo identificador para recuperar la emisión.");
         long id=ids.get(0);return new Issued(id,folio(id),document);
     }
