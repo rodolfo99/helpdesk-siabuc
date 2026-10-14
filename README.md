@@ -1,6 +1,8 @@
-# SIABUC Helpdesk 1.7.0
+# SIABUC Helpdesk 1.8.0
 
 Sistema de atención técnica con servidor **Spring Boot 3.5.16 / Java 17**, cliente **Angular 21.2.25** y base de datos **PostgreSQL 17**. Conserva instituciones, usuarios, casos, pagos, actualizaciones descriptivas y auditoría. El tiempo por correo y por escritorio remoto se administra en **dos bolsas independientes de minutos enteros**.
+
+**Novedades de 1.8:** Portal cliente preparado para bienvenida y ayuda, navegación diferenciada sin cambiar el proveedor de identidad, alta de tickets con validación propia, nuevas categorías editoriales, mejoras de seguimiento y distribución ZIP de fuentes. Los mecanismos institucionales no aprobados permanecen pendientes. Véase [Versión 1.8](docs/VERSION-1.8.md).
 
 **Versión 1.7:** técnico de soporte, vistas guardadas, alertas previas al vencimiento de SLA, plantillas de respuesta, incidencias generales, catálogo de paquetes, calendario de parcialidades, conciliación bancaria CSV y estados de cuenta institucionales. Incluye las funciones de las versiones anteriores.
 

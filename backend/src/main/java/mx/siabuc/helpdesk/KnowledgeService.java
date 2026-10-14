@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class KnowledgeService {
     public enum Status { DRAFT, PUBLISHED, ARCHIVED }
-    public enum Category { INSTALLATION, CATALOGING, LOANS, REPORTS, IMPORT, OTHER }
+    public enum Category { INSTALLATION, CATALOGING, LOANS, REPORTS, IMPORT, OTHER, GUIDES, FAQ, SUPPORT, POLICIES_LICENSES, TRAINING, CONTACT }
     public record Article(long id,String title,Category category,String siabucVersion,String summary,String body,
             Status status,int revision,Instant createdAt,Instant updatedAt,Instant publishedAt) {}
     public record Summary(long id,String title,Category category,String siabucVersion,String summary,
