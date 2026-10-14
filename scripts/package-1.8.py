@@ -6,7 +6,7 @@ from pathlib import Path
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-NAME = "SIABUC-Helpdesk-1.8.0.zip"
+NAME = "SIABUC-Helpdesk-1.8.1.zip"
 EXCLUDE_DIRS = {".git", ".github-cache", ".venv", "node_modules", "target", "dist",
                 "__pycache__", ".angular", ".runtime", "backups", "smtp_queue"}
 EXCLUDE_FILES = {".env", "MANIFEST-SHA256.txt", NAME}
@@ -27,8 +27,8 @@ def include(path: Path) -> bool:
     return not (rel.name.startswith(".env.") and rel.name != ".env.example")
 
 def package() -> Path:
-    if (ROOT / "VERSION").read_text(encoding="utf-8").strip() != "1.8.0":
-        raise ValueError("VERSION no corresponde a 1.8.0.")
+    if (ROOT / "VERSION").read_text(encoding="utf-8").strip() != "1.8.1":
+        raise ValueError("VERSION no corresponde a 1.8.1.")
     files = sorted((p for p in ROOT.rglob("*") if include(p)),
                    key=lambda p: p.relative_to(ROOT).as_posix())
     if not files:

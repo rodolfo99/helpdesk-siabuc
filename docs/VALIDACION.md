@@ -1,3 +1,7 @@
+# Evidencia actual: 1.8.1
+
+**Atención:** La ejecución de 1.8.1 registró 223 de 225 pruebas Java correctas; quedan dos fallos. [Detalle y evidencia](VALIDACION-1.8.1.md). No declararla apta para producción ni trasladar esta evidencia a 1.7.
+
 # Validación de SIABUC Helpdesk
 
 ## Versión 1.7.0 · 14 de octubre de 2026

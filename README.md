@@ -1,8 +1,10 @@
-# SIABUC Helpdesk 1.8.0
+# SIABUC Helpdesk 1.8.1
 
 Sistema de atención técnica con servidor **Spring Boot 3.5.16 / Java 17**, cliente **Angular 21.2.25** y base de datos **PostgreSQL 17**. Conserva instituciones, usuarios, casos, pagos, actualizaciones descriptivas y auditoría. El tiempo por correo y por escritorio remoto se administra en **dos bolsas independientes de minutos enteros**.
 
-**Novedades de 1.8:** Ayuda visible desde el encabezado del cliente, alta de tickets con validación propia y revisión previa, nuevas categorías editoriales y filtros locales de fecha para soporte. Las rutas existentes mantienen el formulario único de contraseña. Los mecanismos institucionales no aprobados permanecen pendientes. Véase [Versión 1.8](docs/VERSION-1.8.md). Para crear el ZIP completo `SIABUC-Helpdesk-1.8.0.zip` ejecute `python3 scripts/package-1.8.py`; el manifiesto de la raíz corresponde a la versión anterior y el paquete crea uno actualizado.
+**Novedades de 1.8:** Ayuda visible desde el encabezado del cliente, alta de tickets con validación propia y revisión previa, nuevas categorías editoriales y filtros locales de fecha para soporte. Las rutas existentes mantienen el formulario único de contraseña. Los mecanismos institucionales no aprobados permanecen pendientes. Véase [Versión 1.8.1](docs/VERSION-1.8.1.md). Para crear el ZIP completo `SIABUC-Helpdesk-1.8.1.zip` ejecute `python3 scripts/package-1.8.py`; el paquete crea un manifiesto SHA-256 nuevo.
+
+**Versión 1.8.1:** versión y rutas de compilación coherentes, corrección de categorías del centro de conocimientos y manual extendido; las pruebas de integración tienen dos incidencias pendientes documentadas en [Validación 1.8.1](docs/VALIDACION-1.8.1.md). No se considera homologada para producción.
 
 **Versión 1.7:** técnico de soporte, vistas guardadas, alertas previas al vencimiento de SLA, plantillas de respuesta, incidencias generales, catálogo de paquetes, calendario de parcialidades, conciliación bancaria CSV y estados de cuenta institucionales. Incluye las funciones de las versiones anteriores.
 
@@ -13,7 +15,7 @@ Sistema de atención técnica con servidor **Spring Boot 3.5.16 / Java 17**, cli
 | Necesito… | Guía |
 | --- | --- |
 | Instalar o actualizar conservando mis datos | [Versión 1.7](docs/VERSION-1.7.md) · [Windows](docs/WINDOWS.md) · [Operación Linux/Docker](docs/OPERACION.md) |
-| Atender casos, usar adjuntos, cronómetro y agenda | [Manual de uso](docs/MANUAL-USUARIO.md) · [Funciones de soporte](docs/HELPDESK-1.4.md) |
+| Atender casos, usar adjuntos, cronómetro y agenda | [Manual extendido 1.8.1](docs/MANUAL-EXTENDIDO-1.8.1.md) · [Manual anterior](docs/MANUAL-USUARIO.md) · [Funciones de soporte](docs/HELPDESK-1.4.md) |
 | Registrar pólizas, pagos y horas adquiridas | [Pólizas y cobranza](docs/POLIZAS-COBRANZA.md) |
 | Cotizar, renovar o validar pagos pendientes | [Cotizaciones y renovaciones](docs/COTIZACIONES-RENOVACIONES.md) · [Solicitudes de pago](docs/SOLICITUDES-PAGO.md) |
 | Habilitar la consulta financiera del cliente | [Portal financiero](docs/PORTAL-FINANCIERO.md) |
