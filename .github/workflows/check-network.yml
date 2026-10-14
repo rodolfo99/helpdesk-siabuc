@@ -57,7 +57,7 @@ jobs:
           DB_PASSWORD: DisposableDatabasePassword123
           ADMIN_PASSWORD: DisposableAdminPassword123
         run: |
-          docker compose -f docker-compose.yml -f docker-compose.dev.yml config --format json | python3 -c '
+          docker compose --profile local-smtp -f docker-compose.yml -f docker-compose.dev.yml config --format json | python3 -c '
           import json,sys
           s=json.load(sys.stdin)["services"]
           for name in ("db","smtp"):
