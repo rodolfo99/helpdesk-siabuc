@@ -548,9 +548,13 @@ def compose(values: dict[str, str], *arguments: str, **kwargs):
     if not backup_directory.is_absolute():
         backup_directory = ROOT / backup_directory
     env["BACKUP_DIRECTORY"] = str(backup_directory.resolve())
+    profiles = [p for p in env.get("COMPOSE_PROFILES", "").split(",") if p and p != "local-smtp"]
     if values.get("SMTP_HOST") == "smtp":
-        env["COMPOSE_PROFILES"] = "local-smtp" + (
-            "," + env["COMPOSE_PROFILES"] if env.get("COMPOSE_PROFILES") else "")
+        profiles.append("local-smtp")
+    if profiles:
+        env["COMPOSE_PROFILES"] = ",".join(profiles)
+    else:
+        env.pop("COMPOSE_PROFILES", None)
     return run(["docker", "compose", "--project-directory", str(ROOT), "--env-file",
                 str(ENV_FILE), "-f", str(ROOT / "docker-compose.yml"), *extra_files, *arguments], env=env, **kwargs)
 
@@ -748,7 +752,7 @@ def restore(values: dict[str, str], filename: str, confirmed: bool) -> None:
             fail("SHA-256 incorrecto: la copia no coincide con su archivo de verificación.")
     docker_ready(values)
     compose(values, "up", "-d", "--wait", "--wait-timeout", "180", "db")
-    compose(values, "stop", "backup", "frontend", "backend", "smtp")
+    compose(values, "--profile", "local-smtp", "stop", "backup", "frontend", "backend", "smtp")
     try:
         with source.open("rb") as handle:
             compose(values, "exec", "-T", "db", "pg_restore", "-U", values["DB_USER"],
@@ -841,7 +845,7 @@ def main() -> None:
             smtp_information(values)
     elif args.command == "stop":
         docker_ready(values)
-        compose(values, "--profile", "mail-test", "down", "--remove-orphans")
+        compose(values, "--profile", "local-smtp", "--profile", "mail-test", "down", "--remove-orphans")
         print("Contenedores detenidos. Se conservaron los volúmenes de PostgreSQL, la cola SMTP y Mailpit si se utilizó.")
     elif args.command == "build":
         docker_ready(values)
