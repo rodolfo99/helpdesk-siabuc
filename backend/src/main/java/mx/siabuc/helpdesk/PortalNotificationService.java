@@ -25,6 +25,7 @@ public class PortalNotificationService {
     // Re-evaluate the current account role and institution, including notices created before an account transfer.
     private static final String VISIBLE = """
          n.recipient_id=? AND ( ?='ADMIN'
+           OR (?='TECH' AND (n.case_id IS NOT NULL OR (NOT n.internal AND n.event_type='LOW_BALANCE')))
            OR (?='BILLING' AND n.case_id IS NULL AND NOT n.internal AND n.event_type='LOW_BALANCE')
            OR (?='USER' AND n.institution_id=? AND i.active AND NOT n.internal))
          AND (n.case_id IS NULL OR c.institution_id=n.institution_id)
@@ -43,7 +44,7 @@ public class PortalNotificationService {
     }
 
     private Object[] args(Models.User actor) {
-        return new Object[]{actor.id(),actor.role().name(),actor.role().name(),actor.role().name(),actor.institutionId()};
+        return new Object[]{actor.id(),actor.role().name(),actor.role().name(),actor.role().name(),actor.role().name(),actor.institutionId()};
     }
     private List<PendingReply> pending(Models.User actor) {
         if (actor.role() == Models.Role.BILLING) return List.of();
@@ -51,7 +52,7 @@ public class PortalNotificationService {
             SELECT c.id,c.title,c.waiting_for,c.updated_at,i.name,COALESCE(u.display_name,'Sin administrativo asignado') AS assigned_name
             FROM support_cases c JOIN institutions i ON i.id=c.institution_id LEFT JOIN app_users u ON u.id=c.assigned_admin_id
             WHERE c.status='OPEN' AND i.active AND
-              ((?='ADMIN' AND c.waiting_for='ADMIN' AND (c.assigned_admin_id=? OR c.assigned_admin_id IS NULL))
+              ((? IN ('ADMIN','TECH') AND c.waiting_for='ADMIN' AND (c.assigned_admin_id=? OR c.assigned_admin_id IS NULL))
                OR (?='USER' AND c.waiting_for='CLIENT' AND c.institution_id=?))
             ORDER BY c.updated_at,c.id LIMIT 100
             """,(r,n) -> new PendingReply(r.getLong("id"),r.getString("title"),r.getString("name"),

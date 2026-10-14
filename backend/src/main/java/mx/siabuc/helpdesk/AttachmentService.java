@@ -110,13 +110,13 @@ public class AttachmentService {
             (r,n) -> new Scope(r.getLong("institution_id"), r.getString("status")), caseId);
         if (cases.isEmpty()) throw ApiException.missing();
         Scope current = cases.get(0);
-        if (actor.role() != Role.ADMIN && !Objects.equals(actor.institutionId(), current.institutionId())) throw ApiException.missing();
+        if (actor.role() == Role.USER && !Objects.equals(actor.institutionId(), current.institutionId())) throw ApiException.missing();
         return current;
     }
     private boolean entry(long caseId, Long entryId, User actor) {
         if (entryId == null) return false;
         List<Boolean> entries = db.query("SELECT internal FROM case_entries WHERE id=? AND case_id=?", (r,n) -> r.getBoolean("internal"), entryId, caseId);
-        if (entries.isEmpty() || (entries.get(0) && actor.role() != Role.ADMIN)) throw ApiException.missing();
+        if (entries.isEmpty() || (entries.get(0) && !isSupportStaff(actor.role()))) throw ApiException.missing();
         return entries.get(0);
     }
 

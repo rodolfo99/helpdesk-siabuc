@@ -6,45 +6,47 @@ Desde 1.5, el usuario **Cobranza** dispone de [pólizas, abonos y acreditación 
 
 Desde 1.6 se incorporan [cotizaciones y renovaciones](COTIZACIONES-RENOVACIONES.md), [solicitudes de pago para validación](SOLICITUDES-PAGO.md), [portal financiero institucional](PORTAL-FINANCIERO.md), [recibos administrativos PDF](RECIBOS-PAGO.md), [base de conocimientos](BASE-CONOCIMIENTOS.md), [encuestas de satisfacción](ENCUESTAS-SATISFACCION.md) y [respaldos automáticos](RESPALDOS-AUTOMATICOS.md). El portal financiero de clientes y el calendario de respaldos comienzan **desactivados por defecto**. El acceso al soporte y los scripts de respaldo manual siguen disponibles.
 
+Desde 1.7 consulte [el recorrido de la versión](VERSION-1.7.md) y [el rol técnico](ROL-TECNICO.md): soporte con permisos operativos, vistas personales, plantillas revisables e incidencias; Cobranza incorpora paquetes, parcialidades, conciliación y estados de cuenta.
+
 ## Acceso y cuentas
 
 La aplicación abre en la pantalla de inicio de sesión. El administrador inicial se configura mediante `.env`; las cuentas posteriores se crean desde **Usuarios**. Las contraseñas deben tener al menos 12 caracteres y no exceder 72 bytes UTF-8, límite de BCrypt. Una contraseña con caracteres acentuados o emojis puede ocupar más bytes que caracteres.
 
 La sesión termina tras 30 minutos de inactividad del servidor o al cerrar sesión. Reiniciar Spring invalida las sesiones y obliga a identificarse de nuevo. **Mi cuenta** permite cambiar la contraseña propia introduciendo la actual: se conserva esa sesión y se revocan las demás. Si un administrador restablece la contraseña de otra cuenta, sus sesiones anteriores se revocan.
 
-| Acción | Administrador (`ADMIN`) | Usuario (`USER`) | Cobranza (`BILLING`) |
-| --- | --- | --- | --- |
-| Ver instituciones/saldos | Todas | Sólo la propia activa | Todas, sin notas administrativas |
-| Crear, editar y dar de baja instituciones | Sí | No | No |
-| Ajustar manualmente presupuestos | Sí | No | No |
-| Administrar usuarios | Sí | No | No |
-| Ver historial de casos | Todos | Los de su institución | No |
-| Abrir caso con saldo | Cualquier institución activa | Su institución | No |
-| Comentar caso abierto | Sí | Público y sin consumo | No |
-| Registrar consumo | Sí | No | No |
-| Notas internas | Sí | No | No |
-| Editar, asignar, cerrar/reabrir casos | Sí | No | No |
-| Anular atención | Sí | No | No |
-| Registrar pagos directos y acreditar soporte | Sí | No | Sí |
-| Consultar pagos y resumen de pólizas | Sí | Propios, sólo con portal financiero habilitado | Sí |
-| Gestionar pólizas e historial financiero interno | Sí | No | Sí |
-| Adjuntar comprobantes a pagos ya registrados | Sí | No | Sí |
-| Descargar comprobantes y recibos administrativos | Sí | Propios, sólo con portal financiero habilitado | Sí |
-| Crear solicitudes y adjuntar evidencia pendiente de validación | Sí | Propias, sólo con portal financiero habilitado | Sí |
-| Aprobar o rechazar solicitudes de pago | Sí | No | Sí |
-| Gestionar cotizaciones, renovaciones y avisos de vencimiento | Sí | No | Sí |
-| Habilitar el portal financiero por institución | Sí | No | No |
-| Consultar/exportar reportes financieros | Sí | No | Sí |
-| Consultar/exportar reportes técnicos | Sí | No | No |
-| Anular pagos | Sí | No | No |
-| Auditoría y cola/configuración de correo | Sí | No | No |
-| Campana de avisos propios | Casos según asignación; saldos institucionales | Casos y saldos de su institución | Avisos de saldo |
-| Consultar artículos publicados de conocimiento | Sí | Sí | No |
-| Editar/publicar artículos y vincular soluciones a casos | Sí | No; consulta vínculos publicados de casos propios | No |
-| Responder encuesta de caso cerrado | No | Una respuesta por caso de su institución | No |
-| Consultar reportes y exportar satisfacción | Sí | No | No |
-| Configurar o solicitar respaldos desde la plataforma | Sí | No | No |
-| Cambiar su propia contraseña | Sí | Sí | Sí |
+| Acción | Administrador (`ADMIN`) | Usuario (`USER`) | Cobranza (`BILLING`) | Técnico (`TECH`) |
+| --- | --- | --- | --- | --- |
+| Ver instituciones/saldos | Todas | Sólo la propia activa | Todas, sin notas administrativas | Todas, sin notas administrativas |
+| Crear, editar y dar de baja instituciones | Sí | No | No | No |
+| Ajustar manualmente presupuestos | Sí | No | No | No |
+| Administrar usuarios | Sí | No | No | No |
+| Ver historial de casos | Todos | Los de su institución | No | Todos |
+| Abrir caso con saldo | Cualquier institución activa | Su institución | No | Cualquier institución activa; asignado a sí mismo |
+| Comentar caso abierto | Sí | Público y sin consumo | No | Sí |
+| Registrar consumo | Sí | No | No | Sí |
+| Notas internas | Sí | No | No | Sí |
+| Editar, asignar, cerrar/reabrir casos | Sí | No | No | Editar/cerrar/reabrir y tomar sin responsable; no reasignar |
+| Anular atención | Sí | No | No | No |
+| Registrar pagos directos y acreditar soporte | Sí | No | Sí | No |
+| Consultar pagos y resumen de pólizas | Sí | Propios, sólo con portal financiero habilitado | Sí | No |
+| Gestionar pólizas e historial financiero interno | Sí | No | Sí | No |
+| Adjuntar comprobantes a pagos ya registrados | Sí | No | Sí | No |
+| Descargar comprobantes y recibos administrativos | Sí | Propios, sólo con portal financiero habilitado | Sí | No |
+| Crear solicitudes y adjuntar evidencia pendiente de validación | Sí | Propias, sólo con portal financiero habilitado | Sí | No |
+| Aprobar o rechazar solicitudes de pago | Sí | No | Sí | No |
+| Gestionar cotizaciones, renovaciones y avisos de vencimiento | Sí | No | Sí | No |
+| Habilitar el portal financiero por institución | Sí | No | No | No |
+| Consultar/exportar reportes financieros | Sí | No | Sí | No |
+| Consultar/exportar reportes técnicos | Sí | No | No | No |
+| Anular pagos | Sí | No | No | No |
+| Auditoría y cola/configuración de correo | Sí | No | No | No |
+| Campana de avisos propios | Casos según asignación; saldos institucionales | Casos y saldos de su institución | Avisos de saldo | Sí |
+| Consultar artículos publicados de conocimiento | Sí | Sí | No | Sí |
+| Editar/publicar artículos y vincular soluciones a casos | Sí | No; consulta vínculos publicados de casos propios | No | Sólo vincular soluciones publicadas; sin edición editorial |
+| Responder encuesta de caso cerrado | No | Una respuesta por caso de su institución | No | No |
+| Consultar reportes y exportar satisfacción | Sí | No | No | No |
+| Configurar o solicitar respaldos desde la plataforma | Sí | No | No | No |
+| Cambiar su propia contraseña | Sí | Sí | Sí | Sí |
 
 Los permisos se verifican en Spring en cada operación. Ocultar un botón en Angular no es el control de acceso. Varios usuarios de una misma institución comparten sus saldos y el historial institucional; no existe aislamiento individual por usuario dentro de esa institución.
 

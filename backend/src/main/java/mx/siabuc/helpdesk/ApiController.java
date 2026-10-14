@@ -39,6 +39,7 @@ public class ApiController {
     @DeleteMapping("/institutions/{id}") @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteInstitution(@PathVariable long id) { service.deleteInstitution(id); }
 
+    @GetMapping("/support-staff") public List<SupportStaff> supportStaff() { return service.supportStaffOptions(); }
     @GetMapping("/users") public List<User> users() { return service.users(); }
     @PostMapping("/users") @ResponseStatus(HttpStatus.CREATED)
     public User createUser(@RequestBody UserInput input) { return service.createUser(input); }

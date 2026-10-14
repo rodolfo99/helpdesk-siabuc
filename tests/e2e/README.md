@@ -215,3 +215,28 @@ Comprueba búsqueda y paginación, filtros por categoría y versión, alta de bo
 Las cuatro suites previas (`helpdesk-v14.ui.mjs`, `billing-v15.ui.mjs`, `history-detail.ui.mjs`, `mail-control.ui.mjs`) conservan sus 61 escenarios e incorporan respuestas sintéticas para el aviso global de respaldos, la configuración de acceso financiero, los vínculos de conocimiento y las encuestas de casos cerrados. Esto permite comprobar las funciones anteriores dentro de la aplicación 1.6 completa. Las cinco suites juntas cubren 71 escenarios simulados.
 
 **Alcance:** estas pruebas ejecutan la interfaz real compilada con API interceptada. No demuestran seguridad del servidor, persistencia PostgreSQL, restauración de respaldos, entrega de correo ni operaciones monetarias reales. `KnowledgeIntegrationIT` valida los permisos y estados del servidor; los flujos con API y base de datos reales se ejecutan y reportan por separado. Los datos y textos de estas pruebas son sintéticos.
+
+## Flujos integrados de 1.7 con API real
+
+`workflows-v17.e2e.mjs` recorre Angular, Spring y una base desechable sin interceptar respuestas. Cubre:
+
+- Sesión TECH sin menús ni acceso a rutas privilegiadas; instituciones sin notas administrativas.
+- Avisos de plazos SLA en la campana con SMTP pausado, vistas personales guardadas y reaplicadas después de recargar.
+- Toma de caso, vista previa e inserción de una plantilla sin publicar ni consumir, registro explícito de cinco minutos y cierre/reapertura por técnico; ausencia de controles de reasignación y anulación de consumo.
+- Incidencia con dos instituciones, avance interno y publicación revisada; el cliente consulta sólo el resumen de su caso, sin IDs ni datos de la otra institución.
+- Paquete, cotización desde su versión y cambio de tarifa que conserva los términos previos.
+- Calendario de parcialidad y aplicación de un abono existente sin duplicar minutos.
+- CSV UTF-8 con BOM, vista previa, importación, confirmación de conciliación y reapertura de importación repetida sin duplicados.
+- Estado de cuenta emitido por Cobranza y por cliente autorizado, PDF descargable y denegación de acceso cruzado; capturas en escritorio y a 390 píxeles.
+
+Ejecutar contra una instalación de pruebas nueva de 1.7, con `MAIL_ENABLED=false` y respaldos automáticos desactivados. Usa las variables de navegador y credenciales descritas arriba:
+
+```bash
+export E2E_DISPOSABLE_DATABASE=true
+export E2E_REPORT_DIR=/tmp/siabuc-e2e-v17
+node tests/e2e/workflows-v17.e2e.mjs
+```
+
+La suite crea fixtures mediante la API real, modifica la configuración de avisos SLA y pausa el correo en la base **desechable**. No la ejecutes contra producción. Guarda resultados detallados en `workflows-v17-results.json`, capturas y PDFs cuando se configura `E2E_REPORT_DIR`. Las cuentas de prueba usan contraseñas aleatorias que no se imprimen ni incluyen en el informe.
+
+El entorno y resultados efectivamente ejecutados se registran en `docs/VALIDACION.md`. Esta suite no acredita entrega SMTP, respaldo/restauración Docker ni ejecución nativa de scripts Windows. Si se ejecuta sobre PGlite, ese motor se declara como tal.

@@ -84,7 +84,7 @@ public class SatisfactionService {
 
     public Options options() {
         admin();return new Options(db.query("SELECT id,name FROM institutions ORDER BY name,id",(r,n)->new Option(r.getLong(1),r.getString(2))),
-            db.query("SELECT id,display_name FROM app_users WHERE role='ADMIN' OR id IN (SELECT administrator_id FROM satisfaction_surveys WHERE administrator_id IS NOT NULL) ORDER BY display_name,id",(r,n)->new Option(r.getLong(1),r.getString(2))));
+            db.query("SELECT id,display_name FROM app_users WHERE role IN ('ADMIN','TECH') OR id IN (SELECT administrator_id FROM satisfaction_surveys WHERE administrator_id IS NOT NULL) ORDER BY display_name,id",(r,n)->new Option(r.getLong(1),r.getString(2))));
     }
 
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)

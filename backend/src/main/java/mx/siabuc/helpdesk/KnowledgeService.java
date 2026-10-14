@@ -51,7 +51,7 @@ public class KnowledgeService {
         String search=text(q,"Búsqueda",200,false),version=text(siabucVersion,"Versión de SIABUC",120,false);
         List<Object> args=new ArrayList<>();StringBuilder where=new StringBuilder(" WHERE 1=1");
         // USER can never broaden the scope with a status parameter, including guessed IDs elsewhere.
-        Status visible=actor.role()==Role.USER ? Status.PUBLISHED : status;
+        Status visible=actor.role()!=Role.ADMIN ? Status.PUBLISHED : status;
         if(visible!=null){where.append(" AND status=?");args.add(visible.name());}
         if(category!=null){where.append(" AND category=?");args.add(category.name());}
         if(!search.isEmpty()){
@@ -118,7 +118,7 @@ public class KnowledgeService {
     }
     @Transactional
     public List<CaseLink> link(long caseId,LinkInput input) {
-        User actor=admin();Scope scope=scope(caseId,actor,true);
+        User actor=staff();Scope scope=scope(caseId,actor,true);
         if(!scope.institutionActive())throw ApiException.conflict("La institución está dada de baja.");
         if(input==null || input.articleId()==null || input.articleId()<1)throw ApiException.bad("Seleccione un artículo publicado.");
         Article article=find(input.articleId(),actor,true);
@@ -133,7 +133,7 @@ public class KnowledgeService {
     }
     @Transactional
     public List<CaseLink> unlink(long caseId,long articleId) {
-        User actor=admin();Scope scope=scope(caseId,actor,true);
+        User actor=staff();Scope scope=scope(caseId,actor,true);
         if(!scope.institutionActive())throw ApiException.conflict("La institución está dada de baja.");
         int changed=db.update("UPDATE knowledge_case_links SET active=FALSE,removed_by=?,removed_at=NOW() WHERE case_id=? AND article_id=? AND active",actor.id(),caseId,articleId);
         if(changed>0)recordLink(caseId,articleId,"UNLINK",actor);
@@ -144,7 +144,7 @@ public class KnowledgeService {
         return db.query("""
             SELECT a.*,l.linked_at FROM knowledge_case_links l JOIN knowledge_articles a ON a.id=l.article_id
             WHERE l.case_id=? AND l.active
-            """+(actor.role()==Role.USER ? " AND a.status='PUBLISHED'" : "")+" ORDER BY l.linked_at DESC,a.id DESC",
+            """+(actor.role()!=Role.ADMIN ? " AND a.status='PUBLISHED'" : "")+" ORDER BY l.linked_at DESC,a.id DESC",
             (r,n)->new CaseLink(caseId,summary(r),time(r,"linked_at")),caseId);
     }
     private Scope scope(long caseId,User actor,boolean lock) {
@@ -154,10 +154,11 @@ public class KnowledgeService {
         return values.get(0);
     }
     private Article find(long id,User actor,boolean lock) {
-        List<Article> values=db.query("SELECT * FROM knowledge_articles WHERE id=?"+(actor.role()==Role.USER?" AND status='PUBLISHED'":"")+(lock?" FOR UPDATE":""),ARTICLE,id);
+        List<Article> values=db.query("SELECT * FROM knowledge_articles WHERE id=?"+(actor.role()!=Role.ADMIN?" AND status='PUBLISHED'":"")+(lock?" FOR UPDATE":""),ARTICLE,id);
         if(values.isEmpty())throw ApiException.missing();return values.get(0);
     }
-    private User actor(){User actor=helpdesk.me();if(actor.role()!=Role.ADMIN && actor.role()!=Role.USER)throw ApiException.forbidden();return actor;}
+    private User actor(){User actor=helpdesk.me();if(!isSupportStaff(actor.role()) && actor.role()!=Role.USER)throw ApiException.forbidden();return actor;}
+    private User staff(){User actor=helpdesk.me();if(!isSupportStaff(actor.role()))throw ApiException.forbidden();return actor;}
     private User admin(){User actor=helpdesk.me();if(actor.role()!=Role.ADMIN)throw ApiException.forbidden();return actor;}
     private static void revision(Article article,Integer revision){if(revision==null || revision<1)throw ApiException.bad("Indique la revisión que está editando.");if(article.revision()!=revision)throw ApiException.conflict("Otro administrativo modificó el artículo. Recargue la versión actual antes de guardar.");}
     private static Input validate(Input input){

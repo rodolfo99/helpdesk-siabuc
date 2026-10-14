@@ -7,7 +7,9 @@ import java.util.List;
 
 public final class Models {
     private Models() {}
-    public enum Role { ADMIN, USER, BILLING }
+    public enum Role { ADMIN, USER, BILLING, TECH }
+    public static boolean isSupportStaff(Role role) { return role == Role.ADMIN || role == Role.TECH; }
+    public record SupportStaff(long id, String displayName, Role role) {}
     public enum PaymentMethod { TRANSFER, DEPOSIT, CASH, CREDIT_CARD, DEBIT_CARD, CHECK, OTHER, CARD }
     public enum Channel { EMAIL, REMOTE }
     public enum CaseStatus { OPEN, CLOSED }

@@ -17,7 +17,7 @@ import { formatTime } from './time';
 }`})
 export class DashboardComponent extends PageState implements OnInit {
   private api=inject(ApiService);readonly openCases=output<void>();readonly institutions=signal<Institution[]>([]);readonly cases=signal<SupportCase[]>([]);readonly time=formatTime;
-  ngOnInit(){this.load();} isAdmin(){return this.api.user()?.role==='ADMIN';}
+  ngOnInit(){this.load();} isAdmin(){return ['ADMIN','TECH'].includes(this.api.user()?.role??'');}
   load(){void this.perform(async()=>{const [institutions,cases]=await Promise.all([this.api.get<Institution[]>('/institutions'),this.api.get<SupportCase[]>('/cases')]);this.institutions.set(institutions);this.cases.set(cases);});}
   openCount(){return this.cases().filter(c=>c.status==='OPEN').length;} closedCount(){return this.cases().filter(c=>c.status==='CLOSED').length;} activeCount(){return this.institutions().filter(i=>i.active).length;}
   usedTotal(){return this.institutions().reduce((sum,i)=>sum+i.emailUsedMinutes+i.remoteUsedMinutes,0);}

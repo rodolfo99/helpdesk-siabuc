@@ -40,7 +40,7 @@ public class SecurityConfig {
     @Bean UserDetailsService userDetailsService(JdbcTemplate db) {
         return username -> {
             var rows = db.query("""
-                SELECT u.username,u.password_hash,u.auth_version,u.role,u.active,(u.role IN ('ADMIN','BILLING') OR COALESCE(i.active,FALSE)) AS institution_active
+                SELECT u.username,u.password_hash,u.auth_version,u.role,u.active,(u.role IN ('ADMIN','BILLING','TECH') OR COALESCE(i.active,FALSE)) AS institution_active
                 FROM app_users u LEFT JOIN institutions i ON i.id=u.institution_id WHERE u.username=?
                 """, (r, n) -> new AccountDetails(r.getString("username"), r.getString("password_hash"),
                     r.getBoolean("active") && r.getBoolean("institution_active"), r.getString("role"), r.getLong("auth_version")), username);
@@ -61,12 +61,19 @@ public class SecurityConfig {
                 .requestMatchers("/api/client-finance-access", "/api/client-finance-access/**", "/api/backups/**", "/api/satisfaction/reports", "/api/satisfaction/reports.csv", "/api/satisfaction/options").hasRole("ADMIN")
                 .requestMatchers("/api/client-finance", "/api/client-finance/**").hasRole("USER")
                 .requestMatchers("/api/quotes", "/api/quotes/**", "/api/renewals", "/api/renewals/**", "/api/payment-requests", "/api/payment-requests/**").hasAnyRole("ADMIN", "BILLING")
-                .requestMatchers("/api/knowledge", "/api/knowledge/**", "/api/satisfaction/**").hasAnyRole("ADMIN", "USER")
+                .requestMatchers("/api/knowledge", "/api/knowledge/**").hasAnyRole("ADMIN", "TECH", "USER")
+                .requestMatchers("/api/satisfaction/**").hasAnyRole("ADMIN", "USER")
+                .requestMatchers("/api/support-staff", "/api/timers/**").hasAnyRole("ADMIN", "TECH")
+                .requestMatchers("/api/saved-views", "/api/saved-views/**").hasAnyRole("ADMIN", "TECH", "USER")
+                .requestMatchers("/api/reply-templates", "/api/reply-templates/**", "/api/incidents", "/api/incidents/**").hasAnyRole("ADMIN", "TECH")
+                .requestMatchers(HttpMethod.GET, "/api/sla-alerts/settings").hasAnyRole("ADMIN", "TECH")
+                .requestMatchers("/api/sla-alerts/**").hasRole("ADMIN")
+                .requestMatchers("/api/support-packages", "/api/support-packages/**", "/api/installments", "/api/installments/**", "/api/reconciliation", "/api/reconciliation/**", "/api/statements", "/api/statements/**").hasAnyRole("ADMIN", "BILLING")
                 .requestMatchers("/api/policies", "/api/policies/**", "/api/reports/billing", "/api/reports/billing.xlsx", "/api/reports/billing.pdf").hasAnyRole("ADMIN", "BILLING")
                 .requestMatchers("/api/payments/*/attachments", "/api/payment-attachments/**", "/api/payments/*/receipt.pdf").hasAnyRole("ADMIN", "BILLING")
-                .requestMatchers("/api/reports/**", "/api/support-settings", "/api/balance-alert-settings", "/api/balance-alert-settings/**", "/api/timers/**").hasRole("ADMIN")
-                .requestMatchers("/api/attachments/**", "/api/remote-sessions/**", "/api/case-profiles").hasAnyRole("ADMIN", "USER")
-                .requestMatchers("/api/cases", "/api/cases/**").hasAnyRole("ADMIN", "USER")
+                .requestMatchers("/api/reports/**", "/api/support-settings", "/api/balance-alert-settings", "/api/balance-alert-settings/**").hasRole("ADMIN")
+                .requestMatchers("/api/attachments/**", "/api/remote-sessions/**", "/api/case-profiles").hasAnyRole("ADMIN", "TECH", "USER")
+                .requestMatchers("/api/cases", "/api/cases/**").hasAnyRole("ADMIN", "TECH", "USER")
                 .requestMatchers(HttpMethod.GET, "/api/institutions").authenticated()
                 .requestMatchers("/api/institutions", "/api/institutions/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/payments").hasAnyRole("ADMIN", "BILLING")

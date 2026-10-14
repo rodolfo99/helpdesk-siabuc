@@ -40,9 +40,11 @@ public class RemoteSessionService {
     public Session reschedule(long id,Proposal input) {
         User actor=admin(); Session initial=find(id); CaseDetail c=lockCase(initial.caseId()); requireOpen(c);
         Session old=locked(id);
+        requireManage(actor,old.adminId());
         if(!List.of("PROPOSED","CONFIRMED").contains(old.status())) throw ApiException.conflict("Sólo se pueden reprogramar sesiones pendientes.");
         Proposal replacement=new Proposal(input.startsAt(),input.endsAt(),input.note(),input.adminId()==null?old.adminId():input.adminId());
         // Keep the same order as propose: administrator before notification settings.
+        requireManage(actor,replacement.adminId());
         lockAdmin(replacement.adminId());
         // Old confirmation is explicitly invalidated. All updates roll back if the new slot conflicts.
         db.update("UPDATE remote_sessions SET status='CANCELLED',response='Reprogramada; requiere una nueva confirmación.',responded_by=?,updated_at=NOW() WHERE id=?",actor.id(),id);
@@ -53,8 +55,9 @@ public class RemoteSessionService {
     public Session respond(long id,String action,Response input) {
         User actor=helpdesk.me();
         boolean clientAction=action.equals("confirm")||action.equals("decline");
-        if(clientAction ? actor.role()!=Role.USER : actor.role()!=Role.ADMIN) throw ApiException.forbidden();
+        if(clientAction ? actor.role()!=Role.USER : !isSupportStaff(actor.role())) throw ApiException.forbidden();
         Session initial=find(id); CaseDetail c=lockCase(initial.caseId()); Session session=locked(id);
+        if(!clientAction) requireManage(actor,session.adminId());
         String next=switch(action) { case "confirm"->"CONFIRMED"; case "decline"->"DECLINED"; case "cancel"->"CANCELLED"; case "complete"->"COMPLETED"; default->throw ApiException.bad("Acción de agenda inválida."); };
         if(session.status().equals(next)) return session;
         if(clientAction) {
@@ -76,6 +79,7 @@ public class RemoteSessionService {
             throw ApiException.bad("Indique una sesión futura con inicio y fin válidos; duración máxima de 12 horas.");
         String note=clean(input.note(),5000,"Motivo de la sesión",true);
         long adminId=input.adminId()==null?actor.id():input.adminId();
+        requireManage(actor,adminId);
         lockAdmin(adminId);
         // Administrative user row serializes conflict detection across cases and institutions.
         Long overlaps=db.queryForObject("SELECT count(*) FROM remote_sessions WHERE admin_id=? AND status IN ('PROPOSED','CONFIRMED') AND starts_at < ? AND ends_at > ?",Long.class,adminId,Timestamp.from(input.endsAt()),Timestamp.from(input.startsAt()));
@@ -85,14 +89,17 @@ public class RemoteSessionService {
         history(c.id(),actor,"REMOTE_SESSION_PROPOSED","Sesión remota #"+id+" propuesta. Administrativo: "+session.adminName()+". Inicio: "+input.startsAt()+"; fin: "+input.endsAt()+" (UTC).\n"+note+(replacesId==null?"":"\nSustituye la sesión #"+replacesId+"; pendiente de nueva confirmación."));
         return session;
     }
+    private void requireManage(User actor,long responsibleId) {
+        if(actor.role()==Role.TECH && actor.id()!=responsibleId) throw ApiException.forbidden();
+    }
     private void lockAdmin(long adminId) {
         // NO KEY UPDATE serializes schedules without conflicting with actor foreign-key checks.
-        List<Long> users=db.query("SELECT id FROM app_users WHERE id=? AND role='ADMIN' AND active FOR NO KEY UPDATE",(r,n)->r.getLong(1),adminId);
-        if(users.isEmpty()) throw ApiException.bad("Seleccione un administrativo activo.");
+        List<Long> users=db.query("SELECT id FROM app_users WHERE id=? AND role IN ('ADMIN','TECH') AND active FOR NO KEY UPDATE",(r,n)->r.getLong(1),adminId);
+        if(users.isEmpty()) throw ApiException.bad("Seleccione un administrador o técnico de soporte activo.");
     }
     private Session find(long id) { List<Session> rows=db.query(SELECT+" WHERE s.id=?",row,id); if(rows.isEmpty()) throw ApiException.missing(); return rows.get(0); }
     private Session locked(long id) { db.queryForObject("SELECT id FROM remote_sessions WHERE id=? FOR UPDATE",Long.class,id); return find(id); }
-    private User admin() { User actor=helpdesk.me(); if(actor.role()!=Role.ADMIN) throw ApiException.forbidden(); return actor; }
+    private User admin() { User actor=helpdesk.me(); if(!isSupportStaff(actor.role())) throw ApiException.forbidden(); return actor; }
     private CaseDetail lockCase(long id) {
         CaseDetail initial=helpdesk.caseDetail(id);
         db.queryForObject("SELECT id FROM institutions WHERE id=? FOR UPDATE",Long.class,initial.institutionId());

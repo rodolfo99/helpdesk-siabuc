@@ -9,16 +9,16 @@ interface RemoteSession {id:number;caseId:number;adminId:number;adminName:string
 `],template:`
 <section aria-label="Agenda de sesiones remotas"><h3>Agenda de sesiones remotas</h3><p>Horarios en tu zona: {{timezone}}. Agendar o confirmar no descuenta minutos.</p><small>Describe el objetivo de la sesión. No escribas contraseñas ni claves de acceso remoto.</small>
 @if(error()){<div class="notice error" role="alert">{{error()}}</div>}@if(success()){<div class="notice success" role="status">{{success()}}</div>}
-@if(api.user()?.role==='ADMIN'&&caseStatus==='OPEN'){
-<form class="agenda-form" (ngSubmit)="propose()" #agendaForm="ngForm"><h4>{{rescheduleId?'Reprogramar sesión #'+rescheduleId:'Proponer una sesión'}}</h4><p>Administrativo de la sesión: {{api.user()?.displayName}}</p>
+@if(isSupportStaff()&&caseStatus==='OPEN'){
+<form class="agenda-form" (ngSubmit)="propose()" #agendaForm="ngForm"><h4>{{rescheduleId?'Reprogramar sesión #'+rescheduleId:'Proponer una sesión'}}</h4><p>Responsable de la sesión: {{api.user()?.displayName}}</p>
 <div class="agenda-grid"><label>Inicio<input name="sessionStart" type="datetime-local" required [(ngModel)]="startsAt"></label><label>Fin<input name="sessionEnd" type="datetime-local" required [(ngModel)]="endsAt"></label></div>
 <label>Objetivo y preparativos<textarea name="sessionNote" required maxlength="5000" rows="3" [(ngModel)]="note"></textarea></label>
 @if(rescheduleId){<p>La sesión anterior quedará cancelada y el cliente deberá confirmar la nueva propuesta.</p>}
 <div class="agenda-actions"><button class="btn primary" [disabled]="busy()||agendaForm.invalid">{{rescheduleId?'Guardar nueva propuesta':'Proponer al cliente'}}</button>@if(rescheduleId){<button type="button" class="btn" (click)="clearForm()">Cancelar cambio</button>}</div></form>}
 <button type="button" class="btn" [disabled]="busy()" (click)="reload()">Actualizar agenda</button>
-@for(s of sessions();track s.id){<article class="session-card"><h4>Sesión #{{s.id}} · {{label(s.status)}}</h4><p><strong>{{s.startsAt|date:'dd/MM/yyyy HH:mm'}} – {{s.endsAt|date:'dd/MM/yyyy HH:mm'}}</strong></p><p>Administrativo: {{s.adminName}}</p><p>{{s.note}}</p>
+@for(s of sessions();track s.id){<article class="session-card"><h4>Sesión #{{s.id}} · {{label(s.status)}}</h4><p><strong>{{s.startsAt|date:'dd/MM/yyyy HH:mm'}} – {{s.endsAt|date:'dd/MM/yyyy HH:mm'}}</strong></p><p>Responsable: {{s.adminName}}</p><p>{{s.note}}</p>
 @if(s.replacesId){<small>Sustituye la sesión #{{s.replacesId}}.</small>}@if(s.response){<p>Respuesta{{s.respondedBy?' de '+s.respondedBy:''}}: {{s.response}}</p>}
-@if((api.user()?.role==='USER'&&s.status==='PROPOSED'&&caseStatus==='OPEN')||(api.user()?.role==='ADMIN'&&(s.status==='PROPOSED'||s.status==='CONFIRMED'))){
+@if((api.user()?.role==='USER'&&s.status==='PROPOSED'&&caseStatus==='OPEN')||(canManage(s)&&(s.status==='PROPOSED'||s.status==='CONFIRMED'))){
 <label>Comentario o motivo<textarea [name]="'response'+s.id" maxlength="2000" [(ngModel)]="responses[s.id]"></textarea></label><div class="agenda-actions">
 @if(api.user()?.role==='USER'){<button type="button" class="btn primary" [disabled]="busy()" (click)="respond(s,'confirm')">Confirmar horario</button><button type="button" class="btn" [disabled]="busy()" (click)="respond(s,'decline')">Rechazar propuesta</button>}
 @else {<button type="button" class="btn" [disabled]="busy()" (click)="respond(s,'cancel')">Cancelar sesión</button>@if(caseStatus==='OPEN'){<button type="button" class="btn" [disabled]="busy()" (click)="edit(s)">Reprogramar</button>}@if(s.status==='CONFIRMED'){<button type="button" class="btn" [disabled]="busy()" (click)="respond(s,'complete')">Marcar realizada</button>}}
@@ -36,5 +36,7 @@ export class RemoteSessionsComponent extends PageState implements OnChanges {
   private local(value:string){const date=new Date(value);return new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,16);}
   propose(){const version=this.requestVersion,caseId=this.caseId;void this.perform(async()=>{const start=new Date(this.startsAt),end=new Date(this.endsAt);if(!Number.isFinite(start.getTime())||!Number.isFinite(end.getTime())||end<=start)throw new Error('Indica un inicio y fin válidos.');const path=this.rescheduleId?'/remote-sessions/'+this.rescheduleId+'/reschedule':'/cases/'+caseId+'/remote-sessions';await this.api.post(path,{startsAt:start.toISOString(),endsAt:end.toISOString(),note:this.note,adminId:this.api.user()?.id});const rows=await this.api.get<RemoteSession[]>('/cases/'+caseId+'/remote-sessions');if(version!==this.requestVersion)return;this.clearForm();this.sessions.set(rows);this.success.set('Propuesta registrada. El cliente puede confirmar desde su cuenta.');this.updated.emit();});}
   respond(s:RemoteSession,action:'confirm'|'decline'|'cancel'|'complete'){const version=this.requestVersion,caseId=this.caseId;void this.perform(async()=>{const response=(this.responses[s.id]??'').trim();if(action!=='confirm'&&!response)throw new Error('Escribe un comentario o motivo para continuar.');await this.api.post('/remote-sessions/'+s.id+'/'+action,{response});const rows=await this.api.get<RemoteSession[]>('/cases/'+caseId+'/remote-sessions');if(version!==this.requestVersion)return;this.responses[s.id]='';this.sessions.set(rows);this.success.set('Agenda e historial actualizados.');this.updated.emit();});}
+  isSupportStaff(){return ['ADMIN','TECH'].includes(this.api.user()?.role??'');}
+  canManage(s:RemoteSession){return this.api.user()?.role==='ADMIN'||(this.api.user()?.role==='TECH'&&s.adminId===this.api.user()?.id);}
   label(status:RemoteSession['status']){return {PROPOSED:'Propuesta',CONFIRMED:'Confirmada',DECLINED:'Rechazada',CANCELLED:'Cancelada',COMPLETED:'Realizada'}[status];}
 }

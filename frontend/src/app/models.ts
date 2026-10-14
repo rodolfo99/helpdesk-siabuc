@@ -1,4 +1,4 @@
-export type Role = 'ADMIN' | 'USER' | 'BILLING';
+export type Role = 'ADMIN' | 'USER' | 'BILLING' | 'TECH';
 export type Channel = 'EMAIL' | 'REMOTE';
 export interface User { id:number; username:string; displayName:string; email:string; role:Role; institutionId:number|null; active:boolean; }
 export interface Institution { id:number; name:string; contactName:string; email:string; phone:string; notes:string; supportAdminId:number|null; active:boolean; emailAllocatedMinutes:number; emailUsedMinutes:number; emailRemainingMinutes:number; remoteAllocatedMinutes:number; remoteUsedMinutes:number; remoteRemainingMinutes:number; }

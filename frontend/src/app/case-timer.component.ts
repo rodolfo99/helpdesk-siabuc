@@ -8,7 +8,7 @@ interface WorkTimer { id:number; caseId:number; status:'RUNNING'|'PAUSED'|'FINIS
   :host{display:block;margin:1rem 0}.timer-box{padding:1rem;border:1px solid var(--line,#dce3eb);border-radius:12px;background:var(--surface,#fff)}
   .timer-clock{font-size:1.8rem;font-variant-numeric:tabular-nums;margin:.5rem 0}.timer-actions{display:flex;gap:.5rem;flex-wrap:wrap}.timer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem}form{margin-top:1rem}small{display:block;margin:.35rem 0}.timer-confirm{background:#fff7e5;padding:1rem;border-radius:8px}
 `],template:`
-@if(api.user()?.role==='ADMIN'){
+@if((['ADMIN','TECH'].includes(api.user()?.role??''))){
 <section class="timer-box" aria-label="Cronómetro de atención"><h3>Cronómetro de atención</h3>
 <small>El tiempo se conserva al salir. Finaliza y confirma los minutos para descontarlos del saldo.</small>
 @if(error()){<div class="notice error" role="alert">{{error()}}</div>}
@@ -28,7 +28,7 @@ interface WorkTimer { id:number; caseId:number; status:'RUNNING'|'PAUSED'|'FINIS
 <label>Canal<select name="timerChannel" [(ngModel)]="channel"><option value="EMAIL">Correo</option><option value="REMOTE">Escritorio remoto</option></select></label></div>
 <label>Descripción de la atención<textarea name="timerDescription" required maxlength="7500" rows="3" [(ngModel)]="description"></textarea></label>
 @if(minutes!==t.suggestedMinutes){<label>Motivo del ajuste de minutos<textarea name="timerReason" required maxlength="2000" [(ngModel)]="adjustmentReason"></textarea></label>}
-<label><input name="timerInternal" type="checkbox" [(ngModel)]="internal"> Nota interna; sólo administrativos</label>
+<label><input name="timerInternal" type="checkbox" [(ngModel)]="internal"> Nota interna; sólo personal de soporte</label>
 @if(caseStatus==='CLOSED'){<p class="notice">El caso está cerrado. Reábrelo para confirmar; el tiempo sigue guardado.</p>}
 <button class="btn primary" [disabled]="busy()||commitForm.invalid||caseStatus==='CLOSED'">Confirmar y descontar {{minutes||0}} minutos</button></form>}
 @if(t.status==='COMMITTED'){<small>Atención registrada #{{t.entryId}}: {{t.confirmedMinutes}} minutos. No se volverán a descontar.</small>}
@@ -41,7 +41,7 @@ export class CaseTimerComponent extends PageState implements OnChanges,OnDestroy
   readonly timer=signal<WorkTimer|null>(null); readonly displayedSeconds=signal(0);
   minutes=1; channel:'EMAIL'|'REMOTE'='EMAIL'; description=''; internal=false; adjustmentReason=''; discardRequested=false;
   private tick:ReturnType<typeof setInterval>|undefined; private observedAt=0; private requestVersion=0;
-  ngOnChanges(changes:Record<string,unknown>){if(changes['caseId']){this.requestVersion++;this.stopClock();this.timer.set(null);this.description='';this.adjustmentReason='';this.internal=false;this.discardRequested=false;if(this.api.user()?.role==='ADMIN')void this.load();}}
+  ngOnChanges(changes:Record<string,unknown>){if(changes['caseId']){this.requestVersion++;this.stopClock();this.timer.set(null);this.description='';this.adjustmentReason='';this.internal=false;this.discardRequested=false;if(['ADMIN','TECH'].includes(this.api.user()?.role??''))void this.load();}}
   ngOnDestroy(){this.requestVersion++;this.stopClock();}
   private stopClock(){if(this.tick)clearInterval(this.tick);this.tick=undefined;}
   private accept(t:WorkTimer|null){this.stopClock();this.timer.set(t);this.observedAt=Date.now();this.displayedSeconds.set(t?.elapsedSeconds??0);if(t?.status==='FINISHED')this.minutes=Math.max(1,t.suggestedMinutes);if(t?.status==='RUNNING')this.tick=setInterval(()=>this.displayedSeconds.set(t.elapsedSeconds+Math.max(0,Math.floor((Date.now()-this.observedAt)/1000))),1000);}

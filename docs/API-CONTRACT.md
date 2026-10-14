@@ -1,6 +1,6 @@
-# Contrato de integración (v1.6)
+# Contrato de integración (v1.7)
 
-Base `/api`. Instantes ISO 8601 UTC; fechas civiles de pagos y pólizas `YYYY-MM-DD`, sin conversión de zona horaria. Identificadores numéricos. Unidad de soporte: minutos enteros (no flotantes). Roles `ADMIN`, `USER` y `BILLING`; canales `EMAIL` y `REMOTE`; estados `OPEN` y `CLOSED`.
+Base `/api`. Instantes ISO 8601 UTC; fechas civiles de pagos y pólizas `YYYY-MM-DD`, sin conversión de zona horaria. Identificadores numéricos. Unidad de soporte: minutos enteros (no flotantes). Roles `ADMIN`, `TECH`, `USER` y `BILLING`; canales `EMAIL` y `REMOTE`; estados `OPEN` y `CLOSED`.
 
 Autenticación: sesión HttpOnly, cookie de CSRF `XSRF-TOKEN`, cabecera `X-XSRF-TOKEN`. Angular usa proxy mismo origen. GET `/auth/csrf` inicializa cookie y retorna `{token}`; llamar antes de login y después de login/logout. POST `/auth/login` usa formulario URL encoded `username`, `password`, devuelve 200. POST `/auth/logout` devuelve 204. GET `/auth/me` devuelve User. PUT `/auth/password` JSON `{currentPassword,newPassword}`.
 
@@ -12,33 +12,33 @@ CaseDetail: campos de Case más `entries:Entry[]`.
 Audit: `{id,actor,action,entityType,entityId,details,createdAt}`.
 Error: `{message}` y HTTP 400 validación, 401 sin sesión, 403 no autorizado, 404 inexistente, 409 conflicto/saldo insuficiente.
 
-- GET `/institutions`: array (ADMIN/BILLING todas incluidas bajas; USER solo propia activa).
+- GET `/institutions`: array (ADMIN/TECH/BILLING todas incluidas bajas; USER solo propia activa).
 - POST `/institutions` ADMIN: `{name,contactName,email,phone,notes,emailAllocatedMinutes,remoteAllocatedMinutes,supportAdminId}`.
 - PUT `/institutions/{id}` ADMIN: campos anteriores más `active`; no permite asignado menor que usado.
 - DELETE `/institutions/{id}` ADMIN: baja lógica sin perder casos.
 - GET `/users` ADMIN: User[].
-- POST `/users` ADMIN: `{username,displayName,password,role,institutionId,active,email}`. USER requiere institución; ADMIN null.
+- POST `/users` ADMIN: `{username,displayName,password,role,institutionId,active,email}`. USER requiere institución; ADMIN/TECH/BILLING null.
 - PUT `/users/{id}` ADMIN: mismos campos, password opcional vacío conserva. Username, rol e institución son inmutables. No desactivar al último administrador. Para cambiar el ámbito de acceso, crear otra cuenta y desactivar la anterior. Restablecer la contraseña revoca las sesiones de esa cuenta.
-- GET `/cases`: Case[] filtrados en servidor por institución del usuario; ADMIN todos.
+- GET `/cases`: Case[] filtrados en servidor por institución del usuario; ADMIN/TECH todos.
 - POST `/cases`: `{institutionId,title,description,channel,assignedAdminId}`; USER solo propia institución. Rechaza si saldo del canal <=0. Devuelve CaseDetail.
 - GET `/cases/{id}`: CaseDetail, USER no recibe entradas internas.
-- PUT `/cases/{id}` ADMIN: `{title,description,channel,assignedAdminId}`; audita modificaciones.
-- POST `/cases/{id}/status` ADMIN: `{status,reason}`; cerrar siempre permitido; reabrir exige saldo del canal.
-- POST `/cases/{id}/entries`: `{description,channel,minutes,internal}`. ADMIN registra minutos >0 y canal o comentario 0/null; USER únicamente comentario 0/null y público. Casos cerrados no aceptan entradas. Devuelve CaseDetail. Consumo y escritura en una transacción con bloqueo de institución; no sobregiro.
+- PUT `/cases/{id}` ADMIN/TECH: `{title,description,channel,assignedAdminId}`; audita modificaciones.
+- POST `/cases/{id}/status` ADMIN/TECH: `{status,reason}`; cerrar siempre permitido; reabrir exige saldo del canal.
+- POST `/cases/{id}/entries`: `{description,channel,minutes,internal}`. ADMIN/TECH registra minutos >0 y canal o comentario 0/null; USER únicamente comentario 0/null y público. Casos cerrados no aceptan entradas. Devuelve CaseDetail. Consumo y escritura en una transacción con bloqueo de institución; no sobregiro.
 - POST `/cases/{id}/entries/{entryId}/void` ADMIN: `{reason}` anula atención y devuelve minutos una única vez; conserva entrada y auditoría. Devuelve CaseDetail.
 - GET `/audit` ADMIN: Audit[] (últimas 500).
 - GET `/health` público: `{status:"UP"}`.
 
 Listados de instituciones, usuarios y casos completos; interfaz filtra búsquedas y estado. Auditoría muestra los últimos 500 eventos, sin eliminar los anteriores de PostgreSQL. Presupuestos son totales históricos asignados: recargar implica aumentar el total. Bajas bloquean acceso de usuarios de esa institución; historial queda consultable por admin. Nunca borrar físicamente trazabilidad. Contraseñas de al menos 12 caracteres Unicode y como máximo 72 bytes UTF-8; BCrypt. Cambiar la contraseña propia conserva la sesión actual y revoca las otras. Variables backend: DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD, SERVER_PORT, ADMIN_USERNAME, ADMIN_PASSWORD, COOKIE_SECURE.
 
-`notes` de Institution se devuelve vacío para USER y BILLING. Las entradas internas no se devuelven a USER; sus minutos sí forman parte del consumo total institucional y del caso.
+`notes` de Institution se devuelve vacío para USER, TECH y BILLING. Las entradas internas no se devuelven a USER; sus minutos sí forman parte del consumo total institucional y del caso.
 
 
 ## Contactos y responsables
 
 `email` acepta una dirección individual válida o vacío. En `PUT /users/{id}`, omitir `email` o enviarlo como `null` conserva el actual; `""` lo vacía. `ADMIN_EMAIL` únicamente establece el correo al crear el administrador inicial: no modifica cuentas existentes.
 
-`supportAdminId` es un ADMIN activo predeterminado para casos nuevos. `assignedAdminId` identifica al responsable del caso. En los PUT respectivos, omitir el campo conserva el valor; `null` elimina la asignación. En POST de casos, si no se indica responsable se usa el predeterminado activo; si falta y crea un ADMIN, se asigna el creador. Un USER no puede indicar un responsable. Cambiar el predeterminado institucional no reasigna casos previos. El responsable no limita el acceso: los ADMIN consultan todos los casos.
+`supportAdminId` es un ADMIN/TECH activo predeterminado para casos nuevos. `assignedAdminId` identifica al responsable del caso. En los PUT respectivos, omitir el campo conserva el valor; `null` elimina la asignación. En POST de casos, si no se indica responsable se usa el predeterminado activo; si falta y crea un ADMIN, se asigna el creador. Un USER no puede indicar un responsable. Cambiar el predeterminado institucional no reasigna casos previos. El responsable no limita el acceso: ADMIN y TECH consultan todos los casos.
 
 ## Pagos y acreditación
 
@@ -187,3 +187,10 @@ El portal USER usa exclusivamente `/api/client-finance/**`, requiere institució
 Conocimiento usa `/api/knowledge/**` y `/api/cases/{id}/knowledge-links`; sólo ADMIN edita/publica y USER únicamente consulta contenido publicado autorizado. Encuestas usa `/api/satisfaction/cases/{caseId}` para casos propios y `/api/satisfaction/reports` para ADMIN. Respaldos usa `/api/backups/**`, exclusivo ADMIN, con programación desactivada por defecto.
 
 Las guías de cada módulo enumeran DTOs, rutas, estados, límites y errores: [cotizaciones/renovaciones](COTIZACIONES-RENOVACIONES.md), [solicitudes y portal](SOLICITUDES-PAGO.md), [recibos](RECIBOS-PAGO.md), [conocimiento](BASE-CONOCIMIENTOS.md), [encuestas](ENCUESTAS-SATISFACCION.md) y [respaldos](RESPALDOS-AUTOMATICOS.md). No se cambia el mecanismo de sesión ni la protección CSRF.
+
+
+## Extensiones 1.7
+
+`TECH` opera casos y sus recursos técnicos. No administra usuarios, instituciones, cobranza, respaldos o configuración. En un caso nuevo queda asignado a sí mismo; puede tomar uno sin responsable. Sólo ADMIN reasigna a otro responsable y anula consumos. `GET /support-staff` (ADMIN/TECH) devuelve exclusivamente `{id,displayName,role}` de responsables activos. Todos los permisos se verifican en servidor, incluso al invocar la API directamente.
+
+Los contratos adicionales se documentan junto con sus reglas y ejemplos en [vistas y alertas](VISTAS-ALERTAS.md), [plantillas](PLANTILLAS-RESPUESTA.md), [incidencias](INCIDENCIAS.md), [paquetes](PAQUETES-TARIFAS.md), [parcialidades](PARCIALIDADES.md), [conciliación](CONCILIACION-BANCARIA.md) y [estados de cuenta](ESTADOS-CUENTA.md). Las mutaciones exigen sesión y CSRF. Importar/conciliar un CSV no invoca la acreditación de horas.

@@ -85,7 +85,7 @@ public class WorkTimerService {
         audit(actor,"COMMIT_TIMER",id,"Caso="+timer.caseId()+"; registro="+entryId+"; minutos="+input.minutes());
         return view(own(id,actor,false));
     }
-    private User admin() { User actor=helpdesk.me(); if(actor.role()!=Role.ADMIN) throw ApiException.forbidden(); return actor; }
+    private User admin() { User actor=helpdesk.me(); if(!isSupportStaff(actor.role())) throw ApiException.forbidden(); return actor; }
     private Stored own(long id,User actor,boolean lock) {
         List<Stored> rows=db.query("SELECT * FROM work_timers WHERE id=? AND admin_id=?"+(lock?" FOR UPDATE":""),row,id,actor.id());
         if(rows.isEmpty()) throw ApiException.missing(); return rows.get(0);

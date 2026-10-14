@@ -85,6 +85,8 @@ public class PolicyService {
         lockInstitution(initial.institutionId(),true);lockForAccounting(id,initial.institutionId());Policy p=policy(id);
         if(!p.status().equals("ACTIVE")) throw ApiException.conflict("La póliza está cancelada y no puede modificarse.");
         if(p.paymentCount()>0) throw ApiException.conflict("La póliza ya tiene historial de pagos, incluso si fueron anulados. Su contrato no puede modificarse.");
+        if(p.agreedAmount().compareTo(input.agreedAmount())!=0 && db.queryForObject("SELECT COUNT(*) FROM policy_installments WHERE policy_id=? AND NOT cancelled",Long.class,id)>0)
+            throw ApiException.conflict("La póliza tiene parcialidades programadas. Cancele el calendario antes de cambiar su importe.");
         uniqueFolio(input.folio(),id);
         db.update("""
             UPDATE support_policies SET folio=?,description=?,valid_from=?,valid_until=?,agreed_amount=?,email_minutes=?,remote_minutes=?,updated_at=NOW() WHERE id=?
