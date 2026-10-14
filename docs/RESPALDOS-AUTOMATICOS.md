@@ -41,7 +41,9 @@ rem Windows, Docker Desktop en modo contenedores Linux
 iniciar.bat
 ```
 
-Los scripts crean el directorio si falta y construyen el servicio `backup`. El worker espera a que el backend esté saludable y haya aplicado sus migraciones. Si ejecutas `docker compose` directamente, crea primero la carpeta indicada: el montaje usa `create_host_path: false` para no crear silenciosamente una ruta equivocada.
+Los scripts crean el directorio si falta, construyen el servicio `backup` y comprueban que pueda escribir en `/backups` **usando el mismo UID/GID del contenedor**, antes de arrancar el resto de servicios. La comprobación crea y elimina un único archivo temporal y no cambia permisos ni propietarios de carpetas existentes. El worker espera a que el backend esté saludable y haya aplicado sus migraciones. Si ejecutas `docker compose` directamente, crea primero la carpeta indicada: el montaje usa `create_host_path: false` para no crear silenciosamente una ruta equivocada.
+
+Para verificar el destino sin arrancar todo el sistema, ejecute `./configurar.sh --verificar-respaldos`. Si falla, el script informa la ruta real y los comandos de Linux para corregir el propietario y permisos (o recomienda revisar Docker Desktop en Windows). Revise que sea el destino esperado **antes** de ejecutar la reparación. No use `chmod -R 777`, no cambie `BACKUP_UID` a ciegas y no borre volúmenes.
 
 Para revisar el servicio:
 
