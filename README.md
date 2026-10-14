@@ -2,7 +2,7 @@
 
 Sistema de atención técnica con servidor **Spring Boot 3.5.16 / Java 17**, cliente **Angular 21.2.25** y base de datos **PostgreSQL 17**. Conserva instituciones, usuarios, casos, pagos, actualizaciones descriptivas y auditoría. El tiempo por correo y por escritorio remoto se administra en **dos bolsas independientes de minutos enteros**.
 
-**Novedades de 1.8:** Ayuda visible desde el encabezado del cliente, alta de tickets con validación propia y revisión previa, nuevas categorías editoriales y filtros locales de fecha para soporte. Las rutas existentes mantienen el formulario único de contraseña. Los mecanismos institucionales no aprobados permanecen pendientes. Véase [Versión 1.8](docs/VERSION-1.8.md).
+**Novedades de 1.8:** Ayuda visible desde el encabezado del cliente, alta de tickets con validación propia y revisión previa, nuevas categorías editoriales y filtros locales de fecha para soporte. Las rutas existentes mantienen el formulario único de contraseña. Los mecanismos institucionales no aprobados permanecen pendientes. Véase [Versión 1.8](docs/VERSION-1.8.md). Para crear el ZIP completo `SIABUC-Helpdesk-1.8.0.zip` ejecute `python3 scripts/package-1.8.py`; el manifiesto de la raíz corresponde a la versión anterior y el paquete crea uno actualizado.
 
 **Versión 1.7:** técnico de soporte, vistas guardadas, alertas previas al vencimiento de SLA, plantillas de respuesta, incidencias generales, catálogo de paquetes, calendario de parcialidades, conciliación bancaria CSV y estados de cuenta institucionales. Incluye las funciones de las versiones anteriores.
 
