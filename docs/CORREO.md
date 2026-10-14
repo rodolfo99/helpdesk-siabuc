@@ -1,6 +1,6 @@
 # Correo y notificaciones · versión 1.3.3
 
-El sistema guarda notificaciones junto con cada operación y las envía posteriormente por SMTP. **En 1.8.2 las instalaciones nuevas utilizan Gmail directo, con envío inicialmente desactivado hasta configurar credenciales**, con la IP local como dominio literal del remitente, por ejemplo `soporte@[192.168.1.50]`. Configure la IP real con `./configurar.sh --smtp-interno`. Los `.env` anteriores conservan su configuración y activación. Consulte [SMTP-INTERNO.md](SMTP-INTERNO.md) para el servidor Docker, su cola y las condiciones de recepción. Configurar el servidor no envía un mensaje de prueba; al activar `MAIL_ENABLED` y reiniciar, se procesa también la cola pendiente acumulada si no existe una pausa administrativa. Desde 1.3.1 puede [pausar el envío desde la aplicación](DESACTIVAR-CORREO.md).
+El sistema conserva notificaciones y las envía mediante el SMTP seleccionado. En 1.8.2, las instalaciones nuevas tienen `MAIL_ENABLED=false` y Gmail directo preseleccionado, sin secretos. `./configurar.sh --gmail-directo` configura la cuenta autorizada. Si una instalación anterior conserva `SMTP_HOST=smtp`, los scripts mantienen el servicio Postfix opcional. Ninguna configuración garantiza que Google acepte los mensajes hasta probar el envío.
 
 ## Conectar Spring directamente a otro SMTP
 
@@ -70,7 +70,7 @@ Pida a su administrador un relay aprobado compatible: por ejemplo, un servidor i
 
 ## Prueba local con Mailpit, sin destinatarios reales
 
-Use una **instalación y base de pruebas separadas**. Mailpit captura mensajes localmente y permite inspeccionarlos en el navegador; Mailpit en el perfil de ensayo no entrega a Internet. El servicio Postfix predeterminado sí es un servidor saliente real: al probar con Mailpit asegúrese de cambiar `SMTP_HOST` y `SMTP_PORT` como se indica abajo.
+Use una **instalación y base de pruebas separadas**. Mailpit captura mensajes localmente y permite inspeccionarlos en el navegador; Mailpit en el perfil de ensayo no entrega a Internet. El servicio Postfix opcional sí es un servidor saliente real: al probar con Mailpit asegúrese de cambiar `SMTP_HOST` y `SMTP_PORT` como se indica abajo.
 
 1. Inicie el sumidero desde la raíz del proyecto:
 
@@ -177,6 +177,6 @@ Desde 1.3.1 el control administrativo de [desactivación de correo](DESACTIVAR-C
 
 ## Novedad 1.8.2: Gmail sin Postfix
 
-Ejecute `./configurar.sh --gmail-directo` o `configurar.bat --gmail-directo` para introducir la cuenta y una nueva contraseña de aplicación por entrada oculta. El cambio no comprueba autenticación ni envía correo y conserva las opciones `SMTP_RELAY_*` antiguas solo como datos de configuración inactivos. Spring Boot enviará directamente a `smtp.gmail.com:587` mediante STARTTLS. La cuenta Workspace debe permitir SMTP con contraseña de aplicación. No publique el archivo `.env`.
+Ejecute `./configurar.sh --gmail-directo` en Linux o `configurar.bat --gmail-directo` en Windows para introducir la cuenta y una nueva contraseña de aplicación por entrada oculta. El cambio no comprueba autenticación ni envía correo y conserva las opciones `SMTP_RELAY_*` antiguas solo como datos de configuración inactivos. Spring Boot enviará directamente a `smtp.gmail.com:587` mediante STARTTLS. La cuenta Workspace debe permitir SMTP con contraseña de aplicación. No publique el archivo `.env`.
 
 Antes de pasar de `SMTP_HOST=smtp` a Gmail directo inspeccione y resuelva la cola Postfix; el volumen `smtp_queue` permanece intacto aunque el servicio deje de iniciarse por defecto. Consulte [migración 1.8.2](VERSION-1.8.2.md).
