@@ -4,6 +4,7 @@ import importlib.util
 import unittest
 from unittest import mock
 import tempfile
+import re
 
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location("siabuc_network_manage_test", ROOT / "scripts/manage.py")
@@ -18,10 +19,13 @@ class NetworkPublicationTests(unittest.TestCase):
         for legacy in ("BIND_HOST:-127.0.0.1",):
             self.assertIn(legacy, text)
         self.assertIn('WEB_BIND_HOST:-', text)
+        def service_block(name):
+            found = re.search(r"(?ms)^  " + name + r":\n(.*?)(?=^  [a-z]+:\n|^volumes:|^networks:|\\Z)", text)
+            self.assertIsNotNone(found)
+            return found.group(1)
         for service in ("db", "backend", "smtp"):
-            segment = text.split("\n  " + service + ":\n", 1)[1].split("\n  ", 1)[0]
-            self.assertNotIn("\n    ports:", segment)
-        frontend = text.split("\n  frontend:\n", 1)[1].split("\n  ", 1)[0]
+            self.assertNotIn("\n    ports:", service_block(service))
+        frontend = service_block("frontend")
         self.assertIn("\n    ports:", frontend)
         self.assertIn(":80", frontend)
 
