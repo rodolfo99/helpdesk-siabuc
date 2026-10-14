@@ -68,12 +68,12 @@ DEFAULTS = {
 }
 FRESH_DEFAULTS = {
     **DEFAULTS,
-    "MAIL_ENABLED": "true",
-    "SMTP_HOST": "smtp",
-    "SMTP_PORT": "25",
-    "SMTP_AUTH": "false",
-    "SMTP_SECURITY": "NONE",
-    "MAIL_FROM": "soporte@[127.0.0.1]",
+    "MAIL_ENABLED": "false",
+    "SMTP_HOST": "smtp.gmail.com",
+    "SMTP_PORT": "587",
+    "SMTP_AUTH": "true",
+    "SMTP_SECURITY": "STARTTLS",
+    "MAIL_FROM": "",
     "MAIL_FROM_NAME": "Soporte SIABUC",
 }
 ALLOWED_KEYS = set(DEFAULTS) | {"DB_PASSWORD", "ADMIN_PASSWORD"}
@@ -358,6 +358,38 @@ def set_mail_configuration(values: dict[str, str]) -> dict[str, str]:
     return updated
 
 
+
+def set_direct_gmail_configuration(values: dict[str, str]) -> dict[str, str]:
+    """Gmail directo: cambiar claves de Spring conservando el relay heredado."""
+    if not sys.stdin.isatty():
+        fail("Use ./configurar.sh --gmail-directo desde una terminal interactiva.")
+    original = ENV_FILE.read_text(encoding="utf-8")
+    default_address = values["SMTP_USERNAME"] if values["SMTP_HOST"] == "smtp.gmail.com" else ""
+    username = input(f"Cuenta Google Workspace/Gmail [{default_address}]: ").strip() or default_address
+    if not valid_email_address(username):
+        fail("Indique un correo completo y válido.")
+    password = getpass.getpass("Nueva contraseña de aplicación Gmail (oculta; Enter conserva la directa existente): ")
+    if password:
+        env_value(password)
+        if password != getpass.getpass("Repita la contraseña de aplicación: "):
+            fail("Las contraseñas no coinciden; .env permanece intacto.")
+    elif values["SMTP_HOST"] == "smtp.gmail.com" and values["SMTP_USERNAME"] == username:
+        password = values["SMTP_PASSWORD"]
+    else:
+        fail("Debe proporcionar una contraseña de aplicación para Gmail directo.")
+    updated = dict(values)
+    updated.update(MAIL_ENABLED="true", SMTP_HOST="smtp.gmail.com", SMTP_PORT="587",
+                   SMTP_AUTH="true", SMTP_SECURITY="STARTTLS", SMTP_USERNAME=username,
+                   SMTP_PASSWORD=password, MAIL_FROM=username)
+    validate_mail(updated)
+    keys = ("MAIL_ENABLED", "SMTP_HOST", "SMTP_PORT", "SMTP_AUTH", "SMTP_SECURITY",
+            "SMTP_USERNAME", "SMTP_PASSWORD", "MAIL_FROM")
+    save_config_values({key: updated[key] for key in keys}, original)
+    print("Gmail directo configurado en .env. No se ha probado autenticación ni enviado correo.")
+    print("Revise la cola Postfix anterior antes de retirarlo y reinicie en mantenimiento.")
+    return updated
+
+
 def set_database_password(values: dict[str, str]) -> dict[str, str]:
     """Configure the local secret; never imply that an existing DB role was altered."""
     if not sys.stdin.isatty():
@@ -473,19 +505,21 @@ def detected_local_ip() -> str:
 
 
 def smtp_information(values: dict[str, str]) -> None:
-    print(f"SMTP interno: 127.0.0.1:{values['SMTP_INTERNAL_PORT']} (contenedores: smtp:25). Sin bandeja web.")
+    if values["SMTP_HOST"] == "smtp":
+        print(f"Postfix opcional: smtp:25 (127.0.0.1:{values['SMTP_INTERNAL_PORT']} en desarrollo).")
+    else:
+        print(f"SMTP directo de Spring: {values['SMTP_HOST']}:{values['SMTP_PORT']}.")
     print(f"IP local configurada: {values['SMTP_LOCAL_IP']}; remitente: {values['MAIL_FROM'] or '(sin configurar)' }.")
     if values["MAIL_ENABLED"] == "false":
         print("La aplicación conserva el envío desactivado; la cola permanece pendiente.")
     elif values["SMTP_HOST"] != "smtp":
-        print("La aplicación conserva su conexión SMTP configurada; el servidor interno está disponible por separado.")
-    if values["SMTP_RELAY_HOST"]:
-        print(f"Salida mediante relay: {values['SMTP_RELAY_HOST']}:{values['SMTP_RELAY_PORT']} ({values['SMTP_RELAY_SECURITY']}).")
-    else:
-        print("Salida directa por MX/puerto 25: depende de la conectividad y de las políticas del servidor destinatario.")
-    if values["SMTP_LOCAL_IP"] == "127.0.0.1":
-        print("127.0.0.1 permite uso local. Para identificar el equipo en su red, seleccione su IP LAN con --smtp-interno.")
-    print("Un remitente con IP literal es válido para uso local; la entrega a proveedores externos depende de sus políticas.")
+        print("Spring entrega directamente al SMTP configurado, sin Postfix intermediario.")
+    if values["SMTP_HOST"] == "smtp":
+        if values["SMTP_RELAY_HOST"]:
+            print(f"Postfix relay: {values['SMTP_RELAY_HOST']}:{values['SMTP_RELAY_PORT']} ({values['SMTP_RELAY_SECURITY']}).")
+        else:
+            print("Postfix usa salida directa MX/25, sujeta a las políticas de destino.")
+    print("La configuración SMTP no prueba entrega externa.")
 
 
 def native_environment(values: dict[str, str]) -> dict[str, str]:
@@ -514,6 +548,13 @@ def compose(values: dict[str, str], *arguments: str, **kwargs):
     if not backup_directory.is_absolute():
         backup_directory = ROOT / backup_directory
     env["BACKUP_DIRECTORY"] = str(backup_directory.resolve())
+    profiles = [p for p in env.get("COMPOSE_PROFILES", "").split(",") if p and p != "local-smtp"]
+    if values.get("SMTP_HOST") == "smtp":
+        profiles.append("local-smtp")
+    if profiles:
+        env["COMPOSE_PROFILES"] = ",".join(profiles)
+    else:
+        env.pop("COMPOSE_PROFILES", None)
     return run(["docker", "compose", "--project-directory", str(ROOT), "--env-file",
                 str(ENV_FILE), "-f", str(ROOT / "docker-compose.yml"), *extra_files, *arguments], env=env, **kwargs)
 
@@ -554,7 +595,7 @@ def build_native() -> None:
     run(["mvn", "-B", "-ntp", "package"], cwd=ROOT / "backend")
     run(["npm", "ci"], cwd=ROOT / "frontend")
     run(["npm", "run", "build"], cwd=ROOT / "frontend")
-    print("Compilación terminada: backend/target/siabuc-helpdesk-1.8.1.jar y frontend/dist/helpdesk/browser/.")
+    print("Compilación terminada: backend/target/siabuc-helpdesk-1.8.2.jar y frontend/dist/helpdesk/browser/.")
 
 
 def wait_http(url: str, process: subprocess.Popen, log_path: Path, timeout: int = 180) -> None:
@@ -594,7 +635,9 @@ def development(values: dict[str, str]) -> None:
                 probe.bind(("127.0.0.1", int(values[key])))
             except OSError:
                 fail(f"El puerto {values[key]} ({key}) está ocupado. Detenga el servicio o cambie .env.")
-    services = ["db", "smtp"]
+    services = ["db"]
+    if values["SMTP_HOST"] == "smtp":
+        services.append("smtp")
     if values["SMTP_HOST"] == "mailpit":
         services.append("mailpit")
     compose(values, "up", "-d", "--build", "--wait", "--wait-timeout", "180", *services)
@@ -611,7 +654,7 @@ def development(values: dict[str, str]) -> None:
     previous_sigterm = signal.signal(signal.SIGTERM, interrupted)
     try:
         commands = [
-            (["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.8.1.jar")],
+            (["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.8.2.jar")],
              ROOT / "backend", RUNTIME / "backend.log", f"http://127.0.0.1:{values['SERVER_PORT']}/api/health"),
             (["npm", "start", "--", "--host", "127.0.0.1", "--port", values["FRONTEND_PORT"]],
              ROOT / "frontend", RUNTIME / "frontend.log", f"http://127.0.0.1:{values['FRONTEND_PORT']}/"),
@@ -709,7 +752,7 @@ def restore(values: dict[str, str], filename: str, confirmed: bool) -> None:
             fail("SHA-256 incorrecto: la copia no coincide con su archivo de verificación.")
     docker_ready(values)
     compose(values, "up", "-d", "--wait", "--wait-timeout", "180", "db")
-    compose(values, "stop", "backup", "frontend", "backend", "smtp")
+    compose(values, "--profile", "local-smtp", "stop", "backup", "frontend", "backend", "smtp")
     try:
         with source.open("rb") as handle:
             compose(values, "exec", "-T", "db", "pg_restore", "-U", values["DB_USER"],
@@ -737,7 +780,8 @@ def main() -> None:
                            help="Solicitar y confirmar DB_PASSWORD sin mostrarla; configura .env, no cambia una base existente.")
     mail_options = configure.add_mutually_exclusive_group()
     mail_options.add_argument("--correo", action="store_true", help="Configurar conexión SMTP y remitente sin enviar correo.")
-    mail_options.add_argument("--smtp-interno", action="store_true", help="Conectar Spring a Postfix interno y configurar salida directa o relay.")
+    mail_options.add_argument("--smtp-interno", action="store_true", help="Usar Postfix opcional como SMTP interno o relay.")
+    mail_options.add_argument("--gmail-directo", action="store_true", help="Configurar Gmail directo con TLS sin Postfix.")
     sub.add_parser("stop")
     build = sub.add_parser("build")
     build.add_argument("--docker", action="store_true")
@@ -773,13 +817,17 @@ def main() -> None:
     prompt_db_password = args.command == "config" and args.password_bd
     prompt_mail = args.command == "config" and args.correo
     prompt_smtp = args.command == "config" and args.smtp_interno
+    prompt_gmail = args.command == "config" and args.gmail_directo
     values = config(create=args.command in {"config", "start", "dev", "build"},
-                    prompt_db_password=prompt_db_password, prompt_mail=prompt_mail, prompt_smtp=prompt_smtp)
+                    prompt_db_password=prompt_db_password,
+                    prompt_mail=prompt_mail or prompt_gmail, prompt_smtp=prompt_smtp)
     if args.command == "config":
         if prompt_db_password:
             values = set_database_password(values)
         if prompt_mail:
             values = set_mail_configuration(values)
+        if prompt_gmail:
+            values = set_direct_gmail_configuration(values)
         if prompt_smtp:
             values = set_internal_smtp_configuration(values)
         print(".env validado. Puede editar los puertos y volver a ejecutar este comando.")
@@ -797,11 +845,14 @@ def main() -> None:
             smtp_information(values)
     elif args.command == "stop":
         docker_ready(values)
-        compose(values, "--profile", "mail-test", "down", "--remove-orphans")
+        compose(values, "--profile", "local-smtp", "--profile", "mail-test", "down", "--remove-orphans")
         print("Contenedores detenidos. Se conservaron los volúmenes de PostgreSQL, la cola SMTP y Mailpit si se utilizó.")
     elif args.command == "build":
         docker_ready(values)
-        compose(values, "build", "backend", "frontend", "smtp", "backup")
+        services = ["backend", "frontend", "backup"]
+        if values["SMTP_HOST"] == "smtp":
+            services.append("smtp")
+        compose(values, "build", *services)
     elif args.command == "dev":
         development(values)
     elif args.command == "backup":

@@ -2,7 +2,7 @@
 
 ## Alcance
 
-Los `.bat` permiten operar desde CMD o PowerShell con Python en Windows. Docker Desktop ejecuta PostgreSQL, Spring, Angular/nginx, Postfix y el worker de respaldos como contenedores **Linux**. No se requiere Git Bash ni instalar Java, Maven o Node en el anfitrión. No basta con renombrar `.sh` a `.bat`: el proyecto conserva su lógica común en Python y usa lanzadores específicos por sistema.
+Los `.bat` permiten operar desde CMD o PowerShell con Python en Windows. Docker Desktop ejecuta PostgreSQL, Spring, Angular/nginx, Postfix opcional y el worker de respaldos como contenedores **Linux**. No se requiere Git Bash ni instalar Java, Maven o Node en el anfitrión. No basta con renombrar `.sh` a `.bat`: el proyecto conserva su lógica común en Python y usa lanzadores específicos por sistema.
 
 El desarrollo nativo (`iniciar-dev.sh`, Java/Angular fuera de Docker) se mantiene para Linux/WSL2. No se proporciona un lanzador de desarrollo nativo de Windows; `compilar.bat` compila dentro de Docker. Los comandos Docker siguen usando la misma configuración y volúmenes del proyecto.
 
@@ -71,7 +71,7 @@ El archivo `backup/compose.restore-test.yml` permite ensayar una restauración e
 
 ## SMTP y datos de otra instalación
 
-La configuración predeterminada sigue siendo Postfix local. El usuario confirmó su funcionamiento en su equipo Linux el 13/10/2026; eso no verifica aún el envío desde Windows. La entrega directa requiere conectividad saliente TCP 25 y depende de las políticas de la red y de los destinatarios.
+En 1.8.2 Gmail directo está preseleccionado, con el envío inicialmente desactivado; las instalaciones previas pueden conservar Postfix. El usuario confirmó su funcionamiento en su equipo Linux el 13/10/2026; eso no verifica aún el envío desde Windows. La entrega directa requiere conectividad saliente TCP 25 y depende de las políticas de la red y de los destinatarios.
 
 Gmail es opcional mediante `configurar-gmail.bat`; **el usuario informó que su configuración Gmail falló**, y no se presenta como solucionada por este cambio. No ejecute ese asistente si desea conservar el SMTP local que funciona.
 
@@ -97,3 +97,7 @@ Se verifican mediante pruebas automatizadas la conservación de datos binarios d
 
 - Docker Desktop Windows: https://docs.docker.com/desktop/setup/install/windows-install/
 - Integración WSL2: https://docs.docker.com/desktop/features/wsl/
+
+## Gmail directo con Helpdesk 1.8.2
+
+En CMD o PowerShell use `configurar.bat --gmail-directo`: ingrese la cuenta de Google y una contraseña de aplicación nueva. El SMTP directo no necesita iniciar el contenedor Postfix. Si `.env` contiene `SMTP_HOST=smtp`, se conserva Postfix automáticamente. Revise antes su cola sin borrar volúmenes. [Detalles](VERSION-1.8.2.md).

@@ -1,8 +1,8 @@
-# SIABUC Helpdesk 1.8.1
+# SIABUC Helpdesk 1.8.2
 
 Sistema de atención técnica con servidor **Spring Boot 3.5.16 / Java 17**, cliente **Angular 21.2.25** y base de datos **PostgreSQL 17**. Conserva instituciones, usuarios, casos, pagos, actualizaciones descriptivas y auditoría. El tiempo por correo y por escritorio remoto se administra en **dos bolsas independientes de minutos enteros**.
 
-## Estado de la versión 1.8.1
+## Estado de la versión 1.8.2
 
 **Código integrado en `main`.** Evolución de 1.7 con mejoras del portal institucional, categorías editoriales, guía de primeros pasos y correcciones de compilación. Conserva los mecanismos de autenticación y las reglas de soporte, pólizas, minutos y cobranza.
 
@@ -71,13 +71,13 @@ Crear paquetes, cotizar, programar parcialidades, importar o conciliar movimient
 - Detalle de cada elemento del historial de atención y de notificaciones, con **Volver al historial**; conserva filtros y posición del listado. Los avisos muestran su correo completo únicamente a administradores.
 - Auditoría administrativa de cambios; anular una atención reintegra sus minutos sin borrar su historia.
 - Inicio de sesión con cookies de sesión, protección CSRF y contraseñas BCrypt; cambio de contraseña desde la cuenta.
-- Inicio de PostgreSQL, Postfix, Spring y Angular con Docker Compose, puertos configurables, respaldo y restauración.
+- Inicio de PostgreSQL, Spring y Angular con Docker Compose; Postfix opcional, puertos configurables, respaldo y restauración.
 - Asignación de un responsable ADMIN/TECH por institución y caso; correo de contacto por cuenta.
 - Registro de pagos y acreditación atómica de minutos, con referencias únicas y protección ante reintentos duplicados.
 - Avisos SMTP al cliente y responsable por cambios de casos, incluido el cierre; avisos de pagos y anulaciones, cola persistente y reintentos.
 - Cada aviso de caso identifica la institución cliente y el administrativo que atiende, incluye la descripción actual, el detalle de la actualización y el estado **Abierto** o **Cerrado**, e invita a consultar la plataforma Helpdesk.
 - Activación y pausa persistente del envío desde **Correo y notificaciones**, exclusiva de administradores, sin reiniciar: los avisos anteriores y los generados durante la pausa quedan sin envío; al reactivar sólo se notifican eventos nuevos.
-- Servidor SMTP Postfix interno configurado por defecto, cola persistente, entrega directa o relay saliente configurable. Sin buzones ni bandeja web.
+- Gmail SMTP directo opcional en 1.8.2; Postfix es un servicio heredado opcional, con cola persistente.
 - Categorías, prioridades, ficha técnica y plazos de primera respuesta y resolución calculados con horario laboral configurable.
 - Adjuntos protegidos en casos y comentarios: capturas, PDF y diagnósticos; incluidos en el respaldo de PostgreSQL.
 - Campana de avisos y respuestas pendientes, independiente del correo; umbrales de saldo bajo por institución y canal.
@@ -118,7 +118,7 @@ La actualización conserva usuarios, casos, pólizas y registros **únicamente s
 2. Descomprima el código 1.8.1 en **otra carpeta**. Copie allí su `.env` sin compartirlo ni subirlo al repositorio. Conserve los mismos identificadores `COMPOSE_PROJECT_NAME`, `DB_NAME`, `DB_USER` y parámetros efectivos de conexión; revise `BACKUP_DIRECTORY` si usa una ruta relativa.
 3. Para detectar errores antes del arranque, ejecute `./compilar.sh --docker` en la carpeta nueva. Este paso **no aplica las migraciones** a la base ni implica que las pruebas de integración hayan pasado.
 4. Después de validar en una **base de pruebas**, detenga la instalación anterior con `./detener.sh` y, desde la carpeta nueva, ejecute `./iniciar.sh`. Flyway aplicará **V25** a la base conectada; no modifique ni borre los scripts V1–V24.
-5. Verifique inicio de sesión, aislamiento de instituciones, saldos, casos, pólizas, cobranza, adjuntos, correo y respaldos. **No actualice una base productiva sin resolver las dos pruebas fallidas de 1.8.1** y completar la validación del entorno.
+5. Verifique inicio de sesión, aislamiento de instituciones, saldos, casos, pólizas, cobranza, adjuntos, correo y respaldos. **Verifique en el destino SMTP, Docker, LAN y respaldos antes de actualizar producción** y completar la validación del entorno.
 
 No ejecute `docker compose down -v` ni destruya el volumen de PostgreSQL. La operación `./restaurar.sh` **reemplaza datos** y no forma parte de una actualización normal. Consulte [respaldo y restauración](docs/RESPALDO-RESTAURACION.md).
 
@@ -166,7 +166,7 @@ Requisitos en Linux: Docker Engine funcionando, complemento `docker compose` con
 
 5. Abra **http://127.0.0.1:4200** o el puerto `FRONTEND_PORT` que haya configurado. Acceda con la cuenta indicada en `.env`, cambie su contraseña en **Mi cuenta** y comience creando una institución y sus usuarios.
 
-El primer inicio descarga dependencias y puede tardar varios minutos. El script espera a que PostgreSQL, Postfix, Spring, Nginx y el servicio de respaldo respondan correctamente. El servicio de respaldo permanece esperando: su calendario empieza desactivado. Si algún puerto está ocupado, cambie su valor en `.env` y vuelva a iniciar.
+El primer inicio descarga dependencias. El script espera a PostgreSQL, Spring, Nginx y el servicio de respaldo. Postfix solo arranca con SMTP_HOST=smtp. El servicio de respaldo permanece esperando: su calendario empieza desactivado. Si algún puerto está ocupado, cambie su valor en `.env` y vuelva a iniciar.
 
 Si omite `configurar.sh`, `iniciar.sh` genera `.env` automáticamente. Nunca publique ni comparta ese archivo. Los scripts resuelven su propia carpeta y pueden invocarse desde cualquier directorio.
 
@@ -187,6 +187,14 @@ En PowerShell use el prefijo `.\`; en CMD puede omitirlo. El desarrollo con Spri
 
 Restaurar reemplaza los datos actuales y deja la aplicación detenida. Para recuperar una versión anterior utilice una base nueva y vacía según la [guía de retroceso](docs/RESPALDO-RESTAURACION.md#retroceder-a-una-versión-anterior). La disponibilidad de scripts Windows no equivale a una ejecución nativa validada; consulte [Windows](docs/WINDOWS.md) y [Validación](docs/VALIDACION.md).
 
+## Correo directo en 1.8.2
+
+**Nuevo:** Spring Boot puede conectar directamente con Gmail/Google Workspace por SMTP (587/STARTTLS) y **Postfix ya no es una dependencia obligatoria**. En instalaciones nuevas el envío empieza desactivado; configure `./configurar.sh --gmail-directo` (o `.\\configurar.bat --gmail-directo`) para introducir una nueva contraseña de aplicación en privado. El asistente no envía correo. Active solo tras revisar la cola heredada y confirmar la política de autenticación de Google Workspace.
+
+Consulte [el ejemplo sin contraseñas](.env.gmail.example) y [la guía 1.8.2](docs/VERSION-1.8.2.md). Las instalaciones previas con `SMTP_HOST=smtp` mantienen Postfix automáticamente mediante el perfil opcional `local-smtp`. No se sobrescriben `.env`, volúmenes ni colas. Para usar Gmail directo en una instalación existente, respalde su `.env`, revise `docker compose --profile local-smtp exec smtp postqueue -p` y, una vez gestionados los mensajes pendientes, use el asistente. **Nunca reutilice la contraseña de aplicación que se compartió anteriormente**: revoque esa credencial y genere una nueva.
+
+[Guía de Gmail directo y migración 1.8.2](docs/VERSION-1.8.2.md). La integración con Gmail real necesita una prueba de envío autorizada en su instalación; la suite no autentica contra Google.
+
 ## Puertos y configuración
 
 En Docker normal solamente se publica la web Angular/Nginx. Spring Boot, PostgreSQL y Postfix se comunican dentro de Docker sin puertos del host; /api/ se reenvía por frontend/nginx.conf.
@@ -206,7 +214,7 @@ No es necesario editar docker-compose.yml ni cambiar el nombre del proyecto. Los
 
 ## Correo, responsables y pagos
 
-Una instalación nueva conecta Spring al servidor SMTP interno **Postfix** en `smtp:25`, con envío habilitado. Postfix se inicia automáticamente y conserva su cola en un volumen. El remitente usa la IP local entre corchetes: `soporte@[192.168.1.50]`, por ejemplo. El valor inicial `soporte@[127.0.0.1]` permite arrancar localmente; configure la IP LAN real del anfitrión y, si lo necesita, un relay autorizado:
+En 1.8.2 una instalación nueva inicia con envío desactivado y Gmail directo preseleccionado; configure `./configurar.sh --gmail-directo` para activarlo. Las instalaciones heredadas pueden conservar Postfix en `smtp:25`. Postfix se inicia automáticamente y conserva su cola en un volumen. El remitente usa la IP local entre corchetes: `soporte@[192.168.1.50]`, por ejemplo. El valor inicial `soporte@[127.0.0.1]` permite arrancar localmente; configure la IP LAN real del anfitrión y, si lo necesita, un relay autorizado:
 
 ```bash
 ./configurar.sh --smtp-interno
@@ -219,7 +227,7 @@ La dirección con IP es una identidad de envío; este servicio no crea un buzón
 
 **Notificaciones** permite al administrador consultar la cola, enviar una prueba a su propia dirección y reintentar avisos fallidos u omitidos. Las notas internas sólo notifican al responsable. Consulte [SMTP interno](docs/SMTP-INTERNO.md) para entrega directa, restricciones del puerto 25, relay, cola y red; [Correo](docs/CORREO.md) detalla destinatarios y proveedores. En el helpdesk, SENT significa que Postfix aceptó el aviso; la entrega remota puede continuar pendiente en su cola.
 
-Gmail institucional `@ucol.mx` es una salida opcional de Postfix: `./configurar-gmail.sh` en Linux o `.\configurar-gmail.bat` en PowerShell. Consulte [Gmail UCOL](docs/GMAIL-UCOL.md) para requisitos y diagnóstico. El usuario confirmó SMTP local funcionando e informó que su configuración Gmail falló; no se presenta ese fallo como resuelto ni se requiere migrar a Gmail.
+Gmail institucional `@ucol.mx` también puede configurarse directamente mediante `--gmail-directo`; como alternativa histórica, Gmail es una salida de Postfix: `./configurar-gmail.sh` en Linux o `.\configurar-gmail.bat` en PowerShell. Consulte [Gmail UCOL](docs/GMAIL-UCOL.md) para requisitos y diagnóstico. El usuario confirmó SMTP local funcionando e informó que su configuración Gmail falló; no se presenta ese fallo como resuelto ni se requiere migrar a Gmail.
 
 Desde 1.6 puede comenzar con una **Cotización**, guardar la aceptación y convertirla en póliza. Una **Solicitud de pago** permanece pendiente hasta que Administración o Cobranza revise su comprobante y apruebe explícitamente el importe y los minutos. Sólo la aprobación crea el pago y acredita el saldo; cotizar, crear una póliza o adjuntar evidencia no acredita horas. El registro directo de pagos se conserva para dinero ya verificado.
 

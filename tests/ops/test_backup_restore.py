@@ -210,7 +210,7 @@ class BackupRestoreTests(unittest.TestCase):
                 self.assertEqual(source.read_bytes(), PAYLOAD)
                 self.assertEqual(commands, [
                     ("up", "-d", "--wait", "--wait-timeout", "180", "db"),
-                    ("stop", "backup", "frontend", "backend", "smtp"),
+                    ("--profile", "local-smtp", "stop", "backup", "frontend", "backend", "smtp"),
                     ("exec", "-T", "db", "pg_restore", "-U", "siabuc", "-d", "siabuc_helpdesk", "--clean", "--if-exists",
                      "--no-owner", "--no-privileges", "--single-transaction", "--exit-on-error"),
                 ])
@@ -231,7 +231,7 @@ class BackupRestoreTests(unittest.TestCase):
             manage.restore(self.values, str(source), True)
         self.assertEqual(source.read_bytes(), PAYLOAD)
         self.assertEqual(len(commands), 3)
-        self.assertEqual(commands[1], ("stop", "backup", "frontend", "backend", "smtp"))
+        self.assertEqual(commands[1], ("--profile", "local-smtp", "stop", "backup", "frontend", "backend", "smtp"))
         self.assertIn("pg_restore", commands[-1])
 
 

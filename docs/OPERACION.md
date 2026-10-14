@@ -7,7 +7,7 @@ En Linux se usan los scripts Bash `.sh`. En Windows se usan los `.bat` desde CMD
 1. Instale Docker Engine y el complemento `docker compose` mediante el procedimiento oficial de su sistema. Confirme que `docker info` funciona con su usuario. Si requiere privilegios, configure el acceso a Docker conforme a las políticas de su equipo.
 2. Descomprima el proyecto. Desde su carpeta, ejecute `chmod +x ./*.sh` si hace falta.
 3. Ejecute `./configurar.sh`. Abra `.env` con un editor y ajuste los puertos antes de iniciar. Mantenga el archivo fuera del control de versiones.
-4. Ejecute `./iniciar.sh`. Compose compila las imágenes, arranca PostgreSQL y Postfix, espera su salud, inicia Spring con migraciones Flyway y finalmente sirve Angular con Nginx e inicia el servicio `backup` en espera. Su calendario está desactivado por defecto.
+4. Ejecute `./iniciar.sh`. Compose compila las imágenes, arranca PostgreSQL y, solo con `SMTP_HOST=smtp`, Postfix; espera la salud de PostgreSQL, inicia Spring con migraciones Flyway y finalmente sirve Angular con Nginx e inicia el servicio `backup` en espera. Su calendario está desactivado por defecto.
 5. Abra el puerto `FRONTEND_PORT` del anfitrión. Por defecto es `http://127.0.0.1:4200`.
 6. Inicie sesión como `ADMIN_USERNAME` usando `ADMIN_PASSWORD` y cambie la contraseña desde Mi cuenta.
 
@@ -15,7 +15,7 @@ Para elegir la contraseña PostgreSQL antes del primer arranque, ejecute `./conf
 
 La cuenta administrativa se inicializa cuando no existe un administrador activo. Durante la operación normal siempre debe conservar al menos uno. No existe un usuario invitado ni una contraseña fija para la instalación. Las contraseñas de demostraciones o pruebas automatizadas no se usan en este flujo.
 
-La versión 1.1 añade SMTP, cobranza y responsables. Para una instalación 1.0 siga [MIGRACION-1.1.md](MIGRACION-1.1.md): conserve V1 y permita que Flyway aplique V2/V3, sin eliminar los datos. Un `.env` previo conserva su configuración; si no incluía variables de correo, sigue desactivado. La versión 1.2 agrega Postfix sin nuevas migraciones de tablas. Sólo las instalaciones nuevas usan SMTP interno por defecto; las anteriores lo adoptan con `./configurar.sh --smtp-interno`.
+La versión 1.1 añade SMTP, cobranza y responsables. Para una instalación 1.0 siga [MIGRACION-1.1.md](MIGRACION-1.1.md): conserve V1 y permita que Flyway aplique V2/V3, sin eliminar los datos. Un `.env` previo conserva su configuración; si no incluía variables de correo, sigue desactivado. La versión 1.2 agrega Postfix sin nuevas migraciones de tablas. Las instalaciones 1.8.2 nuevas preseleccionan Gmail directo con envío desactivado; las anteriores conservan su configuración y pueden elegir `./configurar.sh --smtp-interno`.
 
 Configure el Postfix integrado con `./configurar.sh --smtp-interno` según [SMTP-INTERNO.md](SMTP-INTERNO.md). Para conectar Spring directamente a otro servidor, use `./configurar.sh --correo`; el asistente solicita SMTP, autenticación y remitente, conserva el secreto fuera de logs y sólo guarda el archivo. Reinicie para aplicar. Para nombres o secretos con espacios, `$` o `#`, el archivo admite comillas simples literales; no admite apóstrofes internos, controles ni barra inversa al final. No ejecute `.env` con `source`. Los detalles de proveedores, límites OAuth y sumidero Mailpit están en [CORREO.md](CORREO.md).
 
@@ -55,11 +55,11 @@ npm run build
 npm test
 ```
 
-Artefactos: `backend/target/siabuc-helpdesk-1.7.0.jar` y `frontend/dist/helpdesk/browser/`. `npm ci` utiliza el archivo `package-lock.json` entregado. No sustituya `npm ci` por actualizaciones de dependencias durante una instalación reproducible.
+Artefactos: `backend/target/siabuc-helpdesk-1.8.2.jar` y `frontend/dist/helpdesk/browser/`. `npm ci` utiliza el archivo `package-lock.json` entregado. No sustituya `npm ci` por actualizaciones de dependencias durante una instalación reproducible.
 
 `mvn package` compila también las clases de prueba y ejecuta pruebas unitarias si existen. Los archivos `*IT.java` se ejecutan únicamente con el perfil `postgres-it`. Una compilación satisfactoria no significa por sí sola que se ejecutaron esas pruebas de integración.
 
-## Desarrollo: PostgreSQL/Postfix Docker, Spring y Angular locales
+## Desarrollo: PostgreSQL, Postfix opcional, Spring y Angular locales
 
 Después de instalar las herramientas nativas:
 
@@ -270,3 +270,7 @@ Revise `docker compose logs --tail=100 backend` para el servidor Docker y `.runt
 ## SMTP integrado
 
 Consulte [SMTP-INTERNO.md](SMTP-INTERNO.md) para variables, relay, DNS y mantenimiento. `SMTP_INTERNAL_PORT` siempre se publica en `127.0.0.1`, incluso con `BIND_HOST=0.0.0.0`. El respaldo PostgreSQL no reemplaza el respaldo del volumen SMTP. La restauración detiene también Postfix; revise la cola antes de reiniciar.
+
+## Versión 1.8.2: SMTP directo sin Postfix obligatorio
+
+Configure `./configurar.sh --gmail-directo` y reinicie solamente después de revisar mensajes pendientes del antiguo Postfix, respaldar `.env` y validar las credenciales en su entorno. Si `.env` conserva `SMTP_HOST=smtp`, los scripts habilitan el perfil Docker `local-smtp` y mantienen Postfix en la instalación. Los nuevos archivos `.env` empiezan con correo desactivado y valores de Gmail, sin contraseñas. La configuración directa no envía una prueba automáticamente. Lea [VERSION-1.8.2.md](VERSION-1.8.2.md) antes de migrar.

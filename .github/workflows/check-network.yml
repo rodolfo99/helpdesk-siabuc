@@ -37,8 +37,9 @@ jobs:
           import json,sys
           cfg=json.load(sys.stdin)
           services=cfg["services"]
-          for name in ("db","backend","smtp"):
+          for name in ("db","backend"):
               assert not services[name].get("ports"), (name,services[name].get("ports"))
+          assert "smtp" not in services
           web=services["frontend"].get("ports",[])
           assert len(web)==1,web
           assert str(web[0]["target"])=="80",web
@@ -56,7 +57,7 @@ jobs:
           DB_PASSWORD: DisposableDatabasePassword123
           ADMIN_PASSWORD: DisposableAdminPassword123
         run: |
-          docker compose -f docker-compose.yml -f docker-compose.dev.yml config --format json | python3 -c '
+          docker compose --profile local-smtp -f docker-compose.yml -f docker-compose.dev.yml config --format json | python3 -c '
           import json,sys
           s=json.load(sys.stdin)["services"]
           for name in ("db","smtp"):
