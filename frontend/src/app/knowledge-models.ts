@@ -1,4 +1,4 @@
-import { CaseCategory } from './case-profile.component';
+export type CaseCategory = 'INSTALLATION'|'CATALOGING'|'LOANS'|'REPORTS'|'IMPORT'|'OTHER'|'GUIDES'|'FAQ'|'SUPPORT'|'POLICIES_LICENSES'|'TRAINING'|'CONTACT';
 export type KnowledgeStatus='DRAFT'|'PUBLISHED'|'ARCHIVED';
 export interface KnowledgeSummary {id:number;title:string;category:CaseCategory;siabucVersion:string;summary:string;status:KnowledgeStatus;revision:number;updatedAt:string;publishedAt:string|null}
 export interface KnowledgeArticle extends KnowledgeSummary {body:string;createdAt:string}
