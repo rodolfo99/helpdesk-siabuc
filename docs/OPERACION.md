@@ -270,3 +270,7 @@ Revise `docker compose logs --tail=100 backend` para el servidor Docker y `.runt
 ## SMTP integrado
 
 Consulte [SMTP-INTERNO.md](SMTP-INTERNO.md) para variables, relay, DNS y mantenimiento. `SMTP_INTERNAL_PORT` siempre se publica en `127.0.0.1`, incluso con `BIND_HOST=0.0.0.0`. El respaldo PostgreSQL no reemplaza el respaldo del volumen SMTP. La restauración detiene también Postfix; revise la cola antes de reiniciar.
+
+## Versión 1.8.2: SMTP directo sin Postfix obligatorio
+
+Configure `./configurar.sh --gmail-directo` y reinicie solamente después de revisar mensajes pendientes del antiguo Postfix, respaldar `.env` y validar las credenciales en su entorno. Si `.env` conserva `SMTP_HOST=smtp`, los scripts habilitan el perfil Docker `local-smtp` y mantienen Postfix en la instalación. Los nuevos archivos `.env` empiezan con correo desactivado y valores de Gmail, sin contraseñas. La configuración directa no envía una prueba automáticamente. Lea [VERSION-1.8.2.md](VERSION-1.8.2.md) antes de migrar.
