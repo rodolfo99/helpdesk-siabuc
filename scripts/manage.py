@@ -788,7 +788,7 @@ def main() -> None:
         docker_ready(values)
         if args.solo_bd:
             compose(values, "up", "-d", "--wait", "--wait-timeout", "180", "db")
-            print(f"PostgreSQL listo en {127.0.0.1:{values['DB_PORT']}.")
+            print(f"PostgreSQL listo en 127.0.0.1:{values['DB_PORT']}.")
         else:
             prepare_automatic_backup_directory(values)
             compose(values, "up", "-d", "--build", "--wait", "--wait-timeout", "300")
