@@ -71,13 +71,13 @@ Crear paquetes, cotizar, programar parcialidades, importar o conciliar movimient
 - Detalle de cada elemento del historial de atención y de notificaciones, con **Volver al historial**; conserva filtros y posición del listado. Los avisos muestran su correo completo únicamente a administradores.
 - Auditoría administrativa de cambios; anular una atención reintegra sus minutos sin borrar su historia.
 - Inicio de sesión con cookies de sesión, protección CSRF y contraseñas BCrypt; cambio de contraseña desde la cuenta.
-- Inicio de PostgreSQL, Postfix, Spring y Angular con Docker Compose, puertos configurables, respaldo y restauración.
+- Inicio de PostgreSQL, Spring y Angular con Docker Compose; Postfix opcional, puertos configurables, respaldo y restauración.
 - Asignación de un responsable ADMIN/TECH por institución y caso; correo de contacto por cuenta.
 - Registro de pagos y acreditación atómica de minutos, con referencias únicas y protección ante reintentos duplicados.
 - Avisos SMTP al cliente y responsable por cambios de casos, incluido el cierre; avisos de pagos y anulaciones, cola persistente y reintentos.
 - Cada aviso de caso identifica la institución cliente y el administrativo que atiende, incluye la descripción actual, el detalle de la actualización y el estado **Abierto** o **Cerrado**, e invita a consultar la plataforma Helpdesk.
 - Activación y pausa persistente del envío desde **Correo y notificaciones**, exclusiva de administradores, sin reiniciar: los avisos anteriores y los generados durante la pausa quedan sin envío; al reactivar sólo se notifican eventos nuevos.
-- Servidor SMTP Postfix interno configurado por defecto, cola persistente, entrega directa o relay saliente configurable. Sin buzones ni bandeja web.
+- Gmail SMTP directo opcional en 1.8.2; Postfix es un servicio heredado opcional, con cola persistente.
 - Categorías, prioridades, ficha técnica y plazos de primera respuesta y resolución calculados con horario laboral configurable.
 - Adjuntos protegidos en casos y comentarios: capturas, PDF y diagnósticos; incluidos en el respaldo de PostgreSQL.
 - Campana de avisos y respuestas pendientes, independiente del correo; umbrales de saldo bajo por institución y canal.
@@ -166,7 +166,7 @@ Requisitos en Linux: Docker Engine funcionando, complemento `docker compose` con
 
 5. Abra **http://127.0.0.1:4200** o el puerto `FRONTEND_PORT` que haya configurado. Acceda con la cuenta indicada en `.env`, cambie su contraseña en **Mi cuenta** y comience creando una institución y sus usuarios.
 
-El primer inicio descarga dependencias y puede tardar varios minutos. El script espera a que PostgreSQL, Postfix, Spring, Nginx y el servicio de respaldo respondan correctamente. El servicio de respaldo permanece esperando: su calendario empieza desactivado. Si algún puerto está ocupado, cambie su valor en `.env` y vuelva a iniciar.
+El primer inicio descarga dependencias. El script espera a PostgreSQL, Spring, Nginx y el servicio de respaldo. Postfix solo arranca con SMTP_HOST=smtp. El servicio de respaldo permanece esperando: su calendario empieza desactivado. Si algún puerto está ocupado, cambie su valor en `.env` y vuelva a iniciar.
 
 Si omite `configurar.sh`, `iniciar.sh` genera `.env` automáticamente. Nunca publique ni comparta ese archivo. Los scripts resuelven su propia carpeta y pueden invocarse desde cualquier directorio.
 
@@ -214,7 +214,7 @@ No es necesario editar docker-compose.yml ni cambiar el nombre del proyecto. Los
 
 ## Correo, responsables y pagos
 
-Una instalación nueva conecta Spring al servidor SMTP interno **Postfix** en `smtp:25`, con envío habilitado. Postfix se inicia automáticamente y conserva su cola en un volumen. El remitente usa la IP local entre corchetes: `soporte@[192.168.1.50]`, por ejemplo. El valor inicial `soporte@[127.0.0.1]` permite arrancar localmente; configure la IP LAN real del anfitrión y, si lo necesita, un relay autorizado:
+En 1.8.2 una instalación nueva inicia con envío desactivado y Gmail directo preseleccionado; configure `./configurar.sh --gmail-directo` para activarlo. Las instalaciones heredadas pueden conservar Postfix en `smtp:25`. Postfix se inicia automáticamente y conserva su cola en un volumen. El remitente usa la IP local entre corchetes: `soporte@[192.168.1.50]`, por ejemplo. El valor inicial `soporte@[127.0.0.1]` permite arrancar localmente; configure la IP LAN real del anfitrión y, si lo necesita, un relay autorizado:
 
 ```bash
 ./configurar.sh --smtp-interno
@@ -227,7 +227,7 @@ La dirección con IP es una identidad de envío; este servicio no crea un buzón
 
 **Notificaciones** permite al administrador consultar la cola, enviar una prueba a su propia dirección y reintentar avisos fallidos u omitidos. Las notas internas sólo notifican al responsable. Consulte [SMTP interno](docs/SMTP-INTERNO.md) para entrega directa, restricciones del puerto 25, relay, cola y red; [Correo](docs/CORREO.md) detalla destinatarios y proveedores. En el helpdesk, SENT significa que Postfix aceptó el aviso; la entrega remota puede continuar pendiente en su cola.
 
-Gmail institucional `@ucol.mx` es una salida opcional de Postfix: `./configurar-gmail.sh` en Linux o `.\configurar-gmail.bat` en PowerShell. Consulte [Gmail UCOL](docs/GMAIL-UCOL.md) para requisitos y diagnóstico. El usuario confirmó SMTP local funcionando e informó que su configuración Gmail falló; no se presenta ese fallo como resuelto ni se requiere migrar a Gmail.
+Gmail institucional `@ucol.mx` también puede configurarse directamente mediante `--gmail-directo`; como alternativa histórica, Gmail es una salida de Postfix: `./configurar-gmail.sh` en Linux o `.\configurar-gmail.bat` en PowerShell. Consulte [Gmail UCOL](docs/GMAIL-UCOL.md) para requisitos y diagnóstico. El usuario confirmó SMTP local funcionando e informó que su configuración Gmail falló; no se presenta ese fallo como resuelto ni se requiere migrar a Gmail.
 
 Desde 1.6 puede comenzar con una **Cotización**, guardar la aceptación y convertirla en póliza. Una **Solicitud de pago** permanece pendiente hasta que Administración o Cobranza revise su comprobante y apruebe explícitamente el importe y los minutos. Sólo la aprobación crea el pago y acredita el saldo; cotizar, crear una póliza o adjuntar evidencia no acredita horas. El registro directo de pagos se conserva para dinero ya verificado.
 
