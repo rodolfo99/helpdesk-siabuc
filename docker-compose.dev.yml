@@ -1,0 +1,10 @@
+# Solo para desarrollo nativo o ./iniciar.sh --solo-bd.
+# No se carga en ./iniciar.sh normal ni en 'docker compose up' ordinario.
+# Permite a Java/Maven fuera de Docker usar PostgreSQL y Postfix sin exponerlos a la LAN.
+services:
+  db:
+    ports:
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
+  smtp:
+    ports:
+      - "127.0.0.1:${SMTP_INTERNAL_PORT:-2525}:25"
