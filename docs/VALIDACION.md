@@ -1,8 +1,20 @@
-# Evidencia actual: 1.8.1
-
-**Atención:** La ejecución de 1.8.1 registró 223 de 225 pruebas Java correctas; quedan dos fallos. [Detalle y evidencia](VALIDACION-1.8.1.md). No declararla apta para producción ni trasladar esta evidencia a 1.7.
-
 # Validación de SIABUC Helpdesk
+
+## Evidencia vigente: 1.8.3
+
+La revisión `15e9b2c4e1e94d97632b2e90dc389bfc727d5c71` completó 233 pruebas Java
+con PostgreSQL 17 nativo, 71 Python, 10 frontend, compilación Angular y cuatro
+escenarios de navegador con API simulada. Compose y la conexión a Postfix real
+en la red predeterminada también finalizaron satisfactoriamente.
+Consulte [resultados, enlaces a CI y límites de 1.8.3](VALIDACION-1.8.3.md).
+
+## Archivo histórico
+
+La ejecución inicial de 1.8.1 registró 223 de 225 pruebas Java correctas y dos
+fallos. [El informe original](VALIDACION-1.8.1.md) conserva ese resultado y su
+revisión; no describe el estado de 1.8.3. Los registros siguientes corresponden
+exclusivamente a las versiones y entornos indicados. Sus apartados «pendiente»
+son límites de aquellas ejecuciones, no el estado de validación más reciente.
 
 ## Versión 1.7.0 · 14 de octubre de 2026
 

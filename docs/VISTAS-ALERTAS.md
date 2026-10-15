@@ -1,4 +1,4 @@
-# Vistas guardadas y alertas de vencimiento — 1.7
+# Vistas guardadas y alertas de vencimiento — 1.8.3
 
 Las vistas permiten repetir una consulta de casos sin reconstruir los filtros. Los avisos SLA recuerdan los objetivos de primera respuesta y resolución. Ninguna de estas funciones consume horas contratadas.
 
@@ -14,9 +14,11 @@ Ejemplos para Administración y técnicos:
 
 | Nombre sugerido | Filtros |
 |---|---|
-| Mis casos pendientes | Estado Abiertos; responsable Mis casos |
-| Urgentes sin responsable | Estado Abiertos; responsable Sin asignar; prioridad Urgente |
-| Instalaciones abiertas | Estado Abiertos; categoría Instalación |
+| Mis casos pendientes | Estado Pendientes de resolver; asignación Mis casos |
+| Urgentes sin responsable | Estado Pendientes de resolver; asignación Sin responsable; prioridad Urgente |
+| Instalaciones pendientes | Estado Pendientes de resolver; categoría Instalación |
+
+**Pendientes de resolver** agrupa Recibido, En atención y Requiere respuesta del cliente. También puede guardar un estado concreto, Resuelto, Cerrado o Todos. Al actualizar a 1.8.3, las vistas antiguas con `status: "OPEN"` se convierten al grupo `active`, conservando la intención de mostrar todo el trabajo pendiente. Una vista nueva con `OPEN` selecciona únicamente **Recibido**.
 
 Cada cuenta puede guardar hasta 50 vistas con nombres distintos (sin distinguir mayúsculas). Son personales: ni siquiera Administración puede leer o editar las vistas de otra cuenta mediante esta API. Los clientes conservan su acceso limitado a la institución asignada; no pueden guardar una institución ajena ni el filtro de asignación reservado al personal. Cobranza no accede al módulo de vistas técnicas.
 
@@ -32,7 +34,7 @@ Administración configura **Avisos antes del vencimiento** en los ajustes de ate
 
 Los objetivos y sus fechas se obtienen de la ficha SLA de cada caso, respetando la configuración de horario laboral, días inhábiles, prioridad y calendario conservado por el caso. **La anticipación del aviso usa minutos naturales**: no cambia el cálculo del plazo laboral.
 
-Se revisan casos abiertos de instituciones activas. Se avisa cuando falta como máximo la anticipación configurada, o cuando el objetivo ya venció y sigue pendiente. No se genera el aviso de primera respuesta si ya se respondió, ni de resolución si ya se resolvió; un caso cerrado no genera avisos nuevos. Al reactivar la función se evalúan los objetivos que continúan pendientes, incluidos los ya vencidos.
+Se revisan casos **Recibido, En atención y Requiere respuesta del cliente** de instituciones activas. Esperar al cliente **no pausa el SLA** ni sus avisos. Se avisa cuando falta como máximo la anticipación configurada, o cuando el objetivo ya venció y sigue pendiente. No se genera el aviso de primera respuesta si ya se respondió, ni de resolución si ya se resolvió; un caso Resuelto o Cerrado no genera avisos nuevos. Al reactivar la función se evalúan los objetivos que continúan pendientes, incluidos los ya vencidos.
 
 Destinatarios:
 
@@ -64,7 +66,7 @@ Ejemplo de vista:
   "name": "Mis casos pendientes",
   "filters": {
     "search": "",
-    "status": "OPEN",
+    "status": "active",
     "assignment": "mine",
     "institutionId": null,
     "category": "all",
@@ -73,8 +75,10 @@ Ejemplo de vista:
 }
 ```
 
-Para actualizar añada `expectedRevision` con la revisión devuelta por el servidor. `status` admite `all`, `OPEN`, `CLOSED`; `assignment` admite `all`, `mine`, `unassigned`. Categoría y prioridad admiten `all` o los valores de la ficha técnica. El filtro de asignación de clientes debe ser `all`.
+Para actualizar añada `expectedRevision` con la revisión devuelta por el servidor. `status` admite `all`, `active`, `OPEN`, `IN_PROGRESS`, `WAITING_CLIENT`, `RESOLVED` y `CLOSED`; `assignment` admite `all`, `mine`, `unassigned`. Categoría y prioridad admiten `all` o los valores de la ficha técnica. El filtro de asignación de clientes debe ser `all`.
 
 Configuración de avisos: `{"enabled":true,"leadMinutes":60}`. La revisión manual recibe `{}` y devuelve `{"created":0}` si no hay avisos nuevos. Las escrituras requieren sesión y CSRF. La migración `V18__saved_views_sla_alerts.sql` crea las vistas, configuración y registro de deduplicación; los avisos se guardan en la campana existente. No cambia migraciones anteriores.
+
+El [manual detallado 1.8.3](MANUAL-EXTENDIDO-1.8.3.md) reúne estas funciones con el flujo completo de soporte.
 
 Las pruebas `SavedViewIntegrationIT` y `SlaAlertIntegrationIT` verifican aislamiento, validación, revisiones, roles, desactivación, anticipación, deduplicación y saldos intactos. Consulte [VALIDACION.md](VALIDACION.md) para los resultados efectivamente ejecutados.

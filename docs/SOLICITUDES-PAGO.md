@@ -1,10 +1,12 @@
-# Solicitudes de pago pendientes — versión 1.6
+# Solicitudes de pago pendientes — versión 1.8.3
 
-Las solicitudes permiten revisar la evidencia **antes de registrar un pago o acreditar minutos**. Los pagos directos de la versión 1.5 siguen disponibles para administración y cobranza cuando la validación ya se hizo fuera de la plataforma.
+Guía vigente de SIABUC Helpdesk 1.8.3. Consulte el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md) para el recorrido completo por rol.
+
+Las solicitudes permiten revisar la evidencia **antes de registrar un pago o acreditar minutos**. El registro directo de pagos sigue disponible para Administración (`ADMIN`) y Cobranza (`BILLING`) cuando la validación ya se hizo fuera de la plataforma. El rol Técnico (`TECH`) no tiene acceso a solicitudes ni decisiones financieras.
 
 ## Flujo de administración y cobranza
 
-1. Abrir **Solicitudes de pago → Nueva solicitud**. Elegir institución activa y, opcionalmente, una póliza activa de esa institución.
+1. Abrir **Validar pagos → Nueva solicitud**. Elegir institución activa y, opcionalmente, una póliza activa de esa institución.
 2. Capturar referencia, importe en pesos mexicanos (MXN), fecha, método, minutos de correo y remoto solicitados, y una descripción **visible para la institución**. Los minutos son una petición, no saldo disponible.
 3. Guardar. Se crea el estado **Pendiente**; no se crea un pago, no se acreditan minutos y no se envía un aviso de pago.
 4. Adjuntar y descargar los comprobantes PDF, PNG o JPG/JPEG para verificarlos. Se requiere al menos un archivo para aprobar.
@@ -15,7 +17,7 @@ No se editan importes ni minutos durante la aprobación. Si están equivocados, 
 
 ## Flujo del cliente
 
-El administrador debe habilitar primero el [portal financiero](PORTAL-FINANCIERO.md) para la institución. Sus usuarios activos podrán crear solicitudes para su institución, adjuntar evidencia mientras estén pendientes, consultar el estado y descargar los archivos. No pueden aprobar, rechazar, registrar pagos directos ni adjuntar archivos nuevos a pagos ya registrados. El rechazo muestra su motivo; la observación privada de aprobación no se devuelve al cliente en ninguna vista ni en reintentos del envío.
+El administrador debe habilitar primero el [portal financiero](PORTAL-FINANCIERO.md) para la institución. Desde **Finanzas institucionales → Solicitudes de pago**, sus usuarios activos (`USER`) podrán crear solicitudes para su institución, adjuntar evidencia mientras estén pendientes, consultar el estado y descargar los archivos. No pueden aprobar, rechazar, registrar pagos directos ni adjuntar archivos nuevos a pagos ya registrados. El rechazo muestra su motivo; la observación privada de aprobación no se devuelve al cliente en ninguna vista ni en reintentos del envío.
 
 ## Reglas de dinero, pólizas e historial
 
@@ -50,4 +52,4 @@ Orden de bloqueos: institución → póliza opcional → solicitud; la aprobaci�
 
 ## Pruebas
 
-`PaymentRequestIntegrationIT` cubre permisos, PDF e imagen antes de aprobar, conservación de bytes, reintentos, rechazo sin evidencia, límites y formatos, políticas de importe/minutos, reversión después de un fallo controlado del aviso y dos aprobaciones simultáneas. `ClientFinanceIntegrationIT` cubre proyecciones privadas, acceso institucional y revocación. La ejecución conjunta y sus limitaciones reales se documentan en las notas de validación de la entrega; una prueba con un único backend de base de datos no demuestra contención real entre varias conexiones PostgreSQL.
+`PaymentRequestIntegrationIT` cubre permisos, PDF e imagen antes de aprobar, conservación de bytes, reintentos, rechazo sin evidencia, límites y formatos, políticas de importe/minutos, reversión después de un fallo controlado del aviso y dos aprobaciones simultáneas. `ClientFinanceIntegrationIT` cubre proyecciones privadas, acceso institucional y revocación. La ejecución conjunta y sus limitaciones reales se documentan en [Validación](VALIDACION.md) y en las [notas de 1.8.3](VERSION-1.8.3.md); una prueba con un único backend de base de datos no demuestra contención real entre varias conexiones PostgreSQL.

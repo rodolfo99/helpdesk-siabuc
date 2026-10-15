@@ -1,4 +1,4 @@
-# Plantillas de respuesta — 1.7
+# Plantillas de respuesta — 1.8.3
 
 Las plantillas reúnen instrucciones frecuentes de instalación, diagnóstico y solución. El texto se copia a un borrador que el personal revisa y adapta antes de registrar la respuesta.
 
@@ -17,7 +17,7 @@ El historial conserva el contenido completo, título, categoría, versión, esta
 
 ## Usar una plantilla en un caso
 
-1. Administración o un técnico abre el caso y el formulario para registrar un comentario o atención.
+1. Administración o un técnico abre un caso activo (Recibido, En atención o Requiere respuesta del cliente) y el formulario para registrar un comentario o atención.
 2. Pulsa **Usar una plantilla de respuesta** y busca por texto, categoría o versión.
 3. Selecciona una plantilla activa y revisa la **Vista previa**.
 4. Pulsa **Insertar en borrador**. El texto se añade al contenido existente, separado por una línea en blanco.
@@ -26,7 +26,11 @@ El historial conserva el contenido completo, título, categoría, versión, esta
 
 **Elegir, previsualizar o insertar una plantilla no registra una entrada, no envía correo y no descuenta minutos.** La confirmación del formulario de atención mantiene las reglas de saldo, permisos y pausa del correo existentes.
 
+En un caso Resuelto o Cerrado, primero debe reabrir desde **Cambiar estado → En atención**, con motivo, institución activa y saldo en el canal principal. Insertar una plantilla no cambia el estado del caso. La suma del borrador y la plantilla no puede superar 10,000 caracteres.
+
 El contenido se muestra como texto literal. No hay ejecución HTML ni sustitución automática de variables: revise nombres, rutas y demás datos antes de publicar. Una plantilla archivada desaparece de la selección del técnico. Una copia que ya estuviera en un borrador sigue siendo texto editable; archivar no borra ese borrador ni una respuesta histórica.
+
+El [manual detallado 1.8.3](MANUAL-EXTENDIDO-1.8.3.md) reúne el procedimiento de respuesta, los estados y las reglas de cargo.
 
 ## Permisos y API
 

@@ -1,4 +1,4 @@
-# Arquitectura y reglas de integridad
+# Arquitectura y reglas de integridad · 1.8.3
 
 ## Componentes
 
@@ -15,9 +15,9 @@ En desarrollo, el servidor Angular ocupa el lugar de Nginx y su proxy toma `SERV
 
 ## Modelo lógico
 
-Una **institución** contiene contacto, estado, responsable predeterminado y dos presupuestos. Un **usuario** tiene correo y pertenece a una institución cuando su rol es `USER`; `ADMIN` y `BILLING` no tienen institución. Cada **caso** pertenece a una institución y contiene título, descripción, canal inicial, estado, responsable asignado, autor y fechas. Cada **entrada** pertenece a un caso y describe una atención o comentario. Un **pago** contiene importe, referencia, institución, acreditación y trazabilidad de anulación. Una **notificación** conserva evento, destinatario individual, contenido y estado de entrega. Un **evento de auditoría** identifica actor, acción, entidad, detalle y fecha.
+Una **institución** contiene contacto, estado, responsable predeterminado y dos presupuestos. Un **usuario** tiene correo y pertenece a una institución cuando su rol es `USER`; `ADMIN`, `TECH` y `BILLING` no tienen institución. Cada **caso** pertenece a una institución y contiene título, descripción, canal inicial, estado, responsable asignado, autor y fechas. Cada **entrada** pertenece a un caso y describe una atención o comentario. Un **pago** contiene importe, referencia, institución, acreditación y trazabilidad de anulación. Una **notificación** conserva evento, destinatario individual, contenido y estado de entrega. Un **evento de auditoría** identifica actor, acción, entidad, detalle y fecha.
 
-El esquema concreto y sus restricciones se encuentran en `backend/src/main/resources/db/migration/`: V1 original, V2 de cobranza/contactos/asignaciones, V3 de notificaciones y V4 de control persistente del envío; V5–V10 incorporan los módulos de 1.4/1.5 y V11–V16 los de 1.6, descritos más adelante. No cambie una migración que ya se haya aplicado a una base existente; añada la siguiente migración versionada. Consulte [MIGRACION-1.1.md](MIGRACION-1.1.md).
+El esquema concreto y sus restricciones se encuentran en `backend/src/main/resources/db/migration/`: V1 original, V2 de cobranza/contactos/asignaciones, V3 de notificaciones y V4 de control persistente del envío; V5–V10 incorporan los módulos de 1.4/1.5 y V11–V16 los de 1.6. V17–V24 corresponden a 1.7, V25 amplía las categorías de conocimiento y V26 incorpora el flujo de casos de 1.8.3. No cambie migraciones ya aplicadas; añada la siguiente migración versionada. Las guías anteriores conservan el contexto de cada incorporación.
 
 ## Minutos e independencia de canales
 
@@ -34,7 +34,7 @@ Los presupuestos se expresan como total histórico; recargar significa increment
 
 ## Concurrencia, errores y trazabilidad
 
-Registrar o anular consumo se realiza en una transacción. Se bloquea la institución antes de comprobar o modificar el saldo. Dos administradores que intenten gastar al mismo tiempo compiten por el mismo bloqueo: el segundo verifica el saldo ya actualizado y recibe un conflicto si no alcanza. La operación fallida no deja una atención parcial ni un saldo negativo.
+Registrar o anular consumo se realiza en una transacción. Se bloquea la institución antes de comprobar o modificar el saldo. Dos integrantes de soporte (`ADMIN` o `TECH`) que intenten gastar al mismo tiempo compiten por el mismo bloqueo: el segundo verifica el saldo ya actualizado y recibe un conflicto si no alcanza. La operación fallida no deja una atención parcial ni un saldo negativo.
 
 Las anulaciones conservan descripción y minutos originales, añaden un motivo y devuelven el saldo una única vez. Los contadores de tiempo utilizado sólo se modifican por las operaciones de atención/anulación del servicio. La baja institucional es lógica: no elimina los datos referenciados por casos y usuarios.
 
@@ -50,7 +50,9 @@ La autenticación usa sesión del servidor, cookie de sesión `HttpOnly` y `Same
 
 Las contraseñas se almacenan como hashes BCrypt, nunca como texto recuperable. Las respuestas de usuarios no incluyen el hash. Spring restringe las consultas al ámbito institucional del usuario y elimina información interna de las respuestas de ese rol. Un usuario desactivado o vinculado a una institución dada de baja no conserva autorización por tener una sesión previa.
 
-`BILLING` puede consultar instituciones sin notas administrativas, administrar pólizas, pagos, comprobantes, recibos y reportes de cobranza, gestionar cotizaciones/renovaciones, decidir solicitudes de pago y cambiar su contraseña. No puede operar casos, conocimiento, encuestas, usuarios, auditoría, configuración de correo, portal financiero o respaldos ni dar de baja instituciones o anular pagos. Su campana conserva avisos propios de saldo; los avisos de vencimiento se consultan en Renovaciones. La asignación como responsable de soporte exige un `ADMIN` activo.
+`BILLING` puede consultar instituciones sin notas administrativas, administrar pólizas, pagos, comprobantes, recibos y reportes de cobranza, gestionar cotizaciones/renovaciones, decidir solicitudes de pago y cambiar su contraseña. No puede operar casos, conocimiento, encuestas, usuarios, auditoría, configuración de correo, portal financiero o respaldos ni dar de baja instituciones o anular pagos. Su campana conserva avisos propios de saldo; los avisos de vencimiento se consultan en Renovaciones. La asignación como responsable de soporte admite un `ADMIN` o `TECH` activo.
+
+`TECH` opera casos, atenciones, estados, cronómetros, agenda, plantillas e incidencias. Puede tomar un caso sin responsable y crear casos propios como responsable; no reasigna un caso a otra persona. Consulta instituciones sin notas administrativas y artículos publicados, y puede vincularlos a casos. No administra usuarios, configuración de correo, respaldos, finanzas ni la publicación editorial de conocimiento.
 
 El portal financiero `USER` tiene autorización adicional por institución, desactivada por defecto. `ClientFinanceAccessService` comprueba cuenta e institución activas y la habilitación en cada operación; las proyecciones de consulta omiten información interna. Las rutas `/api/client-finance/**` no conceden acceso a `/api/payments`, `/api/policies`, cotizaciones o reportes administrativos. Habilitar también autoriza comprobantes históricos de la institución; revocar no puede recuperar archivos ya descargados. El PDF cliente omite notas internas y motivo/responsable interno de anulación, manteniendo visible el estado ANULADO. Consulte [Portal financiero](PORTAL-FINANCIERO.md) y [Recibos](RECIBOS-PAGO.md).
 
@@ -58,7 +60,7 @@ Las sesiones residen en memoria de Spring: un reinicio cierra las sesiones. La a
 
 ## Operación y capacidad
 
-La persistencia de negocio usa un volumen Docker de PostgreSQL. Postfix conserva una segunda cola en `smtp_queue`; SENT en PostgreSQL significa aceptación del primer SMTP, no finalización de la entrega remota. Consulte [SMTP-INTERNO.md](SMTP-INTERNO.md). Los archivos compilados de Angular y el JAR se reconstruyen a partir del código. La inicialización administrativa utiliza una contraseña de `.env` sólo cuando falta la cuenta de arranque según la lógica de inicialización; no sustituye la administración regular de contraseñas.
+La persistencia de negocio usa un volumen Docker de PostgreSQL. Cuando se utiliza Postfix, conserva una segunda cola en `smtp_queue`; Gmail directo omite esa etapa. SENT en PostgreSQL significa aceptación del primer SMTP, no finalización de la entrega remota. Una instalación nueva tiene el correo desactivado y Gmail directo preseleccionado; el estado administrativo de pausa se conserva aparte en la base. Consulte [SMTP-INTERNO.md](SMTP-INTERNO.md) y [CORREO.md](CORREO.md). Los archivos compilados de Angular y el JAR se reconstruyen a partir del código. La inicialización administrativa utiliza una contraseña de `.env` sólo cuando no existe un administrador activo; no sustituye la administración regular de contraseñas.
 
 El objetivo es un helpdesk institucional de volumen moderado. Varios listados operativos se cargan en el cliente y se filtran en la interfaz; conocimiento ya utiliza búsqueda y paginación del servidor, y reportes aplican filtros/límites del servidor. No se ha realizado una prueba de carga productiva ni se declara un número máximo validado de usuarios simultáneos. Antes de un crecimiento grande, conviene ampliar la paginación a los listados restantes, ajustar índices según consultas reales y añadir monitoreo. La auditoría de interfaz presenta los últimos 500 eventos.
 
@@ -128,7 +130,7 @@ Un recibo conserva datos de emisión, pero cada descarga obtiene el estado vigen
 
 ### Conocimiento y satisfacción
 
-Conocimiento autoriza ADMIN/USER; Cobranza queda excluida. Las consultas cliente filtran artículos publicados antes de mapearlos, incluso en vínculos a casos. IDs adivinados de borradores o archivados no entregan contenido. El historial editorial queda reservado a ADMIN. Los vínculos apuntan a la publicación actual y no descuentan minutos. La interfaz interpola texto, sin `innerHTML` ni recursos externos. Consulte [Base de conocimientos](BASE-CONOCIMIENTOS.md).
+Conocimiento autoriza ADMIN/TECH/USER; Cobranza queda excluida. Las consultas TECH y USER filtran artículos publicados antes de mapearlos, incluso en vínculos a casos. IDs adivinados de borradores o archivados no entregan contenido. La edición y el historial editorial quedan reservados a ADMIN. Los vínculos apuntan a la publicación actual y no descuentan minutos. La interfaz interpola texto, sin `innerHTML` ni recursos externos. Consulte [Base de conocimientos](BASE-CONOCIMIENTOS.md).
 
 La encuesta exige un caso propio cerrado y una cuenta/institución activas. La unicidad por caso y UUID protege respuestas simultáneas y reintentos. Guarda nombres y asignación al responder; una reasignación posterior no reatribuye la evaluación. Los informes ADMIN calculan medias sobre todas las respuestas del resultado y exportan CSV con protección de fórmulas. No requiere habilitar finanzas ni genera consumo o correo. Consulte [Encuestas de satisfacción](ENCUESTAS-SATISFACCION.md).
 
@@ -150,3 +152,11 @@ V17–V24 son migraciones aditivas; V1–V16 permanecen intactas. TECH es un rol
 El catálogo conserva versiones; las cotizaciones referencian una versión inmutable. Las parcialidades asignan pagos existentes dentro de sus importes y no generan dinero o minutos. La conciliación importa con hashes y exige confirmación de una relación uno a uno con un pago existente. Los estados de cuenta usan apertura temporal y versiones públicas de filas desde V24; cada emisión conserva una instantánea, sin reconstruir historia previa que la aplicación no registró.
 
 Los avisos de SLA se publican en la campana; los recordatorios de parcialidades se consultan en su propia pantalla. Ambos mecanismos son internos e independientes de SMTP. Ninguna extensión modifica la pausa de correo ni activa el calendario de respaldos.
+
+## Flujo de casos en 1.8.3
+
+V26 amplía la restricción de estado y su longitud a 20 caracteres. Conserva `OPEN` como identificador de **Recibido**, junto con `IN_PROGRESS` (**En atención**), `WAITING_CLIENT` (**Requiere respuesta del cliente**), `RESOLVED` (**Resuelto**) y `CLOSED` (**Cerrado**). No reclasifica retrospectivamente los casos `OPEN`; mantiene IDs, entradas, responsables y saldos. Los filtros guardados `OPEN` se convierten al grupo `active` para conservar su intención de mostrar todo el trabajo pendiente.
+
+Los tres primeros estados permanecen activos. Los cambios manuales son de ADMIN/TECH, requieren motivo y registran historial, auditoría y avisos sin consumo. Tomar un caso Recibido lo pone En atención; una respuesta pública del cliente hace lo mismo desde Requiere respuesta del cliente. La reapertura desde Resuelto/Cerrado exige institución activa y saldo positivo en el canal principal.
+
+Requiere respuesta del cliente pausa cronómetros en ejecución conservando el tiempo medido, pero **no pausa ni reinicia el SLA**. Resuelto y Cerrado detienen el SLA de resolución y bloquean nuevas atenciones hasta reabrir; cerrar después de resolver conserva la fecha de resolución. Reabrir inicia una nueva ventana de resolución sin borrar la primera respuesta registrada. Los cambios de estado nunca confirman ni cobran un cronómetro automáticamente. Consulte [VERSION-1.8.3.md](VERSION-1.8.3.md) para transiciones y validación.

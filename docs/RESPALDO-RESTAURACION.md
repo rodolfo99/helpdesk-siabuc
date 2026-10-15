@@ -1,6 +1,6 @@
-# Respaldo y restauración de SIABUC Helpdesk
+# Respaldo y restauración de SIABUC Helpdesk · 1.8.3
 
-Guía para la versión 1.6.0. En Windows utilice `respaldar.bat` y `restaurar.bat` con los mismos argumentos; consulte [WINDOWS.md](WINDOWS.md). Los scripts `respaldar.sh` y `restaurar.sh` operan sobre la base PostgreSQL del servicio Docker `db`, utilizando los valores de conexión de `.env`.
+En Windows utilice `respaldar.bat` y `restaurar.bat` con los mismos argumentos; consulte [WINDOWS.md](WINDOWS.md). Los scripts `respaldar.sh` y `restaurar.sh` operan sobre la base PostgreSQL del servicio Docker `db`, utilizando los valores de conexión de `.env`. La versión 1.8.3 usa PostgreSQL 17 y migraciones hasta V26.
 
 Desde 1.6 existe también un calendario de respaldos **desactivado por defecto**, administrable en **Respaldos**. El servicio `backup` puede permanecer iniciado sin producir copias programadas. Activarlo requiere configurar y confirmar el destino; desactivarlo conserva copias e historial y no impide respaldar manualmente. La programación, retención y prueba de restauración en un proyecto aislado se documentan en [RESPALDOS-AUTOMATICOS.md](RESPALDOS-AUTOMATICOS.md). Los comandos de esta guía siguen siendo respaldos **manuales**, fuera de la limpieza automática.
 
@@ -38,7 +38,7 @@ Se crean dos archivos:
 - `backups/mi-respaldo.dump`: copia de la base en formato PostgreSQL personalizado.
 - `backups/mi-respaldo.dump.sha256`: verificación de integridad de esa copia.
 
-Se crean los directorios de destino que falten y ambos archivos quedan con permisos `600`. El respaldo utiliza una instantánea de PostgreSQL; no necesita detener la aplicación. Si el archivo de respaldo ya existe, la operación se rechaza: elija un nombre nuevo. Si falla `pg_dump`, el script elimina el archivo incompleto que acaba de crear.
+Se crean los directorios de destino que falten y ambos archivos quedan con permisos `600` en Linux. En Windows proteja la carpeta con una ACL privada; `chmod` no establece una ACL equivalente. El respaldo utiliza una instantánea de PostgreSQL; no necesita detener la aplicación. Si el archivo de respaldo ya existe, la operación se rechaza: elija un nombre nuevo. Si falla `pg_dump`, el script elimina el archivo incompleto que acaba de crear.
 
 Copie ambos archivos a una ubicación segura fuera del equipo. El script no cifra los respaldos.
 
@@ -94,13 +94,13 @@ Este procedimiento sobre la instalación actual requiere un esquema compatible c
    ./restaurar.sh backups/mi-respaldo.dump --confirmar-reemplazo
    ```
 
-4. Espere el mensaje de restauración terminada. Revise la configuración y las colas de correo antes de reanudar los envíos. Una copia de 1.6 también recupera el estado guardado del calendario de respaldos: podría estar activado aunque una instalación nueva lo deje desactivado. Para revisarlo primero con el worker detenido, inicie únicamente los servicios indicados:
+4. Espere el mensaje de restauración terminada. Una copia con V16 recupera también el estado guardado del calendario: podría estar activado. Para revisar la instalación antes de reanudar correo y respaldos, establezca temporalmente `MAIL_ENABLED=false` en el `.env` del destino e inicie sólo base, backend y frontend; mantenga Postfix y `backup` detenidos:
 
    ```bash
-   docker compose up -d --build --wait db smtp backend frontend
+   docker compose up -d --build --wait db backend frontend
    ```
 
-5. Acceda con una cuenta administrativa incluida en la copia, abra **Respaldos**, desactive el calendario si corresponde y compruebe destino y retención. Después utilice `./iniciar.sh` o `iniciar.bat` para iniciar también el worker. Compruebe instituciones, usuarios, saldos, pagos y casos. Los cambios posteriores a la fecha del respaldo no estarán en la base recuperada.
+5. Acceda con una cuenta administrativa incluida en la copia, abra **Respaldos**, desactive el calendario si corresponde y compruebe destino y retención. Revise también la pausa y cola de **Correo y notificaciones** y, si utiliza Postfix, su cola conservada. Use `./iniciar.sh` o `iniciar.bat` cuando esté listo para iniciar el worker y los demás servicios seleccionados. Restablezca `MAIL_ENABLED=true` sólo si quiere reanudar el envío y recree el backend para aplicarlo. Compruebe instituciones, usuarios, saldos, pagos y casos. Los cambios posteriores a la fecha del respaldo no estarán en la base recuperada.
 
 ### Qué comprueba y ejecuta el script
 
@@ -115,10 +115,11 @@ Después inicia PostgreSQL si es necesario y detiene los contenedores `backup`, 
 | Incluido en PostgreSQL | No incluido |
 | --- | --- |
 | Instituciones, usuarios y hashes de sus contraseñas | Archivo `.env` y credenciales de conexión PostgreSQL/SMTP |
-| Saldos, casos e historial de atenciones | Código fuente e imágenes Docker |
+| Saldos, casos con sus cinco estados e historial de atenciones | Código fuente e imágenes Docker |
 | Pagos, anulaciones, responsables y auditoría | Sesiones de acceso en memoria |
 | Cola de notificaciones de Spring y migraciones | Cola Postfix del volumen `smtp_queue` |
 | Configuración e historial de respaldos programados | Archivos `.dump` y `.sha256` externos del destino de copias |
+| Adjuntos BYTEA, pólizas, cotizaciones, comprobantes, recibos, conocimiento y módulos financieros | Configuración del sistema operativo, certificados y permisos del destino |
 
 Preserve `.env` por separado con acceso restringido y mantenga código y base de datos de versiones compatibles. Esta entrega utiliza PostgreSQL 17. Para recuperar en otro equipo, prepare Docker, el proyecto y su configuración de conexión antes de ejecutar `restaurar.sh`.
 
@@ -139,7 +140,7 @@ La cola PostgreSQL puede contener avisos pendientes que vuelvan a enviarse al in
 
 ## 6. Validación disponible
 
-Como evidencia histórica anterior a 1.6, la suite Python de aquella revisión obtuvo **37 pruebas satisfactorias**, incluidas 12 de respaldo/restauración. Comprobó argumentos, archivos, permisos, SHA-256, protección de copias existentes, fallos y parámetros transaccionales con una llamada a Compose simulada. También se comprobó la ayuda de los scripts y el rechazo de argumentos inválidos desde otro directorio. La evidencia actual de 1.6 y sus pruebas de worker están en [VALIDACION.md](VALIDACION.md) y [RESPALDOS-AUTOMATICOS.md](RESPALDOS-AUTOMATICOS.md).
+Como evidencia histórica anterior a 1.6, la suite Python de aquella revisión obtuvo **37 pruebas satisfactorias**, incluidas 12 de respaldo/restauración. Comprobó argumentos, archivos, permisos, SHA-256, protección de copias existentes, fallos y parámetros transaccionales con una llamada a Compose simulada. También se comprobó la ayuda de los scripts y el rechazo de argumentos inválidos desde otro directorio. Estos resultados no son conteos de 1.8.3. Consulte la evidencia por versión en [VALIDACION.md](VALIDACION.md) y los procedimientos vigentes en [RESPALDOS-AUTOMATICOS.md](RESPALDOS-AUTOMATICOS.md).
 
 **No se ejecutó una restauración real de PostgreSQL en Docker en el entorno de preparación.** Los detalles y resultados históricos están en [VALIDACION.md](VALIDACION.md). Para otras tareas de instalación y operación, consulte [OPERACION.md](OPERACION.md).
 
@@ -149,12 +150,12 @@ Los respaldos con V4 incluyen notification_settings y su pausa administrativa. R
 
 ## Retroceder a una versión anterior
 
-`pg_restore --clean` borra únicamente los objetos incluidos en el respaldo. Por ejemplo, una copia anterior a 1.5 no conoce las tablas V9/V10; una anterior a 1.6 tampoco conoce V11–V16. Sus relaciones con instituciones y pagos pueden impedir restaurar esa copia sobre la base actual. El script no realiza una migración inversa ni vacía completamente el esquema.
+`pg_restore --clean` borra únicamente los objetos incluidos en el respaldo. Por ejemplo, una copia anterior a 1.5 no conoce las tablas V9/V10; una anterior a 1.6 tampoco conoce V11–V16. Sus relaciones pueden impedir restaurar esa copia sobre la base actual. Además, el código anterior a 1.8.3 no interpreta los nuevos estados de V26. El script no realiza una migración inversa ni vacía completamente el esquema: use una base nueva con el respaldo y código compatibles.
 
 1. Detenga los servicios de la instalación actual y conserve su volumen, un respaldo reciente y su `.env`. Manténgalos disponibles para volver a la versión actual.
 2. Descomprima el código de la versión que desea recuperar en **otra carpeta**. Configure un `.env` propio con un `COMPOSE_PROJECT_NAME` nuevo y puertos libres para evitar reutilizar volúmenes o entrar en conflicto con la instalación conservada.
 3. Inicie **únicamente PostgreSQL** en esa nueva instalación: `./iniciar.sh --solo-bd` en Linux o `iniciar.bat --solo-bd` en Windows. Compruebe que corresponde al proyecto nuevo. No arranque Spring todavía: la base debe estar vacía de tablas de la aplicación.
-4. Copie el `.dump` anterior y su `.sha256` a esa carpeta. Restaure con `./restaurar.sh --nombre-respaldo backups/antes-1.5.dump --confirmar-reemplazo` o su equivalente `restaurar.bat`. Use el nombre real de su archivo.
-5. Compruebe la restauración y la configuración de correo antes de iniciar el código anterior con `./iniciar.sh` o `iniciar.bat`. Ese código debe conectarse exclusivamente a la base recuperada, nunca a la base V9/V10 conservada.
+4. Copie el `.dump` anterior y su `.sha256` a esa carpeta. Restaure con `./restaurar.sh --nombre-respaldo backups/antes-de-actualizar.dump --confirmar-reemplazo` o su equivalente `restaurar.bat`. Use el nombre real de su archivo.
+5. Compruebe la restauración y la configuración de correo antes de iniciar el código anterior con `./iniciar.sh` o `iniciar.bat`. Ese código debe conectarse exclusivamente a la base recuperada, nunca a la base migrada que conserva para revisión.
 
 Las operaciones posteriores al respaldo no estarán en la base recuperada. Este procedimiento conserva el entorno migrado para revisión; no utilice `docker compose down -v` para hacer el retroceso. La ejecución real de esta recuperación Docker sigue pendiente de validación en el entorno destino.

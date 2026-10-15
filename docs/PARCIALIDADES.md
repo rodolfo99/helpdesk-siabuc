@@ -1,10 +1,12 @@
-# Calendario de parcialidades — versión 1.7
+# Calendario de parcialidades — versión 1.8.3
+
+Guía vigente de SIABUC Helpdesk 1.8.3. Consulte el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md) para el recorrido completo por rol.
 
 El calendario de Cobranza permite registrar **cuándo se comprometió el cliente a pagar y cuánto**, y relacionar esos compromisos con pagos ya registrados. Está disponible para `ADMIN` y `BILLING`; no expone información a Técnico ni Cliente.
 
 ## Programar un acuerdo
 
-1. Abra **Calendario de parcialidades → Programar parcialidad**.
+1. Abra **Parcialidades → Programar parcialidad**. La pantalla se titula **Calendario de parcialidades**.
 2. Seleccione una póliza activa, fecha comprometida, importe en MXN y descripción del acuerdo.
 3. Revise el importe contratado, la suma ya programada y lo disponible para programar. Guarde.
 4. Repita para cada fecha del acuerdo. Puede programar una parte o el total; no está obligado a completar todo el contrato de una sola vez.

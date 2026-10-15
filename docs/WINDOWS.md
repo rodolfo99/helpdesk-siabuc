@@ -1,4 +1,4 @@
-# Instalación y operación en Windows
+# Instalación y operación en Windows · 1.8.3
 
 ## Alcance
 
@@ -40,7 +40,9 @@ Use las terminales para conservar los mensajes de error; no dependa del doble cl
 | Operación | PowerShell |
 |---|---|
 | Validar/crear configuración | `.\configurar.bat` |
-| Configurar SMTP local | `.\configurar.bat --smtp-interno` |
+| Configurar Gmail directo, sin Postfix | `.\configurar.bat --gmail-directo` |
+| Configurar otro SMTP directo | `.\configurar.bat --correo` |
+| Configurar Postfix opcional | `.\configurar.bat --smtp-interno` |
 | Iniciar todo y compilar cambios | `.\iniciar.bat` |
 | Iniciar sólo PostgreSQL | `.\iniciar.bat --solo-bd` |
 | Compilar imágenes | `.\compilar.bat` |
@@ -53,7 +55,7 @@ Los nombres relativos de respaldo manual se resuelven desde la carpeta actual de
 
 ## Respaldos automáticos en Windows
 
-El calendario se instala **desactivado por defecto**, también al actualizar desde una versión anterior. `iniciar.bat` puede dejar saludable el servicio `backup` sin crear ninguna copia programada. Los respaldos manuales de `respaldar.bat` funcionan independientemente de ese calendario y nunca se eliminan por su retención.
+El calendario comienza **desactivado** en una instalación nueva o al aplicar V16 por primera vez; una actualización posterior conserva el estado guardado. `iniciar.bat` puede dejar saludable el servicio `backup` sin crear ninguna copia programada. Los respaldos manuales de `respaldar.bat` funcionan independientemente de ese calendario y nunca se eliminan por su retención.
 
 Para elegir una carpeta privada diferente, edite `.env` con una sola definición de cada variable:
 
@@ -71,11 +73,15 @@ El archivo `backup/compose.restore-test.yml` permite ensayar una restauración e
 
 ## SMTP y datos de otra instalación
 
-En 1.8.2 Gmail directo está preseleccionado, con el envío inicialmente desactivado; las instalaciones previas pueden conservar Postfix. El usuario confirmó su funcionamiento en su equipo Linux el 13/10/2026; eso no verifica aún el envío desde Windows. La entrega directa requiere conectividad saliente TCP 25 y depende de las políticas de la red y de los destinatarios.
+Gmail directo está preseleccionado desde 1.8.2, con el envío inicialmente desactivado. Para configurarlo use `.\configurar.bat --gmail-directo`; guarda la cuenta, la contraseña de aplicación y STARTTLS en `smtp.gmail.com:587`, sin probar autenticación ni enviar una prueba. La política de Google Workspace debe permitir ese acceso.
 
-Gmail es opcional mediante `configurar-gmail.bat`; **el usuario informó que su configuración Gmail falló**, y no se presenta como solucionada por este cambio. No ejecute ese asistente si desea conservar el SMTP local que funciona.
+Las instalaciones previas pueden conservar Postfix con `SMTP_HOST=smtp`. `iniciar.bat` habilita entonces el perfil `local-smtp`; en 1.8.3 usa la red `default`, sin una subred SMTP fija. Una clave antigua `SMTP_NETWORK_SUBNET` se ignora. El puerto SMTP no se publica en el despliegue normal. La entrega Postfix directa por MX necesita salida TCP 25; el modo relay usa el puerto del proveedor.
 
-Para trasladar datos de Linux a Windows, cree un respaldo con respaldar.sh y copie `.dump`, `.dump.sha256` y `.env` por un medio privado. Ejecute configurar.bat para validar `.env`, inicie sólo la BD, restaure con restaurar.bat y luego inicie todo. Conservar el nombre del proyecto no traslada volúmenes entre equipos ni entre motores Docker diferentes. El respaldo de PostgreSQL no incluye la cola Postfix pendiente ni la configuración `.env`; no apague definitivamente el origen antes de gestionar esa cola.
+`configurar-gmail.bat` es un asistente diferente y heredado: utiliza Postfix como relay hacia Gmail y comprueba autenticación desde el anfitrión antes de guardar. Consulte [GMAIL-UCOL.md](GMAIL-UCOL.md) para decidir entre ambas rutas.
+
+**Evidencia histórica, 13/10/2026:** el usuario informó que Postfix local funcionó en Linux y que el configurador Gmail de aquel momento falló. Eso no verifica Gmail directo de 1.8.3 ni envío desde Windows; se conserva como antecedente, sin atribuirle una solución posterior no comprobada.
+
+Para trasladar datos de Linux a Windows, cree un respaldo con `respaldar.sh` y copie `.dump`, `.dump.sha256` y `.env` por un medio privado. Adapte `BACKUP_DIRECTORY` y los permisos al destino Windows; una ruta Linux no se convierte automáticamente. Ejecute `configurar.bat` para validar `.env`, inicie sólo la BD y restaure con `restaurar.bat`. Revise correo y calendario antes de reanudar los servicios, siguiendo [Respaldo y restauración](RESPALDO-RESTAURACION.md). Conservar el nombre del proyecto no traslada volúmenes entre equipos ni entre motores Docker diferentes. El respaldo de PostgreSQL no incluye la cola Postfix pendiente ni la configuración `.env`; no apague definitivamente el origen antes de gestionar esa cola.
 
 ## Permisos y diagnóstico
 
@@ -84,9 +90,9 @@ En Linux se utilizan modos 600 para archivos privados. `chmod(600)` de Python **
 ```powershell
 docker compose ps -a
 docker compose logs --tail=150 backend
-docker compose logs --tail=100 smtp
+docker compose --profile local-smtp logs --tail=100 smtp
 docker compose logs --tail=100 backup
-docker compose exec -T smtp postqueue -p
+docker compose --profile local-smtp exec -T smtp postqueue -p
 ```
 
 Si el backend aparece unhealthy, conserve el registro: no elimine volúmenes ni use `docker compose down -v` como reparación. Las mismas restricciones de puertos y correo aplican en Windows. No desactive el firewall completo.
@@ -98,6 +104,6 @@ Se verifican mediante pruebas automatizadas la conservación de datos binarios d
 - Docker Desktop Windows: https://docs.docker.com/desktop/setup/install/windows-install/
 - Integración WSL2: https://docs.docker.com/desktop/features/wsl/
 
-## Gmail directo con Helpdesk 1.8.2
+## Actualizar a 1.8.3
 
-En CMD o PowerShell use `configurar.bat --gmail-directo`: ingrese la cuenta de Google y una contraseña de aplicación nueva. El SMTP directo no necesita iniciar el contenedor Postfix. Si `.env` contiene `SMTP_HOST=smtp`, se conserva Postfix automáticamente. Revise antes su cola sin borrar volúmenes. [Detalles](VERSION-1.8.2.md).
+Conserve `.env`, los volúmenes y un respaldo reciente, actualice el conjunto completo de archivos y ejecute `.\iniciar.bat`. Flyway aplica las migraciones pendientes hasta V26. Los casos conservan sus datos y saldos, con los cinco estados descritos en [VERSION-1.8.3.md](VERSION-1.8.3.md). No copie archivos sueltos de versiones distintas ni use el ZIP como reemplazo de una copia de la base.

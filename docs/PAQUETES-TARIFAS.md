@@ -1,11 +1,13 @@
-# Catálogo de paquetes y tarifas — versión 1.7
+# Catálogo de paquetes y tarifas — versión 1.8.3
+
+Guía vigente de SIABUC Helpdesk 1.8.3. Consulte el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md) para el recorrido completo por rol.
 
 Administración y Cobranza pueden preparar paquetes de soporte, consultar sus revisiones y usarlos como punto de partida para cotizaciones. Técnico y Cliente no tienen acceso al catálogo financiero ni a sus APIs.
 
 ## Crear y mantener paquetes
 
 1. Abra **Paquetes y tarifas → Nuevo paquete**.
-2. Capture un código estable (letras, números, guiones o guion bajo), nombre, descripción/condiciones, importe en MXN y minutos de correo y remoto.
+2. Capture un código estable de hasta 60 caracteres (letras, números, guiones o guion bajo), nombre, descripción/condiciones, importe en MXN y minutos de correo y remoto. El código se normaliza a mayúsculas y debe ser único.
 3. Guarde. El importe debe ser positivo con hasta dos decimales; cada canal admite de 0 a 1 000 000 000 minutos y al menos uno debe ser positivo.
 4. Para cambiar la oferta, abra el paquete y elija **Crear nueva versión**. El código no cambia; nombre, condiciones, precio y minutos quedan en una nueva revisión.
 5. **Desactivar paquete** impide usarlo en nuevas cotizaciones. El paquete y todas sus versiones siguen disponibles para consulta histórica. Puede reactivarlo posteriormente.
@@ -18,7 +20,7 @@ El servidor comprueba la revisión que está editando. Si otra persona publicó 
 2. Seleccione un paquete. Se copian importe, descripción y minutos de la versión vigente recibida del servidor.
 3. Complete folio, fechas de oferta y cobertura. Revise todos los términos antes de guardar.
 4. Si negocia otro precio, minutos o descripción, capture el **Motivo de ajuste al paquete**. Se conservan tanto la versión original como los términos negociados.
-5. Al registrar la emisión se congelan los términos de la cotización, como en la versión 1.6. La aceptación y conversión posterior generan la póliza con los términos negociados.
+5. Al registrar la emisión se congelan los términos de la cotización. La aceptación y conversión posterior generan la póliza con los términos negociados.
 
 El detalle muestra código, revisión, tarifa original, minutos, condiciones originales y motivo del ajuste. El historial de la cotización registra la versión seleccionada y los términos pactados. No se admite que el navegador mande una copia arbitraria del paquete: debe referenciar un identificador de versión existente.
 

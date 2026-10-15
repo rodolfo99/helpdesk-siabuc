@@ -1,10 +1,12 @@
-# Pólizas, cobranza y acreditación de horas
+# Pólizas, cobranza y acreditación de horas — versión 1.8.3
 
-Disponible desde SIABUC Helpdesk 1.5.0. El módulo relaciona las pólizas de una institución, sus pagos y los minutos de soporte efectivamente acreditados.
+Guía vigente de SIABUC Helpdesk 1.8.3. Consulte el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md) para el recorrido completo por rol.
+
+El módulo, incorporado en SIABUC Helpdesk 1.5.0, relaciona las pólizas de una institución, sus pagos y los minutos de soporte efectivamente acreditados.
 
 **Cada pago guarda en una sola operación su importe, método, institución, póliza opcional y minutos de correo/remoto.** El servidor actualiza las bolsas de soporte y el historial dentro de la misma transacción. Si el movimiento es inválido o falla su registro, no se guarda parcialmente el dinero ni se acreditan minutos sueltos.
 
-Desde 1.6 se añaden [cotizaciones y renovaciones](COTIZACIONES-RENOVACIONES.md), [solicitudes pendientes de validación](SOLICITUDES-PAGO.md), [recibos administrativos](RECIBOS-PAGO.md) y un [portal financiero institucional](PORTAL-FINANCIERO.md) deshabilitado por defecto. Las reglas contables y el registro directo de pagos de 1.5 se conservan.
+Desde 1.6 se añaden [cotizaciones y renovaciones](COTIZACIONES-RENOVACIONES.md), [solicitudes pendientes de validación](SOLICITUDES-PAGO.md), [recibos administrativos](RECIBOS-PAGO.md) y un [portal financiero institucional](PORTAL-FINANCIERO.md) deshabilitado por defecto. La versión 1.8.3 conserva estos flujos e incluye [paquetes y tarifas](PAQUETES-TARIFAS.md), [calendario de parcialidades](PARCIALIDADES.md), [conciliación bancaria](CONCILIACION-BANCARIA.md) y [estados de cuenta](ESTADOS-CUENTA.md). Las reglas de acreditación y anulación se describen a continuación.
 
 ## Permisos
 
@@ -24,7 +26,9 @@ Desde 1.6 se añaden [cotizaciones y renovaciones](COTIZACIONES-RENOVACIONES.md)
 | Habilitar acceso financiero por institución | No | Sí | No |
 | Anular un pago | No | Sí, si quedan los minutos necesarios | No |
 
-Cobranza conserva su acceso a los saldos institucionales; estas funciones no le otorgan acceso a notas internas, expedientes de soporte ni administración de usuarios. Los correos de pagos continúan usando los destinatarios y la política de pausa de notificaciones existentes.
+El rol Técnico (`TECH`) no tiene acceso a estos módulos financieros. El nombre de rol del cliente en la API es `USER`. Cobranza conserva su acceso a los saldos institucionales; estas funciones no le otorgan acceso a notas internas, expedientes de soporte ni administración de usuarios. Los correos de pagos continúan usando los destinatarios y la política de pausa de notificaciones existentes.
+
+Los cinco estados de casos de soporte de 1.8.3 no cambian los estados financieros: una póliza sigue **Activa/Cancelada**, un pago **Vigente/Anulado** y una solicitud **Pendiente/Aprobada/Rechazada**. Cambiar un caso a Resuelto o Cerrado no registra dinero ni devuelve automáticamente minutos consumidos.
 
 ## Crear una póliza
 
@@ -40,7 +44,7 @@ Desde el apartado **Pólizas**, seleccione la institución y capture:
 
 La póliza tiene estado administrativo **Activa** o **Cancelada**. Además, muestra una vigencia informativa: **Por iniciar**, **Vigente** o **Vencida**, calculada con la fecha de `America/Mexico_City`. El vencimiento no elimina minutos ya acreditados ni cierra casos: los saldos de soporte pertenecen a las bolsas de la institución. Se permiten registros de pago de pólizas pasadas o futuras para documentar operaciones retrospectivas o anticipos; una póliza cancelada sí rechaza nuevos movimientos.
 
-## Cotizaciones y renovaciones desde 1.6
+## Cotizaciones y renovaciones
 
 Una cotización aceptada puede convertirse en una póliza con los términos registrados. Administración o Cobranza documentan la emisión y la respuesta del cliente; aceptar no es una firma digital. La conversión es idempotente y no registra dinero ni acredita soporte. Los pagos directos o aprobados desde solicitudes usan después las mismas reglas de acreditación descritas en esta guía.
 
@@ -109,7 +113,7 @@ Deshabilitar bloquea nuevas peticiones sin borrar los registros. Los archivos ya
 
 ## Correcciones y cancelaciones
 
-La póliza puede modificarse mientras esté activa y **nunca haya tenido un pago**. La institución no puede cambiarse. Después del primer pago, incluso si este se anula, el contrato queda congelado para que los movimientos históricos no cambien de significado.
+La póliza puede modificarse mientras esté activa y **nunca haya tenido un pago**. La institución no puede cambiarse. Si existen parcialidades no canceladas, tampoco puede cambiarse el importe contratado: primero hay que retirar sus aplicaciones y cancelar el calendario conforme a [Parcialidades](PARCIALIDADES.md). Después del primer pago, incluso si este se anula, el contrato queda congelado para que los movimientos históricos no cambien de significado.
 
 Para anular un pago, un ADMIN debe indicar el motivo. El sistema verifica que la institución tenga disponibles todos los minutos acreditados por ese movimiento en ambos canales. Si parte del crédito ya es necesario para cubrir atenciones consumidas, la anulación se rechaza completa; no retira solo una parte ni deja saldos negativos.
 
@@ -155,4 +159,4 @@ Los datos de pólizas e historial se almacenan en PostgreSQL y forman parte del 
 
 Desde 1.6 también puede configurarse el servicio de [respaldos automáticos](RESPALDOS-AUTOMATICOS.md), con calendario desactivado por defecto; no elimina ni reemplaza los scripts manuales existentes.
 
-Las pruebas de las reglas incorporadas en 1.5 están en `PolicyIntegrationIT` y en `tests/migrations/upgrade-v15.mjs`. Consulte el informe de validación de 1.5.0 para resultados realmente ejecutados, incluyendo concurrencia, reversión de errores, conservación de registros anteriores y exportaciones financieras.
+Las pruebas de las reglas incorporadas en 1.5 están en `PolicyIntegrationIT` y en `tests/migrations/upgrade-v15.mjs`. Consulte [Validación](VALIDACION.md) y las [notas de 1.8.3](VERSION-1.8.3.md) para resultados realmente ejecutados. Los informes de 1.5.0 y otras entregas anteriores se conservan como evidencia histórica, sin atribuirles cobertura de los cambios nuevos.

@@ -1,4 +1,6 @@
-# Comprobantes de pago
+# Comprobantes de pago — versión 1.8.3
+
+Guía vigente de SIABUC Helpdesk 1.8.3. Consulte el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md) para el recorrido completo por rol.
 
 Desde la versión 1.5.0, **Administración y Cobranza** pueden adjuntar evidencia a un pago ya registrado: fichas de depósito, transferencias, recibos o capturas. El archivo es opcional; adjuntarlo **no registra otro cobro, no acredita minutos y no cambia el importe del pago**.
 
@@ -13,7 +15,7 @@ Desde 1.6 hay dos flujos complementarios: [evidencia de solicitudes pendientes](
 
 Puede agregar evidencia a pagos anulados y de instituciones dadas de baja. Su estado financiero permanece intacto. Los archivos se conservan: no hay funciones para sustituirlos ni eliminarlos. Si necesita corregir una evidencia, adjunte el documento correcto; ambos quedarán registrados.
 
-En 1.5, los comprobantes financieros son exclusivos de Administración y Cobranza. Desde 1.6, `ADMIN` puede habilitar expresamente el [portal financiero](PORTAL-FINANCIERO.md) de una institución activa. Comienza **deshabilitado por defecto**, también para instituciones existentes al actualizar. Con ese permiso, sus usuarios cliente pueden listar y descargar comprobantes propios, incluidos los cargados antes de habilitar el portal. No pueden cargar, sustituir ni borrar archivos del pago registrado.
+La carga a pagos registrados está reservada a Administración y Cobranza; el rol Técnico (`TECH`) no accede a este módulo. `ADMIN` puede habilitar expresamente el [portal financiero](PORTAL-FINANCIERO.md) de una institución activa. Comienza **deshabilitado por defecto**, también para instituciones existentes al actualizar. Con ese permiso, sus usuarios cliente pueden listar y descargar comprobantes propios, incluidos los cargados antes de habilitar el portal. No pueden cargar, sustituir ni borrar archivos del pago registrado.
 
 Administración y Cobranza conservan acceso al historial financiero completo. Sólo Administración puede conceder o revocar el acceso del cliente. La revocación bloquea peticiones posteriores sin borrar evidencias ni retirar archivos ya descargados. Revise los archivos históricos antes de habilitarlos: el permiso alcanza su contenido original, no una versión con datos ocultos. Los adjuntos de casos mantienen sus permisos independientes.
 
@@ -60,7 +62,7 @@ Los scripts documentados de inicio, respaldo y restauración siguen disponibles 
 | `POST /api/payments/{id}/attachments` | Carga multipart con campos `file` y `requestId` UUID; devuelve HTTP 201 |
 | `GET /api/payment-attachments/{id}/download` | Descarga autenticada del archivo |
 
-Las tres rutas administrativas requieren `ADMIN` o `BILLING`; `USER` recibe 403 incluso con portal habilitado. El cliente autorizado usa únicamente `GET /api/client-finance/payments/{id}/attachments` y `GET /api/client-finance/payment-attachments/{id}/download`, siempre para su institución. No existe una ruta cliente para cargar al pago registrado. El detalle de acceso y revocación está en [Portal financiero](PORTAL-FINANCIERO.md). Las peticiones POST requieren CSRF, igual que los demás formularios. Un pago o comprobante inexistente devuelve 404; formato inválido, 400; archivo demasiado grande, 413; cuota agotada o UUID reutilizado con otro contenido, 409.
+Las tres rutas administrativas requieren `ADMIN` o `BILLING`; `TECH` y `USER` reciben 403 en estas rutas, incluso si la institución del cliente tiene el portal habilitado. El cliente autorizado usa únicamente `GET /api/client-finance/payments/{id}/attachments` y `GET /api/client-finance/payment-attachments/{id}/download`, siempre para su institución. No existe una ruta cliente para cargar al pago registrado. El detalle de acceso y revocación está en [Portal financiero](PORTAL-FINANCIERO.md). Las peticiones POST requieren CSRF, igual que los demás formularios. Un pago o comprobante inexistente devuelve 404; formato inválido, 400; archivo demasiado grande, 413; cuota agotada o UUID reutilizado con otro contenido, 409.
 
 Los metadatos administrativos contienen `id`, `paymentId`, `filename`, `contentType`, `sizeBytes`, `sha256`, `uploadedBy`, `uploadedName` y `createdAt`. La vista cliente omite las identidades administrativas de carga. Los listados no incluyen los bytes. El servidor serializa la carga con el mismo orden de bloqueo de cobranza: institución, póliza si existe y pago. Archivo, auditoría e historial se guardan en una sola transacción.
 

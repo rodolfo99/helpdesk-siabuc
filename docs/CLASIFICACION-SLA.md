@@ -1,10 +1,10 @@
 # Clasificación, ficha técnica y plazos de atención
 
-Disponible desde SIABUC Helpdesk 1.4.0. El caso conserva únicamente los estados **Abierto** y **Cerrado**. La categoría, prioridad y cumplimiento de plazos son datos adicionales; no agregan otros estados al caso.
+Guía vigente para **SIABUC Helpdesk 1.8.3**. La clasificación y los plazos acompañan los cinco estados del caso: **Recibido**, **En atención**, **Requiere respuesta del cliente**, **Resuelto** y **Cerrado**. Categoría, prioridad y cumplimiento de plazos son datos independientes del estado. Consulte el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md) para el recorrido completo.
 
 ## Clasificar una solicitud
 
-En **Casos → Nuevo caso** pueden indicarse la categoría, prioridad y datos técnicos desde la creación. Un usuario cliente crea solicitudes para su propia institución; un administrativo puede seleccionar la institución.
+En **Casos → Nuevo caso** pueden indicarse la categoría, prioridad y datos técnicos desde la creación. Un usuario cliente crea solicitudes para su propia institución; Administración o un técnico puede seleccionar la institución.
 
 | Categoría | Ejemplos de uso |
 |---|---|
@@ -27,7 +27,7 @@ Dentro del caso, **Ficha técnica y plazos de atención** permite consultar y gu
 
 Evite copiar contraseñas, claves o datos innecesarios en la ficha. Las capturas y archivos se agregan mediante el apartado de adjuntos, descrito en su guía correspondiente.
 
-Los administrativos y los usuarios de la institución propietaria pueden modificar la ficha de un caso abierto. Un caso cerrado debe reabrirse antes de modificarla; una institución dada de baja no puede recibir cambios de ficha. Cobranza no tiene acceso a las fichas ni a los casos de soporte. Los cambios quedan registrados en auditoría administrativa.
+Administración, Técnicos y usuarios de la institución propietaria pueden modificar la ficha de un caso activo (Recibido, En atención o Requiere respuesta del cliente). Un caso Resuelto o Cerrado debe reabrirse antes de modificarla; una institución dada de baja no puede recibir cambios de ficha. Cobranza no tiene acceso a las fichas ni a los casos de soporte. Los cambios quedan registrados en auditoría administrativa.
 
 El listado de casos permite filtrar por categoría y prioridad, además de los filtros de institución, responsable y estado.
 
@@ -35,23 +35,25 @@ El listado de casos permite filtrar por categoría y prioridad, además de los f
 
 Los objetivos de primera respuesta y resolución cuentan **minutos dentro del horario laboral**. No son minutos de atención facturable: ni el transcurso del tiempo ni un vencimiento descuentan saldo. Los minutos contratados se descuentan al registrar una atención con consumo, según las reglas de correo y escritorio remoto del sistema.
 
-**Primera respuesta:** empieza al crear el caso y se completa con el primer comentario o atención **pública** que un administrativo registra en el seguimiento. No cuentan los comentarios del cliente, notas internas, toma o reasignación del caso, cambios de datos, avisos de agenda ni cambios de estado. Una atención pública registrada mediante el cronómetro cuenta como respuesta cuando se confirma su registro. La fecha de primera respuesta se conserva si después se anula el consumo: la comunicación ya ocurrió.
+**Primera respuesta:** empieza al crear el caso y se completa con el primer comentario o atención **pública** que Administración o un técnico registra en el seguimiento. No cuentan los comentarios del cliente, notas internas, toma o reasignación del caso, cambios de datos, avisos de agenda ni cambios de estado. Una atención pública registrada mediante el cronómetro cuenta como respuesta cuando se confirma su registro. La fecha de primera respuesta se conserva si después se anula el consumo: la comunicación ya ocurrió.
 
-**Resolución:** empieza al crear el caso y termina cuando un administrativo lo cierra. Al reabrirlo comienza un nuevo plazo de resolución desde la reapertura; la primera respuesta original se conserva. Los cierres y reaperturas anteriores siguen en el historial y la auditoría.
+**Resolución:** empieza al crear el caso y termina al pasar a **Resuelto** o al cerrar directamente un caso activo. Pasar después de Resuelto a Cerrado conserva la fecha original de resolución. Al reabrir un caso Resuelto o Cerrado en **En atención**, comienza un nuevo plazo de resolución desde la reapertura; la primera respuesta original se conserva. Los cambios anteriores siguen en el historial y la auditoría.
+
+Cambiar entre Recibido, En atención y Requiere respuesta del cliente **no reinicia el plazo**. **Esperar al cliente no pausa el SLA**: el calendario laboral sigue contando y pueden generarse avisos de vencimiento. Los cronómetros de atención sí se pausan al esperar al cliente; son una medición independiente.
 
 | Indicador | Significado |
 |---|---|
 | Dentro del plazo | El objetivo todavía está pendiente y la fecha límite no ha pasado |
 | Plazo vencido | El objetivo está pendiente y ya pasó su fecha límite |
-| Cumplido | La respuesta o cierre ocurrió como máximo en la fecha límite |
-| Atendido fuera del plazo | La respuesta o cierre ocurrió después de la fecha límite |
-| Sin fecha registrada | El caso está cerrado y no hay evidencia de una fecha de respuesta o cierre para ese objetivo |
+| Cumplido | La respuesta o resolución ocurrió como máximo en la fecha límite |
+| Atendido fuera del plazo | La respuesta o resolución ocurrió después de la fecha límite |
+| Sin fecha registrada | El caso está Resuelto o Cerrado y no hay evidencia de una fecha de respuesta o resolución para ese objetivo |
 
-Cerrar un caso sin una respuesta pública no inventa una fecha de primera respuesta. El cierre y la primera respuesta son mediciones distintas.
+Resolver o cerrar un caso sin una respuesta pública no inventa una fecha de primera respuesta. La resolución y la primera respuesta son mediciones distintas.
 
-## Configuración por el administrativo
+## Configuración por Administración
 
-Abra **Horario y plazos de atención** desde el menú administrativo. La API también admite consultar y actualizar la configuración mediante `/api/support-settings`, únicamente con una sesión ADMIN.
+Abra **Configuración de soporte → Horario y plazos de atención** con una cuenta de Administración. La API también admite consultar y actualizar la configuración mediante `/api/support-settings`, únicamente con una sesión ADMIN.
 
 La configuración inicial es:
 
@@ -79,7 +81,7 @@ Puede seleccionar cualquier conjunto no vacío de días de la semana. Se admite 
 
 Cada caso guarda una copia del calendario y objetivos vigentes al crearse. **Cambiar la configuración general afecta a los casos nuevos.** Los existentes conservan sus días, horario, zona, fechas inhábiles y tabla de objetivos.
 
-Al cambiar la prioridad de un caso abierto se usan los objetivos de la nueva prioridad de esa copia guardada. Se recalculan las fechas límite desde la creación para primera respuesta y desde la creación o última reapertura para resolución; cambiar prioridad no reinicia el reloj. La modificación queda en auditoría.
+Al cambiar la prioridad de un caso activo se usan los objetivos de la nueva prioridad de esa copia guardada. Se recalculan las fechas límite desde la creación para primera respuesta y desde la creación o última reapertura para resolución; cambiar prioridad no reinicia el reloj. La modificación queda en auditoría.
 
 Los casos anteriores a 1.4.0 se clasifican inicialmente como Otro / Normal y reciben el calendario inicial de la migración. Se intenta recuperar la primera respuesta a partir de registros públicos reales de atención administrativa respaldados por `CREATE_ENTRY` en auditoría; los cierres y reaperturas se recuperan de los cambios de estado auditados. No se inventan fechas usando la última modificación del caso. La interfaz marca estos cálculos históricos como **orientativos**, porque esos plazos todavía no estaban configurados cuando se abrieron los casos.
 
@@ -87,9 +89,9 @@ Los casos anteriores a 1.4.0 se clasifican inicialmente como Otro / Normal y rec
 
 | Método / ruta | Uso | Acceso |
 |---|---|---|
-| `GET /api/case-profiles` | Resumen `{caseId,category,priority}` para filtros | ADMIN: todos; USER: su institución |
-| `GET /api/cases/{id}/profile` | Ficha completa y mediciones SLA | ADMIN o USER de la institución |
-| `PUT /api/cases/{id}/profile` | Actualizar categoría, prioridad y ficha técnica | ADMIN o USER de la institución, caso abierto |
+| `GET /api/case-profiles` | Resumen `{caseId,category,priority}` para filtros | ADMIN/TECH: todos; USER: su institución |
+| `GET /api/cases/{id}/profile` | Ficha completa y mediciones SLA | ADMIN/TECH o USER de la institución |
+| `PUT /api/cases/{id}/profile` | Actualizar categoría, prioridad y ficha técnica | ADMIN/TECH o USER de la institución, caso activo |
 | `GET /api/support-settings` | Consultar calendario y objetivos | ADMIN |
 | `PUT /api/support-settings` | Actualizar calendario y objetivos para nuevos casos | ADMIN |
 
@@ -99,4 +101,4 @@ Los cambios requieren el token CSRF de la sesión, igual que las demás operacio
 
 Las categorías de API son `INSTALLATION`, `CATALOGING`, `LOANS`, `REPORTS`, `IMPORT`, `OTHER`; las prioridades son `LOW`, `NORMAL`, `HIGH`, `URGENT`. La configuración utiliza `timezone`, `workDays` (1=lunes a 7=domingo), `startTime`, `endTime`, `holidays` y `goals` con `firstResponseMinutes` / `resolutionMinutes` por prioridad.
 
-La migración `V5__case_profiles_sla.sql` añade las tablas `support_settings` y `case_profiles`; no cambia las bolsas de tiempo ni introduce estados adicionales para los casos. Las pruebas del módulo están en `BusinessHoursTest` y `CaseProfileIntegrationIT`; consulte el informe de validación de la versión para los resultados efectivamente ejecutados.
+Históricamente, `V5__case_profiles_sla.sql` incorporó las tablas `support_settings` y `case_profiles`. La versión 1.8.3 amplía los estados mediante `V26__case_workflow_states.sql`; no cambia las bolsas de tiempo ni reescribe las migraciones anteriores. Las pruebas del módulo están en `BusinessHoursTest` y `CaseProfileIntegrationIT`; consulte el informe de validación de la versión para los resultados efectivamente ejecutados.

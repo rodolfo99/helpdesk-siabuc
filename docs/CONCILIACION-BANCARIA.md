@@ -1,4 +1,6 @@
-# Conciliación bancaria por CSV — versión 1.7
+# Conciliación bancaria por CSV — versión 1.8.3
+
+Guía vigente de SIABUC Helpdesk 1.8.3. Consulte el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md) para el recorrido completo por rol.
 
 Disponible para **Administración (ADMIN)** y **Cobranza (BILLING)**. Los clientes y técnicos no pueden consultar ni modificar este módulo. La conciliación documenta una relación entre un ingreso bancario y un pago que ya existe en Helpdesk. **No conecta con el banco, no registra un pago, no cobra, no acredita minutos y no envía correos.**
 
@@ -71,4 +73,4 @@ La migración **V23** añade `bank_imports`, `bank_movements`, `bank_import_rows
 
 ## Verificación reproducible
 
-`BankCsvTest` cubre codificación, BOM, campos entre comillas, huellas estables, límites y validación estricta. `BankReconciliationIntegrationIT` cubre permisos/CSRF, vista previa sin cambios, importaciones repetidas y superpuestas, rechazo atómico, candidaturas, confirmación/deshacer, anulación posterior, monedas y competencia concurrente por un pago. El resultado de la ejecución conjunta se documenta en `VALIDACION.md`; la presencia de pruebas en el repositorio no implica por sí misma que hayan sido ejecutadas en todas las plataformas.
+`BankCsvTest` cubre codificación, BOM, campos entre comillas, huellas estables, límites y validación estricta. `BankReconciliationIntegrationIT` cubre permisos/CSRF, vista previa sin cambios, importaciones repetidas y superpuestas, rechazo atómico, candidaturas, confirmación/deshacer, anulación posterior, monedas y competencia concurrente por un pago. El resultado de la ejecución conjunta se documenta en [Validación](VALIDACION.md) y en las [notas de 1.8.3](VERSION-1.8.3.md); la presencia de pruebas en el repositorio no implica por sí misma que hayan sido ejecutadas en todas las plataformas.

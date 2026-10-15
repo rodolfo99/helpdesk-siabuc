@@ -1,5 +1,9 @@
 # SIABUC Helpdesk 1.5.0: pólizas y cobranza
 
+> **Documento histórico — 1.5.0.** Se conservan el alcance, los procedimientos y los resultados de esa entrega. Las referencias a la versión «actual», a la «última» evidencia y a funciones o fallos pendientes corresponden a ese momento; no describen el estado de 1.8.3.
+>
+> Para uso e instalación vigentes, consulte el [manual detallado 1.8.3](MANUAL-EXTENDIDO-1.8.3.md), el [índice de documentación](README.md) y las [notas de 1.8.3](VERSION-1.8.3.md).
+
 La versión 1.5 incluye todas las funciones de 1.4 y amplía el trabajo del usuario **Cobranza (`BILLING`)**. Administración conserva acceso para supervisión. Las instituciones cliente siguen consultando su saldo y soporte; los módulos financieros están protegidos por rol.
 
 ## Qué cambia

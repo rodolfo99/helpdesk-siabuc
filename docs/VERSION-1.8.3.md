@@ -1,4 +1,7 @@
-# SIABUC Helpdesk 1.8.3 — estados de atención
+# SIABUC Helpdesk 1.8.3 — estados de atención y red Docker
+
+[Manual detallado](MANUAL-EXTENDIDO-1.8.3.md) · [Índice de guías](README.md) ·
+[Evidencia de validación](VALIDACION-1.8.3.md).
 
 ## Uso
 

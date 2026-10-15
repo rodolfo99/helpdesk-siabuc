@@ -1,6 +1,6 @@
-# Respaldos automáticos, desactivados por defecto
+# Respaldos automáticos · 1.8.3
 
-Desde 1.6.0, SIABUC Helpdesk incluye un servicio Docker llamado **`backup`** y una sección **Respaldos**, exclusiva de **ADMIN**. Tanto una instalación nueva como una actualización dejan el calendario **desactivado por defecto**. Iniciar Docker o abrir la página no activa copias programadas.
+Desde 1.6.0, SIABUC Helpdesk incluye un servicio Docker llamado **`backup`** y una sección **Respaldos**, exclusiva de **ADMIN**. El calendario comienza **desactivado** en una instalación nueva o al aplicar V16 por primera vez. Una actualización posterior, incluida 1.8.3, conserva el estado guardado; un respaldo también lo recupera al restaurar. Iniciar Docker o abrir la página no cambia ese estado.
 
 El administrativo puede activar y desactivar el calendario. **Desactivarlo conserva las copias y el historial**, cancela los programados todavía pendientes y mantiene disponible **Crear respaldo ahora**. Una copia que ya comenzó puede terminar; no se trunca su archivo. Al reactivar se espera el siguiente horario futuro, sin recuperar horarios perdidos durante la pausa.
 
@@ -41,7 +41,7 @@ rem Windows, Docker Desktop en modo contenedores Linux
 iniciar.bat
 ```
 
-Los scripts crean el directorio si falta y construyen el servicio `backup`. El worker espera a que el backend esté saludable y haya aplicado sus migraciones. Si ejecutas `docker compose` directamente, crea primero la carpeta indicada: el montaje usa `create_host_path: false` para no crear silenciosamente una ruta equivocada.
+Los scripts crean el directorio si falta y construyen el servicio `backup`. No corrigen propietario ni permisos de una carpeta existente, ni sustituyen la comprobación de escritura del worker. El worker espera a que el backend esté saludable y haya aplicado sus migraciones. Si ejecutas `docker compose` directamente, crea primero la carpeta indicada: el montaje usa `create_host_path: false` para no crear silenciosamente una ruta equivocada.
 
 Para revisar el servicio:
 
@@ -50,7 +50,7 @@ docker compose ps backup
 docker compose logs --tail=100 backup
 ```
 
-En Linux ante falta de permisos del daemon, utiliza `sudo` según tu instalación habitual. El contenedor debe quedar saludable incluso con el calendario desactivado: permanece esperando. No publica puertos. PostgreSQL conserva sus puertos y contraseña configurables como antes.
+En Linux ante falta de permisos del daemon, utiliza `sudo` según tu instalación habitual. Con conexión a la base y destino escribible, el contenedor queda saludable incluso con el calendario desactivado: permanece esperando. El worker y PostgreSQL no publican puertos en Compose ordinario; el override de desarrollo publica sólo PostgreSQL en `127.0.0.1:DB_PORT` y SMTP si se selecciona. `backup` comparte la red `default` del proyecto.
 
 `iniciar-dev.sh` mantiene su flujo nativo y no arranca este worker automáticamente: la programación descrita aquí corresponde a la instalación completa con Compose. Los scripts manuales `respaldar.sh` y `respaldar.bat` siguen disponibles.
 
@@ -59,7 +59,7 @@ En Linux ante falta de permisos del daemon, utiliza `sudo` según tu instalació
 1. Inicia sesión como administrativo y abre **Respaldos**.
 2. Comprueba que el destino mostrado sea correcto y que el servicio esté conectado y pueda escribir.
 3. Configura **hora diaria**, **zona horaria IANA**, **retención en días** y **mínimo de copias automáticas**. Valores iniciales: `03:00`, `America/Mexico_City`, 30 días y 7 copias.
-4. Marca la confirmación del destino privado y pulsa **Guardar configuración**. Esto conserva el calendario desactivado.
+4. Marca la confirmación del destino privado y pulsa **Guardar configuración**. Si estaba desactivado, sigue desactivado; guardar conserva el estado actual y no es el botón de activación.
 5. Opcionalmente pulsa **Crear respaldo ahora** y verifica que llegue a **Completado**.
 6. Para programar los siguientes, pulsa **Activar respaldos automáticos**.
 
