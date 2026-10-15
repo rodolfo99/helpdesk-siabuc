@@ -1,10 +1,10 @@
-# Correo y notificaciones · versión 1.3.3
+# Correo y notificaciones · 1.8.3
 
-El sistema conserva notificaciones y las envía mediante el SMTP seleccionado. En 1.8.2, las instalaciones nuevas tienen `MAIL_ENABLED=false` y Gmail directo preseleccionado, sin secretos. `./configurar.sh --gmail-directo` configura la cuenta autorizada. Si una instalación anterior conserva `SMTP_HOST=smtp`, los scripts mantienen el servicio Postfix opcional. Ninguna configuración garantiza que Google acepte los mensajes hasta probar el envío.
+El sistema conserva notificaciones y las envía mediante el SMTP seleccionado. Desde 1.8.2, las instalaciones nuevas tienen `MAIL_ENABLED=false` y Gmail directo preseleccionado, sin secretos ni remitente. `./configurar.sh --gmail-directo` configura la cuenta autorizada sin probar autenticación ni enviar mensajes. Si una instalación anterior conserva `SMTP_HOST=smtp`, los scripts mantienen Postfix opcional; en 1.8.3 comparte la red `default` del proyecto. Ninguna configuración por sí sola acredita entrega externa.
 
 ## Conectar Spring directamente a otro SMTP
 
-Este apartado es la alternativa al Postfix integrado. Desde la carpeta del proyecto:
+Para un SMTP directo con parámetros propios, desde la carpeta del proyecto:
 
 ```bash
 ./configurar.sh --correo
@@ -16,14 +16,14 @@ No se realiza una conexión SMTP ni se envía correo durante el asistente. Reini
 
 | Variable | Predeterminado | Uso |
 | --- | --- | --- |
-| `MAIL_ENABLED` | `false` (instalación nueva 1.8.2) | Habilita correo en el servidor; la pausa administrativa también debe estar desactivada. |
+| `MAIL_ENABLED` | `false` (instalación nueva) | Habilita correo en el servidor; la pausa administrativa también debe estar desactivada. |
 | `SMTP_HOST` | `smtp.gmail.com` (nuevo) o `smtp` (heredado) | Nombre SMTP o IPv4, sin `smtp://` ni puerto. |
 | `SMTP_PORT` | `587` (nuevo) o `25` (heredado) | Puerto del servidor SMTP. |
 | `SMTP_SECURITY` | `STARTTLS` (Gmail directo) | `STARTTLS`, `SSL` o `NONE`. |
 | `SMTP_AUTH` | `true` (Gmail directo) | Si exige usuario y contraseña. |
 | `SMTP_USERNAME` | Vacío | Usuario autorizado por el servidor. |
 | `SMTP_PASSWORD` | Vacío | Contraseña SMTP o contraseña de aplicación. |
-| `MAIL_FROM` | `soporte@[127.0.0.1]` | Remitente literal inicial; el asistente propone `soporte@[IP local]`. Para un proveedor externo, debe admitir esa dirección. |
+| `MAIL_FROM` | Vacío (instalación nueva) | Gmail directo establece la cuenta autenticada. El asistente Postfix propone `soporte@[IP local]` cuando no existe un remitente personalizado; el receptor debe admitirlo. |
 | `MAIL_FROM_NAME` | `Soporte SIABUC` (instalación nueva) | Nombre visible, hasta 200 caracteres. |
 | `MAIL_REPLY_TO` | Vacío | Dirección individual para recibir respuestas, opcional. |
 | `MAIL_POLL_MS` | `15000` | Intervalo de revisión de cola; 1000–3600000 ms. |
@@ -93,7 +93,7 @@ Use una **instalación y base de pruebas separadas**. Mailpit captura mensajes l
 3. Reinicie la aplicación. En cuentas existentes establezca el correo desde **Usuarios**. Registre una institución de prueba con `cliente@example.test` y asígnele un administrador con correo.
 4. Abra **Notificaciones** y solicite una prueba. Sólo se encola para el correo de la cuenta administrativa que la solicita. Cree o actualice un caso para probar avisos al cliente y responsable.
 5. Abra **http://127.0.0.1:8025**, o su `MAILPIT_UI_PORT`. Espere el intervalo de cola y compruebe contenido y destinatario de cada mensaje.
-6. Agregue una nota interna: el mensaje sólo debe dirigirse al responsable administrativo, sin una copia institucional. Pruebe también cierre de caso, pago y anulación.
+6. Agregue una nota interna: el mensaje sólo debe dirigirse al responsable de soporte (`ADMIN` o `TECH`), sin una copia institucional. Pruebe también los cinco estados de caso, pago y anulación.
 
 Los puertos Mailpit se publican únicamente en `127.0.0.1`, incluso si `BIND_HOST=0.0.0.0`. El volumen `mailpit_data` conserva los mensajes de prueba al detener contenedores. `./detener.sh` detiene también este perfil y conserva los volúmenes. No transporte esos datos de ensayo a producción.
 
@@ -101,8 +101,8 @@ El perfil usa la imagen `axllent/mailpit:v1.27.4`; [Mailpit documenta sus imáge
 
 ## Destinatarios y consulta administrativa
 
-- Un evento público de caso genera notificaciones individuales para `institución.email` y para el correo del administrador asignado.
-- Una nota interna sólo se dirige al administrador asignado.
+- Un evento público de caso genera notificaciones individuales para `institución.email` y para el correo del responsable asignado (`ADMIN` o `TECH`).
+- Una nota interna sólo se dirige al responsable de soporte asignado.
 - Un pago o su anulación avisa a la institución y al autor original del pago (`ADMIN` o `BILLING`), aunque otro administrador efectúe la anulación.
 - En eventos públicos, cuando las direcciones coinciden, se evita duplicar destinatario dentro del evento. Si el correo del responsable coincide con el institucional, un evento interno queda `SKIPPED` para evitar divulgar notas privadas; se deben separar las direcciones antes de reintentarlo.
 - Si falta correo o responsable, se conserva el registro `SKIPPED` y su explicación. No se inventan destinatarios.
@@ -115,10 +115,10 @@ Las direcciones se guardan al crear cada evento. Cambiar después el correo de u
 
 Desde 1.3.3, en **Historial de notificaciones** un administrador puede abrir cada fila con un clic o con **Ver detalle**, leer el correo completo y sus datos de entrega, y usar **← Volver al historial** para recuperar filtros y posición. Abrir el detalle sólo consulta el registro: no envía ni reintenta. Los usuarios institucionales consultan las entradas públicas en el historial de sus propios casos; no acceden a esta cola administrativa.
 
-Desde 1.3.2 cada aviso de apertura, actualización, atención/comentario, anulación y cambio de estado incluye lo siguiente; los avisos de **Caso tomado** añadidos en 1.3.3 usan el mismo formato:
+El formato detallado se incorporó en 1.3.2 y los avisos de **Caso tomado** en 1.3.3. En 1.8.3, cada aviso de apertura, actualización, atención/comentario, anulación, toma y cambio de estado incluye:
 
 - Número y título del caso, institución cliente y nombre del administrativo asignado que atiende.
-- Estado **Abierto** o **Cerrado**, canal principal y usuario que registró el evento. El responsable asignado puede ser distinto de quien registró la actualización.
+- Estado **Recibido**, **En atención**, **Requiere respuesta del cliente**, **Resuelto** o **Cerrado**, canal principal y usuario que registró el evento. El responsable asignado puede ser distinto de quien registró la actualización.
 - **Descripción actual del caso**, tomada de la ficha en el momento del evento, y **Detalle de la actualización**, con el comentario, atención o motivo correspondiente.
 - La leyenda **«Para mayor información, consulte la plataforma Helpdesk.»**
 
@@ -147,6 +147,8 @@ Para mayor información, consulte la plataforma Helpdesk.
 
 Los datos del cuerpo quedan guardados con el evento: una edición posterior no reescribe avisos anteriores ni sus reintentos. Si no hay responsable, se indica «Sin administrativo asignado»; si la cuenta asignada ya está desactivada al registrar el evento, se conserva su nombre pero el nuevo aviso para esa cuenta queda omitido. Los avisos encolados antes de desactivar una cuenta mantienen su destinatario original. Las notas internas y sus anulaciones mantienen su visibilidad exclusiva para personal autorizado. Los avisos de pagos conservan su formato financiero, sin un estado de caso que no les corresponde.
 
+Al tomar un caso Recibido pasa a En atención y se genera un único aviso de **Caso tomado**. Una respuesta pública del cliente en Requiere respuesta del cliente vuelve a En atención; su aviso de comentario refleja ese estado. Los avisos históricos conservan el texto con que se crearon, incluido «Abierto» cuando corresponda a versiones anteriores.
+
 ## Cola, fallos y entrega
 
 Los estados son `PENDING`, `SENDING`, `SENT`, `FAILED`, `SKIPPED` y `SUPPRESSED`. Guardar un caso, consumo o pago y crear su notificación se realiza en la misma transacción; una caída de SMTP no deshace una atención ni una acreditación. El envío se ejecuta fuera de esa transacción, con reintentos limitados y recuperación de bloqueos vencidos tras una caída.
@@ -157,7 +159,7 @@ Con `MAIL_ENABLED=false` la cola queda conservada y no se procesa. Al activar co
 
 ## Remitente y diagnóstico
 
-La configuración predeterminada utiliza IP local, por ejemplo `soporte@[192.168.1.50]`, y depende de que el receptor admita esa identidad. No crea un buzón ni un dominio público autenticado. Si configura alternativamente un dominio público para entregar mediante un proveedor externo, su administrador debe aplicar SPF, DKIM y DMARC según las políticas de ese servicio. Estas políticas se establecen en DNS/servidor de correo, no dentro del helpdesk. Google describe su papel en las [directrices oficiales para remitentes](https://support.google.com/mail/answer/81126?hl=es).
+La instalación nueva deja `MAIL_FROM` vacío y el correo desactivado. El asistente Gmail directo usa la cuenta autenticada como remitente. El asistente Postfix puede proponer una IP local, por ejemplo `soporte@[192.168.1.50]`, que depende de la aceptación del receptor y no crea un buzón ni un dominio público autenticado. Si usa un dominio público mediante un proveedor externo, su administrador debe aplicar SPF, DKIM y DMARC según las políticas de ese servicio. Estas políticas se establecen en DNS/servidor de correo, no dentro del helpdesk. Google describe su papel en las [directrices oficiales para remitentes](https://support.google.com/mail/answer/81126?hl=es).
 
 | Problema | Revisar |
 | --- | --- |
@@ -175,8 +177,10 @@ La configuración de correo y los secretos se conservan en `.env`/entorno. La co
 
 Desde 1.3.1 el control administrativo de [desactivación de correo](DESACTIVAR-CORREO.md) marca SUPPRESSED los avisos recuperables anteriores y los generados durante la pausa. Al reactivar sólo se envían eventos nuevos. Se conserva historial, no se permite reintentar SUPPRESSED y pruebas/reintentos están bloqueados mientras se pausa. Esto es distinto de MAIL_ENABLED=false por sí solo, que conserva la cola para un envío posterior.
 
-## Novedad 1.8.2: Gmail sin Postfix
+## Gmail directo y compatibilidad con Postfix
 
 Ejecute `./configurar.sh --gmail-directo` en Linux o `configurar.bat --gmail-directo` en Windows para introducir la cuenta y una nueva contraseña de aplicación por entrada oculta. El cambio no comprueba autenticación ni envía correo y conserva las opciones `SMTP_RELAY_*` antiguas solo como datos de configuración inactivos. Spring Boot enviará directamente a `smtp.gmail.com:587` mediante STARTTLS. La cuenta Workspace debe permitir SMTP con contraseña de aplicación. No publique el archivo `.env`.
 
 Antes de pasar de `SMTP_HOST=smtp` a Gmail directo inspeccione y resuelva la cola Postfix; el volumen `smtp_queue` permanece intacto aunque el servicio deje de iniciarse por defecto. Consulte [migración 1.8.2](VERSION-1.8.2.md).
+
+El comando heredado `configurar-gmail.sh`/`.bat` configura **Gmail mediante Postfix**, comprueba autenticación desde el anfitrión y puede recrear contenedores y reintentar su cola. No es equivalente a `configurar.sh --gmail-directo`; consulte [GMAIL-UCOL.md](GMAIL-UCOL.md). Para operar Postfix con Compose directamente use `--profile local-smtp`. La variable anterior `SMTP_NETWORK_SUBNET` ya no configura nada y se ignora si permanece en `.env`.

@@ -59,7 +59,6 @@ DEFAULTS = {
     "SMTP_INTERNAL_PORT": "2525",
     "SMTP_HOSTNAME": "mail.siabuc.internal",
     "SMTP_LOCAL_IP": "127.0.0.1",
-    "SMTP_NETWORK_SUBNET": "172.30.55.0/24",
     "SMTP_RELAY_HOST": "",
     "SMTP_RELAY_PORT": "587",
     "SMTP_RELAY_SECURITY": "STARTTLS",
@@ -76,7 +75,9 @@ FRESH_DEFAULTS = {
     "MAIL_FROM": "",
     "MAIL_FROM_NAME": "Soporte SIABUC",
 }
-ALLOWED_KEYS = set(DEFAULTS) | {"DB_PASSWORD", "ADMIN_PASSWORD"}
+# Accept obsolete keys in existing .env files without applying or rewriting them.
+LEGACY_IGNORED_KEYS = {"SMTP_NETWORK_SUBNET"}
+ALLOWED_KEYS = set(DEFAULTS) | {"DB_PASSWORD", "ADMIN_PASSWORD"} | LEGACY_IGNORED_KEYS
 ENV_VALUE_PATTERN = r"[A-Za-z0-9_./:@%+=,!\-]+"
 
 
@@ -156,13 +157,6 @@ def validate_smtp_server(values: dict[str, str]) -> None:
             re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?", label) for label in labels)
     if not valid_hostname(hostname, fully_qualified=True):
         fail("SMTP_HOSTNAME debe ser un nombre técnico completo, por ejemplo mail.siabuc.internal, independiente de la IP remitente.")
-    try:
-        subnet = ipaddress.ip_network(values["SMTP_NETWORK_SUBNET"], strict=True)
-    except ValueError:
-        fail("SMTP_NETWORK_SUBNET debe ser una subred IPv4 privada en notación CIDR.")
-    private_ranges = [ipaddress.ip_network(block) for block in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16")]
-    if subnet.version != 4 or not 24 <= subnet.prefixlen <= 28 or not any(subnet.subnet_of(block) for block in private_ranges):
-        fail("SMTP_NETWORK_SUBNET debe ser IPv4 privada RFC1918, con prefijo /24 a /28; nunca 0.0.0.0/0.")
     host = values["SMTP_RELAY_HOST"]
     if host and not valid_hostname(host):
         fail("SMTP_RELAY_HOST debe ser un servidor o IPv4 sin protocolo ni puerto.")
@@ -240,6 +234,8 @@ def config(create: bool = False, prompt_db_password: bool = False, prompt_mail: 
         if key in seen:
             fail(f".env: variable duplicada: {key}.")
         seen.add(key)
+        if key in LEGACY_IGNORED_KEYS:
+            continue
         values[key] = value
     for key in ("DB_PASSWORD", "ADMIN_PASSWORD"):
         if key == "DB_PASSWORD" and prompt_db_password:
@@ -481,7 +477,7 @@ def set_internal_smtp_configuration(values: dict[str, str]) -> dict[str, str]:
     validate_mail(updated)
     validate_smtp_server(updated)
     keys = [key for key in DEFAULTS if key.startswith("SMTP_RELAY_")]
-    keys.extend(["SMTP_HOSTNAME", "SMTP_LOCAL_IP", "SMTP_NETWORK_SUBNET", "SMTP_INTERNAL_PORT", "MAIL_ENABLED", "SMTP_HOST",
+    keys.extend(["SMTP_HOSTNAME", "SMTP_LOCAL_IP", "SMTP_INTERNAL_PORT", "MAIL_ENABLED", "SMTP_HOST",
                  "SMTP_PORT", "SMTP_AUTH", "SMTP_SECURITY", "SMTP_USERNAME", "SMTP_PASSWORD", "MAIL_FROM"])
     save_config_values({key: updated[key] for key in keys}, original)
     print("SMTP interno configurado en .env (600). Reinicie con ./iniciar.sh para aplicarlo.")
@@ -595,7 +591,7 @@ def build_native() -> None:
     run(["mvn", "-B", "-ntp", "package"], cwd=ROOT / "backend")
     run(["npm", "ci"], cwd=ROOT / "frontend")
     run(["npm", "run", "build"], cwd=ROOT / "frontend")
-    print("Compilación terminada: backend/target/siabuc-helpdesk-1.8.2.jar y frontend/dist/helpdesk/browser/.")
+    print("Compilación terminada: backend/target/siabuc-helpdesk-1.8.3.jar y frontend/dist/helpdesk/browser/.")
 
 
 def wait_http(url: str, process: subprocess.Popen, log_path: Path, timeout: int = 180) -> None:
@@ -654,7 +650,7 @@ def development(values: dict[str, str]) -> None:
     previous_sigterm = signal.signal(signal.SIGTERM, interrupted)
     try:
         commands = [
-            (["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.8.2.jar")],
+            (["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.8.3.jar")],
              ROOT / "backend", RUNTIME / "backend.log", f"http://127.0.0.1:{values['SERVER_PORT']}/api/health"),
             (["npm", "start", "--", "--host", "127.0.0.1", "--port", values["FRONTEND_PORT"]],
              ROOT / "frontend", RUNTIME / "frontend.log", f"http://127.0.0.1:{values['FRONTEND_PORT']}/"),

@@ -1,8 +1,12 @@
 # Actualizar de 1.0 a 1.1
 
+> **Documento histórico — migración de 1.0 a 1.1 y notas posteriores de 1.3.** Se conservan el alcance, los procedimientos y los resultados de esa entrega. Las referencias a la versión «actual», a la «última» evidencia y a funciones o fallos pendientes corresponden a ese momento; no describen el estado de 1.8.3.
+>
+> Para uso e instalación vigentes, consulte el [manual detallado 1.8.3](MANUAL-EXTENDIDO-1.8.3.md), el [índice de documentación](README.md) y las [notas de 1.8.3](VERSION-1.8.3.md).
+
 La versión 1.1 añade cobranza, acreditación por pagos, asignación de responsables y notificaciones SMTP. Conserva instituciones, usuarios, casos, saldos, historiales y auditoría existentes. **No cambie ni elimine `V1__initial_schema.sql`**: Flyway aplica las nuevas migraciones V2 y V3 al iniciar el servidor actualizado.
 
-**Entrega actual 1.3:** también puede actualizar directamente de 1.0 a 1.3 con este procedimiento. El JAR generado será `siabuc-helpdesk-1.6.0.jar`; V1, V2 y V3 no cambian. Para pasar de 1.1 a 1.2 no hay migración adicional. La integración del nuevo Postfix y su remitente con IP se explica en [SMTP-INTERNO.md](SMTP-INTERNO.md#actualizar-una-instalación-anterior). Las referencias a 1.1 de esta guía describen la incorporación original del esquema.
+**Corrección documental en 1.8.3:** este apartado contenía una referencia inconsistente a «Entrega actual 1.3» junto con el JAR `siabuc-helpdesk-1.6.0.jar`. Esa combinación no identifica una entrega válida y no debe utilizarse para seleccionar código, JAR o migraciones. Esta guía conserva la incorporación original del esquema 1.1; para actualizar una instalación consulte el [manual vigente de 1.8.3](MANUAL-EXTENDIDO-1.8.3.md) y sus [notas de versión](VERSION-1.8.3.md).
 
 ## Procedimiento con Docker
 

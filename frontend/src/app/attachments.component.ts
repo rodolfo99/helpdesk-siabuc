@@ -1,3 +1,4 @@
+import { CaseStatus, isActiveCase } from './case-status';
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, Output, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
@@ -25,7 +26,7 @@ interface Attachment {
         </li>}
       </ul>
     }
-    @if(caseStatus === 'OPEN'){
+    @if(isActiveCase(caseStatus)){
       <form class="file-upload" (submit)="upload($event,fileInput)">
         <label>Agregar archivo<input #fileInput type="file" accept=".png,.jpg,.jpeg,.pdf,.txt,.log,.csv,.json" [disabled]="busy()" (change)="selectFile($event)"></label>
         <p class="muted file-help">Capturas PNG/JPG, PDF y diagnósticos TXT, LOG, CSV o JSON en UTF-8. Máximo 10 MiB por archivo; 100 archivos o 100 MiB por caso. Revisa que no contenga contraseñas ni información ajena al caso. Los archivos de una nota interna conservan esa privacidad.</p>
@@ -39,7 +40,8 @@ interface Attachment {
 export class AttachmentsComponent extends PageState implements OnChanges {
   @Input({required:true}) caseId!:number;
   @Input() entryId:number|null=null;
-  @Input() caseStatus:'OPEN'|'CLOSED'='OPEN';
+  readonly isActiveCase=isActiveCase;
+  @Input() caseStatus:CaseStatus='OPEN';
   @Output() updated = new EventEmitter<void>();
   private readonly http=inject(HttpClient);
   readonly files=signal<Attachment[]>([]);
@@ -63,7 +65,7 @@ export class AttachmentsComponent extends PageState implements OnChanges {
     }
   }
   upload(event:Event,input:HTMLInputElement){
-    event.preventDefault();if(!this.selectedFile || this.caseStatus!=='OPEN')return;
+    event.preventDefault();if(!this.selectedFile || !isActiveCase(this.caseStatus))return;
     const file=this.selectedFile;const path=this.path();const token=this.loadToken;
     const form=new FormData();form.append('file',file,file.name);form.append('requestId',this.requestId);
     void this.perform(async()=>{

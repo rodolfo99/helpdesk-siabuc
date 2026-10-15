@@ -232,7 +232,7 @@ try {
     await openCase();const solutions=page.getByRole('region',{name:'Soluciones de la base de conocimientos',exact:true});
     await solutions.getByLabel('Buscar artículo publicado',{exact:true}).fill(articleTitle);await solutions.getByRole('button',{name:'Buscar soluciones',exact:true}).click();
     const linked=await mutate('POST','/cases/'+caseId+'/knowledge-links',()=>solutions.getByRole('button',{name:'Vincular solución',exact:true}).click());assert.equal((await linked.json())[0].article.id,articleId);await assertBalances(60,30);
-    await page.getByRole('button',{name:'Cerrar caso',exact:true}).click();await page.getByLabel('Motivo',{exact:true}).fill('Solución documentada y caso terminado para evaluar la atención.');
+    await page.getByRole('button',{name:'Cambiar estado',exact:true}).click();await page.locator('[name=statusTarget]').selectOption('CLOSED');await page.getByLabel('Motivo',{exact:true}).fill('Solución documentada y caso terminado para evaluar la atención.');
     const closed=await mutate('POST','/cases/'+caseId+'/status',()=>page.getByRole('button',{name:'Confirmar cambio',exact:true}).click());assert.equal((await closed.json()).status,'CLOSED');
     assert.equal((await api('/satisfaction/cases/'+caseId,'POST',{requestId:randomUUID(),score:5,comment:'Administración no sustituye al cliente.'})).status,403);await snapshot('05-caso-cerrado-solucion');
     await logout();await login(clientUsername,password,'USER');

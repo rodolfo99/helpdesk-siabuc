@@ -1,5 +1,43 @@
 # Pruebas del sistema en navegador
 
+## Flujo de casos 1.8.3 validado en CI
+
+`case-workflow-v183.ui.mjs` ejecuta cuatro escenarios sobre Angular compilado
+con API simulada: cinco etiquetas y filtros/vistas, cambio de estado con motivo
+y reapertura, respuesta del cliente en espera sin controles administrativos, y
+pantalla móvil de 390 px. No requiere una cuenta real ni crea datos en PostgreSQL.
+
+Desde la raíz del proyecto:
+
+```bash
+cd frontend
+npm ci
+npm test
+npm run build
+cd ../tests/e2e
+npm ci
+npx playwright install chromium
+node case-workflow-v183.ui.mjs
+```
+
+Admite `E2E_PLAYWRIGHT_PATH`, `E2E_CHROMIUM_PATH` y `E2E_CHROMIUM_ARGS`.
+El [registro 1.8.3](../../docs/VALIDACION-1.8.3.md) identifica el SHA, ejecución
+y resultado. Estas cuatro pruebas visuales no sustituyen los permisos,
+transacciones y migraciones que comprueba Java con PostgreSQL 17.
+
+## Herramientas de regresión de versiones anteriores
+
+Los apartados siguientes describen suites originadas en versiones previas y
+su alcance individual. Se conservan como herramientas auxiliares; la presencia
+de un comando o una cifra de escenarios no afirma que esa suite se haya ejecutado
+contra el head actual. Compruebe su compatibilidad con la interfaz elegida y
+consulte [Validación](../../docs/VALIDACION.md) para la evidencia por revisión.
+En 1.8.3 se adaptaron los selectores de estado de `helpdesk.e2e.mjs`,
+`workflows-v16.e2e.mjs` y `workflows-v17.e2e.mjs`; la ejecución completa de esas
+tres suites sobre 1.8.3 no se atribuye a los cuatro escenarios simulados anteriores.
+
+### Recorrido general con servidor real
+
 La suite ejecuta **13 verificaciones secuenciales** de Angular, Spring y la base de datos. No intercepta ni simula las respuestas de la aplicación. Comprueba acceso con sesión, CRUD institucional con baja lógica, alta de usuario, conversión de horas a minutos, historial, notas internas, consumos independientes, corrección de consumos, cierre/reapertura, sobregiro, permisos y diseño adaptable. La preparación de la segunda institución y las comprobaciones de seguridad utilizan la API real desde la misma sesión del navegador.
 
 **Se requiere una base de datos desechable de pruebas, separada de producción:** la suite crea instituciones, usuarios, casos e historial de auditoría y conserva esos registros al terminar. Cada ejecución usa nombres únicos; termina dando de baja la institución principal. No modifica el usuario administrativo suministrado. No elimina registros históricos ni restablece la base de datos automáticamente.
@@ -177,7 +215,7 @@ Los comprobantes se adjuntan y descargan tanto en pagos vigentes como anulados. 
 
 ## Flujos 1.6 con interfaz y servidor reales
 
-`workflows-v16.e2e.mjs` requiere la versión 1.6, una base desechable nueva con todas sus migraciones y correo de arranque desactivado (`MAIL_ENABLED=false`). Usa Angular, sesiones, cookies, CSRF, Spring y persistencia reales: no intercepta `/api` ni simula respuestas. Crea cuentas e instituciones propias y conserva sus registros para diagnóstico.
+`workflows-v16.e2e.mjs` nació en 1.6; su selector de estados actual requiere la interfaz 1.8.3 y una base desechable nueva con todas sus migraciones y correo de arranque desactivado (`MAIL_ENABLED=false`). Usa Angular, sesiones, cookies, CSRF, Spring y persistencia reales: no intercepta `/api` ni simula respuestas. Crea cuentas e instituciones propias y conserva sus registros para diagnóstico.
 
 Utiliza la misma instalación de Playwright y variables de la sección «Pólizas, cobranza y soporte 1.5 con servidor real». Cambia únicamente el comando por:
 
@@ -229,7 +267,7 @@ Las cuatro suites previas (`helpdesk-v14.ui.mjs`, `billing-v15.ui.mjs`, `history
 - CSV UTF-8 con BOM, vista previa, importación, confirmación de conciliación y reapertura de importación repetida sin duplicados.
 - Estado de cuenta emitido por Cobranza y por cliente autorizado, PDF descargable y denegación de acceso cruzado; capturas en escritorio y a 390 píxeles.
 
-Ejecutar contra una instalación de pruebas nueva de 1.7, con `MAIL_ENABLED=false` y respaldos automáticos desactivados. Usa las variables de navegador y credenciales descritas arriba:
+El recorrido nació en 1.7; el script actual, adaptado al selector de cinco estados, debe apuntar a una instalación de pruebas nueva de 1.8.3, con `MAIL_ENABLED=false` y respaldos automáticos desactivados. Usa las variables de navegador y credenciales descritas arriba:
 
 ```bash
 export E2E_DISPOSABLE_DATABASE=true

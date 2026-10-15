@@ -1,8 +1,9 @@
+import { CaseStatus } from './case-status';
 export type IncidentStatus='OPEN'|'IN_PROGRESS'|'RESOLVED';
 export interface Incident {id:number;title:string;description:string;status:IncidentStatus;revision:number;publicTitle:string;publicSummary:string;publicStatus:IncidentStatus|null;published:boolean;publishedAt:string|null;createdAt:string;updatedAt:string;}
 export interface IncidentSummary {id:number;title:string;status:IncidentStatus;revision:number;published:boolean;updatedAt:string;}
 export interface IncidentPage {items:IncidentSummary[];total:number;page:number;pageSize:number;}
-export interface IncidentCase {id:number;institutionId:number;institutionName:string;title:string;status:'OPEN'|'CLOSED';}
+export interface IncidentCase {id:number;institutionId:number;institutionName:string;title:string;status:CaseStatus;}
 export interface IncidentHistory {id:number;action:string;revision:number;title:string;description:string;status:IncidentStatus;publicTitle:string;publicSummary:string;publicStatus:IncidentStatus|null;published:boolean;note:string;caseId:number|null;actor:string;createdAt:string;}
 export interface IncidentDetail {incident:Incident;cases:IncidentCase[];history:IncidentHistory[];}
 export interface StaffIncidentLink {incidentId:number;title:string;status:IncidentStatus;published:boolean;linkedAt:string;}

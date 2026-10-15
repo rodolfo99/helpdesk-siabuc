@@ -1,6 +1,6 @@
-# Instalación, compilación y operación
+# Instalación, compilación y operación · 1.8.3
 
-En Linux se usan los scripts Bash `.sh`. En Windows se usan los `.bat` desde CMD o PowerShell con Docker Desktop y contenedores Linux; consulte [WINDOWS.md](WINDOWS.md). El modo de desarrollo con Java y Node fuera de contenedores se ejecuta en Linux o dentro de WSL2. El desarrollo nativo requiere JDK 17+, Maven 3.9, Node.js 24 LTS y npm; el despliegue Docker instala esas herramientas dentro de sus imágenes y sólo requiere Docker Compose y Python 3.10+ en el anfitrión.
+En Linux se usan los scripts Bash `.sh`. En Windows se usan los `.bat` desde CMD o PowerShell con Docker Desktop y contenedores Linux; consulte [WINDOWS.md](WINDOWS.md). El desarrollo nativo se ejecuta en Linux o dentro de WSL2. Utilice JDK 17, Maven 3.9 y Node.js 24 con su npm; los scripts comprueban Java 17 o posterior y Node 24 o posterior, mientras que las imágenes Docker fijan Java 17 y Node 24. El despliegue Docker sólo requiere Python 3.10+, el motor Docker y Docker Compose con soporte para `up --wait` en el anfitrión.
 
 ## Instalación y primer arranque
 
@@ -15,7 +15,9 @@ Para elegir la contraseña PostgreSQL antes del primer arranque, ejecute `./conf
 
 La cuenta administrativa se inicializa cuando no existe un administrador activo. Durante la operación normal siempre debe conservar al menos uno. No existe un usuario invitado ni una contraseña fija para la instalación. Las contraseñas de demostraciones o pruebas automatizadas no se usan en este flujo.
 
-La versión 1.1 añade SMTP, cobranza y responsables. Para una instalación 1.0 siga [MIGRACION-1.1.md](MIGRACION-1.1.md): conserve V1 y permita que Flyway aplique V2/V3, sin eliminar los datos. Un `.env` previo conserva su configuración; si no incluía variables de correo, sigue desactivado. La versión 1.2 agrega Postfix sin nuevas migraciones de tablas. Las instalaciones 1.8.2 nuevas preseleccionan Gmail directo con envío desactivado; las anteriores conservan su configuración y pueden elegir `./configurar.sh --smtp-interno`.
+Para actualizar a 1.8.3, conserve `.env`, el nombre del proyecto y los volúmenes, y cree primero un respaldo. Flyway aplica las migraciones pendientes hasta V26; V1–V25 se conservan. V26 añade los cinco estados de casos sin eliminar datos ni cambiar saldos. Consulte [VERSION-1.8.3.md](VERSION-1.8.3.md) para compatibilidad y retroceso. La [migración a 1.1](MIGRACION-1.1.md) se conserva como referencia histórica de V2/V3, no como lista completa de la versión actual.
+
+Una configuración nueva preselecciona Gmail directo con `MAIL_ENABLED=false`, sin usuario, contraseña ni remitente. Un `.env` anterior conserva su proveedor y activación; si no incluía correo, sigue desactivado. `./configurar.sh --gmail-directo` configura Gmail sin Postfix; no prueba autenticación ni envía mensajes. Al reactivar se respetará también la pausa administrativa guardada en PostgreSQL.
 
 Configure el Postfix integrado con `./configurar.sh --smtp-interno` según [SMTP-INTERNO.md](SMTP-INTERNO.md). Para conectar Spring directamente a otro servidor, use `./configurar.sh --correo`; el asistente solicita SMTP, autenticación y remitente, conserva el secreto fuera de logs y sólo guarda el archivo. Reinicie para aplicar. Para nombres o secretos con espacios, `$` o `#`, el archivo admite comillas simples literales; no admite apóstrofes internos, controles ni barra inversa al final. No ejecute `.env` con `source`. Los detalles de proveedores, límites OAuth y sumidero Mailpit están en [CORREO.md](CORREO.md).
 
@@ -55,7 +57,7 @@ npm run build
 npm test
 ```
 
-Artefactos: `backend/target/siabuc-helpdesk-1.8.2.jar` y `frontend/dist/helpdesk/browser/`. `npm ci` utiliza el archivo `package-lock.json` entregado. No sustituya `npm ci` por actualizaciones de dependencias durante una instalación reproducible.
+Artefactos: `backend/target/siabuc-helpdesk-1.8.3.jar` y `frontend/dist/helpdesk/browser/`. `npm ci` utiliza el archivo `package-lock.json` entregado. No sustituya `npm ci` por actualizaciones de dependencias durante una instalación reproducible.
 
 `mvn package` compila también las clases de prueba y ejecuta pruebas unitarias si existen. Los archivos `*IT.java` se ejecutan únicamente con el perfil `postgres-it`. Una compilación satisfactoria no significa por sí sola que se ejecutaron esas pruebas de integración.
 
@@ -110,7 +112,7 @@ from scripts.manage import ROOT, config
 env = os.environ.copy()
 env.update(config())
 env.update(DB_HOST="127.0.0.1", SERVER_ADDRESS="127.0.0.1")
-subprocess.run(["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.7.0.jar")], env=env, check=True)
+subprocess.run(["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.8.3.jar")], env=env, check=True)
 PY
 ```
 
@@ -181,7 +183,7 @@ Para restablecer una contraseña de usuario del helpdesk, utilice otra cuenta ad
 
 ## Respaldo
 
-Desde 1.6, el servicio Docker `backup` ofrece calendario, retención e historial, **desactivados por defecto**, también al actualizar. La sección **Respaldos** de Administración permite activarlo o desactivarlo expresamente. La carpeta se define con `BACKUP_DIRECTORY`; los scripts preparan ese destino. Consulte [Respaldos automáticos](RESPALDOS-AUTOMATICOS.md) para Linux/Windows, permisos y prueba de recuperación aislada. Los siguientes scripts manuales siguen funcionando con el calendario apagado.
+Desde 1.6, el servicio Docker `backup` ofrece calendario, retención e historial. El calendario comienza **desactivado** en una instalación nueva o al aplicar V16 por primera vez; las actualizaciones posteriores y las restauraciones conservan su configuración guardada. La sección **Respaldos** permite activarlo o desactivarlo expresamente. La carpeta se define con `BACKUP_DIRECTORY`; los scripts crean el destino si falta, sin corregir permisos de carpetas existentes. Consulte [Respaldos automáticos](RESPALDOS-AUTOMATICOS.md) para Linux/Windows, permisos y prueba de recuperación aislada. Los siguientes scripts manuales siguen funcionando con el calendario apagado.
 
 Consulte también la [guía completa de respaldo y restauración](RESPALDO-RESTAURACION.md), con los pasos en orden, parámetros, ejemplos y solución de errores.
 
@@ -244,7 +246,7 @@ Seguridad y compatibilidad: WEB_BIND_HOST controla solamente frontend. Si no se 
 
 Para HTTPS: coloque un proxy TLS con certificado válido delante de http://127.0.0.1:4200, incluyendo las rutas /api/. Mantenga WEB_BIND_HOST=127.0.0.1, redirija HTTP a HTTPS y establezca COOKIE_SECURE=true cuando todos los clientes utilicen HTTPS. La configuración Docker no proporciona certificados. No utilice HTTP LAN para contraseñas en redes no confiables.
 
-El modo ./iniciar-dev.sh inicia db y smtp con docker-compose.dev.yml, que publica PostgreSQL y SMTP exclusivamente en 127.0.0.1 para Java local. ./iniciar.sh --solo-bd publica solo db en 127.0.0.1 para mantenimiento. El despliegue ordinario no utiliza ese override. Para mantenimiento interno use docker compose exec db sin exponer su puerto. No utilice docker compose down -v.
+El modo `./iniciar-dev.sh` inicia `db` y, sólo si `SMTP_HOST=smtp`, `smtp` con `docker-compose.dev.yml`; ese override publica PostgreSQL y el SMTP seleccionado exclusivamente en `127.0.0.1` para Java local. Si el host es `mailpit`, inicia ese sumidero de pruebas. `./iniciar.sh --solo-bd` publica sólo `db` en `127.0.0.1` para mantenimiento. El despliegue ordinario no utiliza ese override. Para mantenimiento interno use `docker compose exec db` sin exponer su puerto. No utilice `docker compose down -v`.
 
 Valide puertos con docker compose ps y compruebe de forma autorizada el acceso remoto en una computadora distinta antes de declararlo probado. docker compose config expande secretos: no comparta su salida.
 
@@ -260,7 +262,7 @@ Valide puertos con docker compose ps y compruebe de forma autorizada el acceso r
 | Usuario bloqueado | Revise si la cuenta y su institución están activas. |
 | Error CSRF / 403 | Abra la aplicación desde su URL habitual, permita cookies y vuelva a iniciar sesión; evite mezclar dominios o puertos para el API. |
 | Cambiar una hora muestra saldo distinto al esperado | Los campos de institución son el total histórico asignado, no la recarga adicional ni el disponible. |
-| Un caso no admite atenciones | Compruebe que esté abierto, la institución activa y que el canal conserve saldo suficiente. |
+| Un caso no admite atenciones | Debe estar Recibido, En atención o Requiere respuesta del cliente; los casos Resueltos/Cerrados se reabren antes. La institución debe estar activa y el canal conservar saldo para registrar consumo. |
 | Datos aparentemente ausentes | Revise que `COMPOSE_PROJECT_NAME` y el volumen sean los de la instalación anterior. |
 | Migración Flyway falla después de editar SQL | Restaure el archivo de migración original. Añada una nueva migración versionada para futuros cambios. |
 | Restauración fallida | Spring, Angular y Postfix siguen detenidos si ya se inició `pg_restore`. Revise el mensaje y la compatibilidad de la copia; no reinicie hasta decidir si repetir o conservar la base anterior. |
@@ -269,8 +271,10 @@ Revise `docker compose logs --tail=100 backend` para el servidor Docker y `.runt
 
 ## SMTP integrado
 
-Consulte [SMTP-INTERNO.md](SMTP-INTERNO.md) para variables, relay, DNS y mantenimiento. `SMTP_INTERNAL_PORT` siempre se publica en `127.0.0.1`, incluso con `BIND_HOST=0.0.0.0`. El respaldo PostgreSQL no reemplaza el respaldo del volumen SMTP. La restauración detiene también Postfix; revise la cola antes de reiniciar.
+Consulte [SMTP-INTERNO.md](SMTP-INTERNO.md) para variables, relay, DNS y mantenimiento. Postfix es opcional y no publica puerto en Docker ordinario. El override de desarrollo publica `SMTP_INTERNAL_PORT` en `127.0.0.1`, incluso con `BIND_HOST=0.0.0.0`. El respaldo PostgreSQL no reemplaza el respaldo del volumen SMTP. La restauración detiene también Postfix; revise la cola antes de reiniciar.
 
-## Versión 1.8.2: SMTP directo sin Postfix obligatorio
+## Correo y red Docker en 1.8.3
 
 Configure `./configurar.sh --gmail-directo` y reinicie solamente después de revisar mensajes pendientes del antiguo Postfix, respaldar `.env` y validar las credenciales en su entorno. Si `.env` conserva `SMTP_HOST=smtp`, los scripts habilitan el perfil Docker `local-smtp` y mantienen Postfix en la instalación. Los nuevos archivos `.env` empiezan con correo desactivado y valores de Gmail, sin contraseñas. La configuración directa no envía una prueba automáticamente. Lea [VERSION-1.8.2.md](VERSION-1.8.2.md) antes de migrar.
+
+En 1.8.3 todos los servicios usan la red `default` del proyecto; se retiró la red SMTP dedicada y su subred fija. `SMTP_NETWORK_SUBNET`, si aparece en un `.env` heredado, se acepta y se ignora. Con comandos Compose directos use `--profile local-smtp` al operar Postfix; `SMTP_HOST=smtp` por sí solo no activa perfiles fuera de los scripts del proyecto.

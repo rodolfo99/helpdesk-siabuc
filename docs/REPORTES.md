@@ -1,12 +1,12 @@
-# Reportes de casos y consumo
+# Reportes de casos y consumo — 1.8.3
 
-Disponible desde la versión 1.4.0 en **Reportes**, para cuentas con rol **ADMIN**. El módulo permite consultar y descargar casos y atenciones por institución, administrativo, canal y periodo. Las cuentas cliente y de cobranza no pueden acceder a estos reportes ni a sus archivos. Cobranza conserva su acceso al historial de pagos.
+Disponible desde la versión 1.4.0 en **Reportes**, para cuentas con rol **ADMIN**. El módulo permite consultar y descargar casos y atenciones por institución, administrativo, canal y periodo. Las cuentas de Técnico, Cliente y Cobranza no pueden acceder a estos reportes ni a sus archivos. Cobranza conserva su acceso al historial de pagos.
 
 ## Consultar un reporte
 
-1. Inicia sesión como administrativo y abre **Reportes**.
+1. Inicia sesión como Administrador y abre **Reportes**.
 2. Selecciona una institución o **Todas las instituciones**. Las instituciones inactivas permanecen disponibles para consultar su historial.
-3. Selecciona un administrativo o **Todos los administrativos**. También aparecen administrativos inactivos.
+3. Selecciona un administrativo o **Todos los administrativos**. En 1.8.3 el selector de la interfaz ofrece cuentas `ADMIN`, también inactivas. El resultado sin filtro sí incluye casos y consumos de técnicos; para filtrar exclusivamente una cuenta `TECH`, la API admite su identificador en `administratorId`.
 4. Selecciona correo, escritorio remoto o ambos canales.
 5. Indica **Desde** y **Hasta**, incluyendo ambos días, y pulsa **Consultar reporte**.
 
@@ -14,7 +14,7 @@ Al entrar al módulo se consulta desde el primer día del mes hasta hoy, según 
 
 El resultado incluye:
 
-- Número de casos, abiertos y cerrados.
+- Número total de casos, **pendientes**, **resueltos** y **cerrados** por separado. Pendientes reúne Recibido, En atención y Requiere respuesta del cliente.
 - Minutos de correo y escritorio remoto; la pantalla muestra también su equivalencia en horas y minutos.
 - Atenciones vigentes y anuladas.
 - Consumo agrupado por institución, administrativo que registró la atención y canal.
@@ -31,7 +31,7 @@ Los casos y los consumos son conjuntos distintos. Un caso puede haberse abierto 
 | Institución | Institución propietaria del caso | Institución propietaria del caso atendido |
 | Administrativo | Responsable **actual** del caso | Autor que registró la atención |
 | Canal | Canal principal **actual** del caso | Canal al que se cargaron los minutos de la atención |
-| Estado | Estado **actual**: Abierto o Cerrado | Atención vigente o anulada |
+| Estado | Estado **actual**: Recibido, En atención, Requiere respuesta del cliente, Resuelto o Cerrado | Atención vigente o anulada |
 
 Por ejemplo, un caso creado en enero y atendido por correo en febrero aparecerá en los **consumos de febrero**, aunque no aparezca en los **casos creados en febrero**. Si luego se cambia de responsable, el filtro de casos usará al nuevo responsable; los minutos siguen atribuidos al autor de cada atención.
 
@@ -44,6 +44,8 @@ Solo las atenciones con minutos mayores que cero forman parte del listado de con
 Una atención anulada se conserva en el listado, junto con sus minutos originales y el motivo de anulación, pero **no suma** a los minutos consumidos, las atenciones vigentes ni el consumo agrupado. La anulación se evalúa conforme al estado actual de la atención; un reporte histórico puede cambiar si posteriormente se anula una atención incluida en él.
 
 Los administrativos pueden consultar las atenciones internas. Por ello, los archivos exportados son documentos administrativos: pueden contener información que no se muestra a las instituciones cliente. La API verifica el permiso ADMIN para el JSON, Excel y PDF; no basta con ocultar el botón en la interfaz.
+
+Los totales no cuentan un caso Resuelto como Cerrado. En la API, `openCases` conserva su nombre por compatibilidad y ahora cuenta los tres estados pendientes; `resolvedCases` y `closedCases` cuentan sus estados respectivos. Excel y PDF utilizan las etiquetas españolas de los cinco estados.
 
 Consultar o descargar un reporte no modifica saldos, casos, pagos ni atenciones. Los minutos de los reportes corresponden al consumo registrado; los plazos de primera respuesta y resolución se gestionan por separado.
 
@@ -117,5 +119,7 @@ GET /api/reports/support.pdf
 Los archivos usan encabezado `Content-Disposition: attachment`, tipos MIME correspondientes a XLSX o PDF y `Cache-Control: no-store`. El JSON también se marca `no-store`.
 
 La exportación utiliza [Apache POI 5.5.1](https://poi.apache.org/download.cgi) y [Apache PDFBox 3.0.7](https://pdfbox.apache.org/). Sus dependencias se resuelven al compilar el servidor con Maven. No requiere instalar Excel, LibreOffice ni un visor PDF en el servidor.
+
+El [manual detallado 1.8.3](MANUAL-EXTENDIDO-1.8.3.md) incluye ejemplos para interpretar estos resultados junto con los saldos institucionales.
 
 `ReportIntegrationIT` cubre permisos en los tres formatos, límites de fecha en Ciudad de México, consumo de casos anteriores, diferencias entre autor y responsable, exclusión de minutos anulados, rechazo de resultados excesivos, lectura del libro real con POI y lectura del PDF multipágina con PDFBox. La evidencia de ejecución del conjunto de pruebas se documenta en la validación de la versión.

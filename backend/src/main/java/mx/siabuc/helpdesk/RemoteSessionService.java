@@ -107,7 +107,7 @@ public class RemoteSessionService {
         return helpdesk.caseDetail(id);
     }
     private void requireOpen(CaseDetail c) {
-        if(c.status()!=CaseStatus.OPEN) throw ApiException.conflict("El caso está cerrado. Reábralo para programar o confirmar sesiones.");
+        if(!c.status().active()) throw ApiException.conflict("El caso está resuelto o cerrado. Reábralo para programar o confirmar sesiones.");
         if(!Boolean.TRUE.equals(db.queryForObject("SELECT active FROM institutions WHERE id=?",Boolean.class,c.institutionId()))) throw ApiException.conflict("La institución está dada de baja.");
     }
     private String clean(String value,int max,String label,boolean required) {

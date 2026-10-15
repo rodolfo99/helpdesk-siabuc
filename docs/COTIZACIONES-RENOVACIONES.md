@@ -1,6 +1,8 @@
-# Cotizaciones, renovaciones y vencimientos — versión 1.6
+# Cotizaciones, renovaciones y vencimientos — versión 1.8.3
 
-Los módulos **Cotizaciones** y **Renovaciones** están disponibles para Administración (`ADMIN`) y Cobranza (`BILLING`). Permiten documentar una oferta, registrar la respuesta del cliente y convertir lo aceptado en una póliza. Los usuarios de instituciones (`USER`) no pueden acceder a estos módulos, aunque tengan habilitado el portal financiero.
+Guía vigente de SIABUC Helpdesk 1.8.3. Consulte el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md) para el recorrido completo por rol.
+
+Los módulos **Cotizaciones** y **Renovaciones** están disponibles para Administración (`ADMIN`) y Cobranza (`BILLING`). Permiten documentar una oferta, registrar la respuesta del cliente y convertir lo aceptado en una póliza. El rol Técnico (`TECH`) y los usuarios de instituciones (`USER`) no pueden acceder a estos módulos, aunque el cliente tenga habilitado el portal financiero.
 
 **Crear una cotización, aceptarla, convertirla o renovar una póliza no acredita soporte ni registra dinero recibido.** La acreditación de minutos ocurre al registrar y validar el pago mediante los flujos de Cobranza. Los saldos institucionales existentes permanecen intactos durante una renovación.
 
@@ -8,7 +10,7 @@ Los módulos **Cotizaciones** y **Renovaciones** están disponibles para Adminis
 
 1. Entra en **Cotizaciones → Nueva cotización**.
 2. Selecciona la institución activa, un folio único y la descripción de las condiciones.
-3. Captura el importe en pesos mexicanos, el tiempo de correo y el tiempo remoto. El formulario admite horas y minutos; el servidor guarda minutos enteros. Debe haber tiempo en al menos un canal.
+3. Captura el importe en pesos mexicanos, el tiempo de correo y el tiempo remoto. También puedes seleccionar un [paquete y tarifa](PAQUETES-TARIFAS.md) activo: se copian las condiciones de su versión vigente y debes indicar **Motivo de ajuste al paquete** si cambias precio, descripción o minutos. El formulario admite horas y minutos; el servidor guarda minutos enteros. Debe haber tiempo en al menos un canal.
 4. Indica **Oferta válida hasta**, que es el límite para aceptar la oferta. Las fechas **Inicio de cobertura** y **Fin de cobertura** indican la vigencia propuesta de la póliza y son independientes del vencimiento de la oferta.
 5. Si corresponde a una renovación, selecciona la póliza anterior de esa misma institución. El formulario sugiere sus términos y el siguiente periodo anual; revísalos y corrígelos antes de guardar. El sistema permite fechas explícitas, sin imponer que los periodos no se superpongan.
 6. Guarda el borrador. Puedes editar sus condiciones, fechas, tiempo e importe mientras continúe en **Borrador**. La institución y la póliza anterior quedan fijadas al crearlo; si están equivocadas, crea otra cotización.
@@ -121,7 +123,7 @@ El cuerpo de creación y actualización de cotizaciones es:
 }
 ```
 
-Los ejemplos son ilustrativos: usa instituciones, fechas y folios reales. `previousPolicyId` puede omitirse o ser `null` para una oferta nueva. El servidor no acepta campos adicionales no reconocidos ni minutos fraccionarios. Los conflictos de estado, institución o reintento devuelven HTTP 409; una entrada inválida, 400; falta de permiso, 403; identificador inexistente, 404.
+Los ejemplos son ilustrativos: usa instituciones, fechas y folios reales. `previousPolicyId` puede omitirse o ser `null` para una oferta nueva. Para usar una tarifa del catálogo se añaden `packageVersionId` y, si se negocian términos distintos, `packageOverrideReason` (hasta 2000 caracteres). La versión se verifica en el servidor; el detalle devuelve `packageSnapshot` con las condiciones originales. Omitir la versión al editar conserva el vínculo previo; no elimina su procedencia. El servidor no acepta campos adicionales no reconocidos ni minutos fraccionarios. Los conflictos de estado, institución o reintento devuelven HTTP 409; una entrada inválida, 400; falta de permiso, 403; identificador inexistente, 404.
 
 Cada detalle de cotización incluye fechas de emisión y registro de la decisión, el contacto, las constancias, el administrativo y sus vínculos con pólizas. El historial descriptivo conserva los términos originales y los cambios al borrador. El historial de renovaciones devuelve además `newPolicyStatus`, para identificar la póliza sucesora cancelada.
 
@@ -142,4 +144,4 @@ cd backend
 mvn -Ppostgres-it -Dit.test=QuoteIntegrationIT,RenewalIntegrationIT verify
 ```
 
-No ejecutes esta suite apuntando a la base productiva: crea registros de prueba. La compilación y las pruebas de actualización de la versión se documentan en la validación general de 1.6; esta guía no afirma haber probado restauraciones Docker ni Windows.
+No ejecutes esta suite apuntando a la base productiva: crea registros de prueba. Consulte [Validación](VALIDACION.md) y las [notas de 1.8.3](VERSION-1.8.3.md) para los resultados realmente ejecutados. Los informes de versiones anteriores conservan su valor histórico; esta guía no afirma por sí sola que se hayan ejecutado restauraciones Docker ni Windows.

@@ -184,11 +184,17 @@ class OperationalConfigurationTests(unittest.TestCase):
         native = manage.native_environment(values)
         self.assertEqual((native["SMTP_HOST"], native["SMTP_PORT"]), ("relay.example.test", "465"))
 
-    def test_unsafe_networks_control_injection_and_conflicting_ports_are_rejected(self) -> None:
+    def test_legacy_smtp_subnet_is_ignored_without_rewriting_env(self) -> None:
+        for subnet in ("172.30.55.0/24", "0.0.0.0/0", "not-a-network"):
+            with self.subTest(subnet=subnet):
+                original = self.existing(SMTP_NETWORK_SUBNET=subnet)
+                self.assertNotIn("SMTP_NETWORK_SUBNET", manage.config())
+                self.assertEqual(self.env.read_text(), original)
+        self.assertNotIn("SMTP_NETWORK_SUBNET", manage.FRESH_DEFAULTS)
+
+    def test_control_injection_and_conflicting_ports_are_rejected(self) -> None:
         for overrides in (
-            {"SMTP_NETWORK_SUBNET": "0.0.0.0/0"}, {"SMTP_NETWORK_SUBNET": "10.0.0.0/8"},
-            {"SMTP_NETWORK_SUBNET": "8.8.8.0/24"}, {"SMTP_NETWORK_SUBNET": "10.20.30.1/24"},
-            {"SMTP_NETWORK_SUBNET": "fd00::/64"}, {"SMTP_INTERNAL_PORT": "5544"},
+            {"SMTP_INTERNAL_PORT": "5544"},
             {"SMTP_INTERNAL_PORT": "0"}, {"SMTP_RELAY_PORT": "65536"},
             {"SMTP_LOCAL_IP": "0.0.0.0"}, {"SMTP_LOCAL_IP": "224.1.2.3"}, {"SMTP_LOCAL_IP": "[192.168.1.50]"},
             {"SMTP_HOSTNAME": "bad.example.test-"}, {"SMTP_RELAY_HOST": "relay..example.test"},

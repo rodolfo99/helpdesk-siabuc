@@ -1,6 +1,6 @@
-# Encuestas de satisfacción
+# Encuestas de satisfacción — 1.8.3
 
-Disponibles desde 1.6.0. Al consultar un caso cerrado, un usuario cliente de su institución puede evaluar la atención con una puntuación de **1 a 5** y un comentario opcional de hasta **2,000 caracteres**. La encuesta es voluntaria y no consume ni acredita minutos.
+Disponibles desde 1.6.0. En el flujo actual de cinco estados, **sólo Cerrado (`CLOSED`) habilita la encuesta; Resuelto (`RESOLVED`) todavía no la habilita**. Al consultar un caso Cerrado, un usuario cliente de su institución puede evaluar la atención con una puntuación de **1 a 5** y un comentario opcional de hasta **2,000 caracteres**. La encuesta es voluntaria y no consume ni acredita minutos.
 
 ## Responder desde el portal
 
@@ -9,7 +9,7 @@ Disponibles desde 1.6.0. Al consultar un caso cerrado, un usuario cliente de su 
 3. Selecciona la puntuación: 1 Muy mala, 2 Mala, 3 Regular, 4 Buena o 5 Excelente.
 4. Escribe un comentario si lo deseas y pulsa **Enviar evaluación**.
 
-El agradecimiento muestra la puntuación, el comentario, quién respondió y cuándo. Se acepta **una respuesta por caso para toda la institución**, no una por usuario. Otro usuario de la misma institución puede consultar esa respuesta, pero no reemplazarla. Los administrativos pueden leerla y reportarla; no pueden contestar en nombre del cliente. Cobranza no accede a este módulo.
+El agradecimiento muestra la puntuación, el comentario, quién respondió y cuándo. Se acepta **una respuesta por caso para toda la institución**, no una por usuario. Otro usuario de la misma institución puede consultar esa respuesta, pero no reemplazarla. Administración puede leerla y reportarla; no puede contestar en nombre del cliente. Técnico y Cobranza no acceden a este módulo.
 
 La respuesta no se edita ni se elimina desde la aplicación. Reabrir el caso conserva la evaluación y no habilita otra encuesta. Al cerrarlo nuevamente reaparece la misma respuesta. Si un caso se reabre antes del primer envío, el servidor rechaza ese envío hasta que vuelva a estar cerrado. La elegibilidad se verifica en la transacción de guardado, por lo que no basta con mantener un formulario antiguo abierto.
 
@@ -19,7 +19,7 @@ Los reintentos de una misma solicitud usan un UUID y recuperan la respuesta orig
 
 La encuesta guarda copias del nombre de la institución, título del caso, nombre y usuario del autor, administrativo asignado y fecha de recepción.
 
-**La atribución corresponde al administrativo asignado en el momento de responder**, que puede ser distinto de quien cerró el caso o de otras personas que lo atendieron. No constituye una evaluación individual de todas las intervenciones. Una reasignación posterior no mueve la evaluación a otra persona. Si no había responsable, se conserva como **Sin administrativo asignado**. Cambios posteriores de nombres o del título tampoco reescriben la respuesta.
+**La atribución corresponde al responsable de soporte (`ADMIN` o `TECH`) asignado en el momento de responder**, que puede ser distinto de quien cerró el caso o de otras personas que lo atendieron. No constituye una evaluación individual de todas las intervenciones. Una reasignación posterior no mueve la evaluación a otra persona. Si no había responsable, se conserva como **Sin administrativo asignado**. Cambios posteriores de nombres o del título tampoco reescriben la respuesta.
 
 El envío queda en la auditoría administrativa con el identificador de encuesta y puntuación. No genera cargos, modificaciones al historial de atención ni correos adicionales. Los avisos de cierre del caso conservan el funcionamiento habitual. El comentario es texto plano, sin interpretar HTML.
 
@@ -44,6 +44,8 @@ Las respuestas son voluntarias. El resultado describe únicamente las muestras r
 El límite es de 5,000 respuestas por consulta. Si se supera, se solicita reducir el periodo o agregar filtros; no se truncan muestras ni se calculan promedios con una selección oculta.
 
 **Exportar respuestas CSV** descarga las filas con los filtros del último resultado consultado. Si hay cambios en el servidor entre consulta y descarga, la exportación refleja los datos vigentes al descargar. El CSV incluye encabezados, UTF-8 con BOM, campos entre comillas y protección contra fórmulas de hoja de cálculo en textos introducidos por usuarios. No hay exportación PDF específica de satisfacción en esta versión.
+
+El [manual detallado 1.8.3](MANUAL-EXTENDIDO-1.8.3.md) explica la diferencia entre resolver, cerrar, reabrir y evaluar un caso.
 
 ## API y almacenamiento
 

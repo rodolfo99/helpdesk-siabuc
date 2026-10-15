@@ -1,8 +1,10 @@
-# Casos relacionados e incidencias generales — 1.7
+# Casos relacionados e incidencias generales — 1.8.3
 
 Administración y el rol Técnico pueden coordinar una falla común de SIABUC en **Incidencias**, relacionando los casos de distintas instituciones. Cada caso conserva su institución, responsable, historial, estado y consumo de soporte.
 
-Una incidencia puede estar **Abierta**, **En atención** o **Resuelta**. Estos estados describen la coordinación del problema general; los casos siguen usando **Abierto/Cerrado**. Resolver una incidencia no cierra sus casos. Crear, modificar, publicar o vincular una incidencia no acredita ni descuenta minutos y no genera pagos, entradas de atención ni correos automáticos.
+Una incidencia puede estar **Abierta**, **En atención** o **Resuelta**. Estos estados describen la coordinación del problema general. Los casos relacionados muestran sus cinco estados propios: **Recibido**, **En atención**, **Requiere respuesta del cliente**, **Resuelto** y **Cerrado**. Resolver una incidencia no resuelve ni cierra sus casos: soporte actualiza cada caso por separado según su atención. Crear, modificar, publicar o vincular una incidencia no acredita ni descuenta minutos y no genera pagos, entradas de atención ni correos automáticos.
+
+Consulte el [manual detallado 1.8.3](MANUAL-EXTENDIDO-1.8.3.md) para combinar incidencias con clasificación, estados y atención individual.
 
 ## Flujo del equipo de soporte
 

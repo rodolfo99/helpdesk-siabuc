@@ -34,7 +34,7 @@ public class ReportService {
     public record AttentionRow(long id, long caseId, long institutionId, String institutionName, String caseTitle,
             long administratorId, String administratorName, String username, String channel, long minutes,
             boolean internal, String description, Instant createdAt, boolean voided, String voidReason) {}
-    public record Totals(long cases, long openCases, long closedCases, long attentionEntries, long voidedEntries,
+    public record Totals(long cases, long openCases, long closedCases, long resolvedCases, long attentionEntries, long voidedEntries,
             long emailMinutes, long remoteMinutes) {}
     public record Consumption(long institutionId, String institutionName, long administratorId,
             String administratorName, String channel, long entries, long minutes) {}
@@ -103,9 +103,11 @@ public class ReportService {
             groups.put(key, new Consumption(e.institutionId(), e.institutionName(), e.administratorId(),e.administratorName(),e.channel(),
                 previous == null ? 1 : previous.entries()+1, previous == null ? e.minutes() : previous.minutes()+e.minutes()));
         }
-        long opened = cases.stream().filter(c -> c.status().equals("OPEN")).count();
+        long opened = cases.stream().filter(c -> Models.CaseStatus.valueOf(c.status()).active()).count();
+        long closed = cases.stream().filter(c -> c.status().equals("CLOSED")).count();
+        long resolved = cases.stream().filter(c -> c.status().equals("RESOLVED")).count();
         return new Report(Instant.now(), zone.getId(), filters,
-            new Totals(cases.size(), opened, cases.size()-opened, entries.size()-voided, voided, email, remote),
+            new Totals(cases.size(), opened, closed, resolved, entries.size()-voided, voided, email, remote),
             List.copyOf(cases), List.copyOf(entries), List.copyOf(groups.values()));
     }
 

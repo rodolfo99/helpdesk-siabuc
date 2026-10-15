@@ -29,7 +29,7 @@ final class ReportExporter {
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss XXX");
     static String at(Instant instant, String zone) { return DATE.format(instant.atZone(ZoneId.of(zone))); }
     static String channel(String value) { return "REMOTE".equals(value) ? "Escritorio remoto" : "Correo"; }
-    static String status(String value) { return "CLOSED".equals(value) ? "Cerrado" : "Abierto"; }
+    static String status(String value) { return Models.CaseStatus.valueOf(value).label(); }
     static String administrator(String value) { return value == null || value.isBlank() ? "Sin responsable" : value; }
 
     static byte[] xlsx(ReportService.Report report) throws IOException {
@@ -49,7 +49,8 @@ final class ReportExporter {
             row(summary,text,"Criterio de casos","Casos creados en el periodo. Responsable, canal y estado actuales.");
             row(summary,text,"Criterio de consumos","Atenciones registradas en el periodo, aunque el caso sea anterior. Administrativo = autor; canal = atención.");
             row(summary,text,"Anulaciones","Se conservan en Consumos, pero no suman minutos ni atenciones vigentes. Comentarios sin consumo no se incluyen.");
-            row(summary,text,"Casos",report.totals().cases()); row(summary,text,"Abiertos",report.totals().openCases());
+            row(summary,text,"Casos",report.totals().cases()); row(summary,text,"Pendientes",report.totals().openCases());
+            row(summary,text,"Resueltos",report.totals().resolvedCases());
             row(summary,text,"Cerrados",report.totals().closedCases()); row(summary,text,"Atenciones vigentes",report.totals().attentionEntries());
             row(summary,text,"Atenciones anuladas",report.totals().voidedEntries()); row(summary,text,"Minutos correo",report.totals().emailMinutes());
             row(summary,text,"Minutos remoto",report.totals().remoteMinutes());
@@ -92,7 +93,7 @@ final class ReportExporter {
             pdf.line("Generado: "+at(report.generatedAt(),report.timeZone()));
             pdf.line("Institución: "+(report.filters().institutionId()==null?"Todas":"ID "+report.filters().institutionId())+" | Administrativo: "+(report.filters().administratorId()==null?"Todos":"ID "+report.filters().administratorId())+" | Canal: "+(report.filters().channel()==null?"Todos":channel(report.filters().channel())));
             pdf.line("Casos: creados en el periodo; responsable, estado y canal principal actuales. Consumos: atenciones registradas en el periodo, incluyendo casos anteriores; administrativo autor y canal de la atención. Las anuladas no suman. Se incluyen notas internas con consumo. Los comentarios sin consumo no se incluyen.");
-            pdf.line("Casos: "+report.totals().cases()+" | Abiertos: "+report.totals().openCases()+" | Cerrados: "+report.totals().closedCases());
+            pdf.line("Casos: "+report.totals().cases()+" | Pendientes: "+report.totals().openCases()+" | Resueltos: "+report.totals().resolvedCases()+" | Cerrados: "+report.totals().closedCases());
             pdf.line("Atenciones vigentes: "+report.totals().attentionEntries()+" | Anuladas: "+report.totals().voidedEntries()+" | Correo: "+report.totals().emailMinutes()+" min | Remoto: "+report.totals().remoteMinutes()+" min");
             pdf.line("CONSUMO POR INSTITUCIÓN, ADMINISTRATIVO Y CANAL",true);
             if(report.consumption().isEmpty()) pdf.line("Sin consumo vigente en el periodo y filtros seleccionados.");

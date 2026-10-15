@@ -79,7 +79,7 @@ public class AttachmentService {
             return previous;
         }
         if (!Boolean.TRUE.equals(active)) throw ApiException.conflict("La institución está dada de baja.");
-        if (!"OPEN".equals(current.status())) throw ApiException.conflict("Reabra el caso antes de agregar archivos.");
+        if (!Models.CaseStatus.valueOf(current.status()).active()) throw ApiException.conflict("Reabra el caso antes de agregar archivos.");
         long count = db.queryForObject("SELECT COUNT(*) FROM case_attachments WHERE case_id=?", Long.class, caseId);
         long size = db.queryForObject("SELECT COALESCE(SUM(size_bytes),0) FROM case_attachments WHERE case_id=?", Long.class, caseId);
         if (count >= MAX_CASE_FILES || size + bytes.length > MAX_CASE_BYTES)

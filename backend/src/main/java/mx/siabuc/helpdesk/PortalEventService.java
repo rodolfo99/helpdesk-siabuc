@@ -19,10 +19,11 @@ public class PortalEventService {
         if (cases.isEmpty()) throw ApiException.missing();
         CaseInfo current = cases.get(0);
         String actorRole = db.queryForObject("SELECT role FROM app_users WHERE username=?", String.class, actor);
-        if ("CLOSED".equals(current.status())) {
+        if (!Models.CaseStatus.valueOf(current.status()).active()) {
             db.update("UPDATE support_cases SET waiting_for='NONE' WHERE id=?", caseId);
         } else if ("CREATE_CASE".equals(eventType) || "CHANGE_CASE_STATUS".equals(eventType)) {
-            db.update("UPDATE support_cases SET waiting_for='ADMIN' WHERE id=?", caseId);
+            db.update("UPDATE support_cases SET waiting_for=? WHERE id=?",
+                "WAITING_CLIENT".equals(current.status()) ? "CLIENT" : "ADMIN", caseId);
         } else if ("CREATE_ENTRY".equals(eventType) && !internal) {
             db.update("UPDATE support_cases SET waiting_for=? WHERE id=?", "USER".equals(actorRole) ? "ADMIN" : "CLIENT", caseId);
         }

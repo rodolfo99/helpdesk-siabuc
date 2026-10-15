@@ -1,3 +1,4 @@
+import { CaseStatus, isActiveCase } from './case-status';
 import { Component, EventEmitter, Input, OnChanges, Output, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService, PageState, errorMessage } from './api.service';
@@ -41,7 +42,7 @@ export const emptyCaseProfile = ():CaseProfileInput => ({category:'OTHER',priori
   <p class="sla-note">Horario del caso: {{p.sla.timezone}}. Los plazos laborales no descuentan minutos contratados. La primera respuesta requiere un comentario público del administrativo. Al reabrir se inicia un nuevo plazo de resolución.</p>
   @if(p.sla.legacy){<p class="sla-note">Caso previo a la configuración de plazos: cálculo orientativo con el calendario inicial; solo se muestran fechas de atención/cierre respaldadas por el historial.</p>}
   <form (ngSubmit)="save()" #profileForm="ngForm">
-    <fieldset [disabled]="busy() || caseStatus==='CLOSED'">
+    <fieldset [disabled]="busy() || !isActiveCase(caseStatus)">
     <div class="form-grid">
       <label>Categoría<select name="profileCategory" [(ngModel)]="form.category" required>@for(c of categories;track c.value){<option [value]="c.value">{{c.label}}</option>}</select></label>
       <label>Prioridad<select name="profilePriority" [(ngModel)]="form.priority" required>@for(p of priorities;track p.value){<option [value]="p.value">{{p.label}}</option>}</select></label>
@@ -51,7 +52,7 @@ export const emptyCaseProfile = ():CaseProfileInput => ({category:'OTHER',priori
       <label class="span-2">Pasos para reproducir<textarea name="profileSteps" [(ngModel)]="form.reproductionSteps" maxlength="10000" rows="4" placeholder="1. Abrir… 2. Seleccionar… 3. Resultado observado…"></textarea></label>
     </div>
     </fieldset>
-    @if(caseStatus==='OPEN'){<div class="form-actions"><button class="btn primary" [disabled]="busy() || profileForm.invalid">{{busy()?'Guardando…':'Guardar ficha técnica'}}</button></div>}
+    @if(isActiveCase(caseStatus)){<div class="form-actions"><button class="btn primary" [disabled]="busy() || profileForm.invalid">{{busy()?'Guardando…':'Guardar ficha técnica'}}</button></div>}
     @else{<p class="sla-note">El caso está cerrado. Un administrativo puede reabrirlo para actualizar la ficha.</p>}
   </form>
   } @else if(!loading()) {<button class="btn secondary" type="button" (click)="load()">Reintentar</button>}
@@ -59,7 +60,8 @@ export const emptyCaseProfile = ():CaseProfileInput => ({category:'OTHER',priori
 `,styles:[`:host{display:block}fieldset{padding:0;border:0;margin:0;min-width:0}.sla-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:0 24px}.sla-grid article{padding:16px;background:#f7fafb;border:1px solid #e1e8ee;border-radius:8px}.sla-grid h3{font-size:13px}.sla-grid p,.sla-note{font-size:11px;line-height:1.7;color:#637b8c}.sla-note{padding:0 24px}.notice{margin:0 24px 18px}@media(max-width:650px){.sla-grid{grid-template-columns:1fr}}`]})
 export class CaseProfileComponent extends PageState implements OnChanges {
   @Input({required:true}) caseId!:number;
-  @Input() caseStatus:'OPEN'|'CLOSED'='OPEN';
+  readonly isActiveCase=isActiveCase;
+  @Input() caseStatus:CaseStatus='OPEN';
   @Output() updated=new EventEmitter<void>();
   readonly api=inject(ApiService);readonly profile=signal<CaseProfile|null>(null);readonly loading=signal(false);
   readonly categories=CASE_CATEGORIES;readonly priorities=CASE_PRIORITIES;

@@ -1,5 +1,9 @@
 # SIABUC Helpdesk 1.3.0 · 13 de octubre de 2026
 
+> **Documento histórico — 1.3.0–1.3.3.** Se conservan el alcance, los procedimientos y los resultados de esa entrega. Las referencias a la versión «actual», a la «última» evidencia y a funciones o fallos pendientes corresponden a ese momento; no describen el estado de 1.8.3.
+>
+> Para uso e instalación vigentes, consulte el [manual detallado 1.8.3](MANUAL-EXTENDIDO-1.8.3.md), el [índice de documentación](README.md) y las [notas de 1.8.3](VERSION-1.8.3.md).
+
 ## Cambios
 
 - Operación en Windows desde CMD/PowerShell mediante configurar.bat, iniciar.bat, detener.bat, compilar.bat, respaldar.bat, restaurar.bat y configurar-gmail.bat.

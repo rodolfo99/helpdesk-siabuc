@@ -1,0 +1,127 @@
+name: SIABUC 1.8.3 verify
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: siabuc_test
+          POSTGRES_USER: siabuc
+          POSTGRES_PASSWORD: DisposableDB183Password
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U siabuc -d siabuc_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DB_HOST: localhost
+      DB_PORT: '5432'
+      DB_NAME: siabuc_test
+      DB_USER: siabuc
+      DB_PASSWORD: DisposableDB183Password
+      ADMIN_PASSWORD: DisposableAdmin183Password
+      MAIL_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Python operations and SMTP
+        run: |
+          python3 -m unittest discover -s tests/ops
+          python3 -m unittest discover -s tests/smtp
+          python3 -m py_compile scripts/manage.py
+      - name: Docker Compose with direct Gmail
+        run: |
+          export SMTP_HOST=smtp.gmail.com
+          docker compose config --format json | python3 -c '
+          import json,sys
+          cfg=json.load(sys.stdin)
+          s=cfg["services"]
+          assert set(cfg["networks"])=={"default"}
+          assert not cfg["networks"]["default"].get("ipam")
+          assert set(s["backend"]["networks"])=={"default"}
+          assert "smtp" not in s
+          assert not s["db"].get("ports")
+          assert not s["backend"].get("ports")
+          assert len(s["frontend"]["ports"])==1
+          print("Gmail directo: sin Postfix, solo web publicada")
+          '
+      - name: Docker Compose with legacy Postfix
+        run: |
+          SMTP_HOST=smtp docker compose --profile local-smtp config --format json | python3 -c '
+          import json,sys
+          cfg=json.load(sys.stdin)
+          s=cfg["services"]
+          assert set(cfg["networks"])=={"default"}
+          assert not cfg["networks"]["default"].get("ipam")
+          assert set(s["smtp"]["networks"])=={"default"}
+          assert "SMTP_NETWORK_SUBNET" not in s["smtp"]["environment"]
+          assert "smtp" in s
+          assert not s["smtp"].get("ports")
+          print("Postfix opcional disponible")
+          '
+      - name: SMTP on the automatic Compose network (no message sent)
+        run: |
+          trap 'docker compose --profile local-smtp logs smtp; docker compose --profile local-smtp rm -sf smtp' EXIT
+          docker compose --profile local-smtp up -d --build --wait --wait-timeout 180 smtp
+          docker compose --profile local-smtp run --rm --no-deps -T --entrypoint python3 smtp - < tests/smtp/compose_network_smoke.py
+      - name: Frontend build and tests
+        working-directory: frontend
+        run: |
+          npm ci
+          npm test
+          npm run build
+      - name: Java 17 tests on PostgreSQL 17
+        working-directory: backend
+        run: |
+          mvn --version
+          for attempt in 1 2 3; do
+            if mvn -B -ntp -U -Ppostgres-it verify > maven-verify.log 2>&1; then
+              cat maven-verify.log
+              exit 0
+            fi
+            cat maven-verify.log
+            # Retry dependency transport failures only; assertion failures stop immediately.
+            if ! grep -Eq 'Could not transfer artifact|Connection reset|Failed to read artifact descriptor|Could not resolve dependencies|could not be resolved' maven-verify.log; then
+              exit 1
+            fi
+            if [ "$attempt" -lt 3 ]; then sleep 10; fi
+          done
+          exit 1
+      - name: Case workflow browser regression (simulated API)
+        working-directory: tests/e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          node case-workflow-v183.ui.mjs
+      - name: Confirm version and source package
+        run: |
+          python3 - <<'PY'
+          import json,pathlib
+          assert pathlib.Path('VERSION').read_text().strip() == '1.8.3'
+          assert json.loads(pathlib.Path('frontend/package.json').read_text())['version']=='1.8.3'
+          assert json.loads(pathlib.Path('frontend/package-lock.json').read_text())['version']=='1.8.3'
+          assert '1.8.3' in pathlib.Path('backend/pom.xml').read_text()
+          assert 'siabuc-helpdesk-1.8.3.jar' in pathlib.Path('backend/Dockerfile').read_text()
+          assert not pathlib.Path('.env').exists()
+          PY
+          python3 scripts/release-1.8.3.py --package --output release-output
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SIABUC-Helpdesk-1.8.3-source
+          path: release-output/*
+          retention-days: 14

@@ -97,7 +97,7 @@ public class WorkTimerService {
         return helpdesk.caseDetail(id);
     }
     private void requireOpen(CaseDetail c) {
-        if(c.status()!=CaseStatus.OPEN) throw ApiException.conflict("El caso está cerrado.");
+        if(!c.status().canRunTimer()) throw ApiException.conflict("El cronómetro requiere un caso Recibido o En atención.");
         if(!Boolean.TRUE.equals(db.queryForObject("SELECT active FROM institutions WHERE id=?",Boolean.class,c.institutionId()))) throw ApiException.conflict("La institución está dada de baja.");
     }
     private long elapsed(Stored t,Instant now) { return t.millis()+(t.startedAt()==null?0:Math.max(0,Duration.between(t.startedAt(),now).toMillis())); }

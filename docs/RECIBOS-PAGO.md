@@ -1,4 +1,6 @@
-# Recibos administrativos de pago — versión 1.6
+# Recibos administrativos de pago — versión 1.8.3
+
+Guía vigente de SIABUC Helpdesk 1.8.3. Consulte el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md) para el recorrido completo por rol.
 
 El sistema genera un **recibo administrativo PDF** para cada pago o movimiento de horas registrado. Incluye un folio estable, la institución, referencia, importe y moneda originales, método, fecha, póliza asociada y minutos de correo y escritorio remoto. La versión de Administración y Cobranza incluye también responsable del registro y descripción del pago. **No es comprobante fiscal, CFDI ni factura.**
 
@@ -12,7 +14,7 @@ El recibo generado es distinto del [comprobante de pago adjunto](COMPROBANTES-PA
 
 Los clientes (`USER`) pueden descargar únicamente la **versión institucional** de los recibos de su propia institución desde el portal financiero, si un administrador habilitó expresamente ese portal. Esta versión conserva folio, importes, tiempos y estado; omite notas de pago, identidades del personal y motivos internos de anulación. La habilitación comienza desactivada y se verifica en cada descarga. Deshabilitarla impide nuevas descargas, incluso de recibos emitidos anteriormente; los archivos ya descargados permanecen en el equipo del usuario.
 
-Cobranza y Administración conservan acceso a recibos de pagos anulados e instituciones dadas de baja para consultar su evidencia histórica. El cliente necesita su cuenta, su institución y el acceso al portal habilitados.
+El rol Técnico (`TECH`) no accede a recibos financieros. Cobranza y Administración conservan acceso a recibos de pagos anulados e instituciones dadas de baja para consultar su evidencia histórica. El cliente necesita su cuenta, su institución y el acceso al portal habilitados.
 
 ## Primera emisión, folio e información conservada
 

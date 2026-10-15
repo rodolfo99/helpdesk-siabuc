@@ -1,14 +1,16 @@
-# Portal financiero por institución — versión 1.6
+# Portal financiero por institución — versión 1.8.3
+
+Guía vigente de SIABUC Helpdesk 1.8.3. Consulte el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md) para el recorrido completo por rol.
 
 Por defecto está **deshabilitado** para todas las instituciones, incluidas las existentes al actualizar. No se publica información financiera por el hecho de tener una cuenta de soporte.
 
 ## Habilitación explícita
 
-1. Iniciar sesión como **ADMIN** y abrir **Acceso financiero de clientes**.
+1. Iniciar sesión como **ADMIN** y abrir **Configuración de soporte → Acceso financiero de clientes**.
 2. Buscar la institución y pulsar **Habilitar**.
 3. Leer el alcance y confirmar. Desde ese momento todos sus usuarios activos pueden consultar sus propias pólizas, importes, pagos, recibos y **comprobantes históricos** y enviar solicitudes de validación.
 
-El permiso es institucional, no por usuario. Cobranza (`BILLING`) no puede modificarlo. No se permite habilitar instituciones inactivas. El cambio se registra en auditoría.
+Los clientes (`USER`) acceden desde **Finanzas institucionales**. El permiso es institucional, no por usuario. Cobranza (`BILLING`) no puede modificarlo y Técnico (`TECH`) no tiene acceso a este portal. No se permite habilitar instituciones inactivas. El cambio se registra en auditoría.
 
 Deshabilitar impide nuevas consultas, descargas y solicitudes con efecto en las siguientes peticiones, sin borrar historial. Los archivos que una persona ya descargó fuera del sistema no pueden retirarse. Los datos previamente mostrados en una pestaña pueden permanecer visibles hasta actualizarla; el servidor vuelve a verificar la autorización para cada operación. La baja de un usuario o institución también bloquea el acceso mediante la sesión existente.
 
@@ -39,6 +41,6 @@ Cada consulta filtra la institución de la cuenta autenticada. No se acepta un p
 La migración V12 crea `client_finance_access`; la ausencia de fila equivale a deshabilitado. `ClientFinanceAccessService.requireClient()` centraliza rol USER, cuenta e institución activas y habilitación, y se reutiliza en solicitudes y recibos. Las rutas originales de administración/cobranza siguen denegadas al cliente, incluso con portal habilitado.
 
 
-## Estados de cuenta desde 1.7
+## Estados de cuenta institucionales
 
 El portal habilitado incorpora la generación y descarga PDF del estado de cuenta de la propia institución. Cada folio preserva su emisión; los cambios posteriores no alteran ese documento. El corte usa el registro en plataforma y la historia temporal empieza con una apertura en V24. Consulte [Estados de cuenta](ESTADOS-CUENTA.md) para interpretar cargos, pagos, pendientes y movimientos de minutos. Deshabilitar el portal también bloquea la lectura y descarga de emisiones anteriores desde cuentas cliente.

@@ -274,13 +274,15 @@ public class HelpdeskService {
         LockedCase locked = lockCase(id, actor);
         requireActive(locked.institution());
         SupportCase current = locked.supportCase();
-        if (current.status() != CaseStatus.OPEN)
-            throw ApiException.conflict("El caso está cerrado. Reábralo antes de tomarlo.");
+        if (!current.status().active())
+            throw ApiException.conflict("El caso está resuelto o cerrado. Reábralo antes de tomarlo.");
         if (Objects.equals(current.assignedAdminId(), actor.id())) return detail(current, actor);
         if (current.assignedAdminId() != null)
             throw ApiException.conflict("Otro integrante de soporte ya es responsable de este caso. Actualice el listado para consultar la asignación.");
         db.update("UPDATE support_cases SET assigned_admin_id=?,updated_at=NOW() WHERE id=?", actor.id(), id);
         String description = "Caso tomado por " + actor.displayName() + " (" + actor.username() + "). Es ahora responsable de la atención.";
+        if (current.status() == CaseStatus.OPEN)
+            description += "\n" + recordStatus(current, CaseStatus.IN_PROGRESS, "Inicio de atención al tomar el caso.", actor, false);
         insertEntry(id, description, null, 0, false, actor.id());
         audit(actor.username(), "CLAIM_CASE", "CASE", id, description);
         notifications.caseEvent(id, "CLAIM_CASE", description, false, actor.username());
@@ -308,15 +310,44 @@ public class HelpdeskService {
         if (input.status() == null) throw ApiException.bad("Indique el estado del caso.");
         required(input.reason(), "Motivo del cambio de estado", 10000);
         LockedCase locked = lockCase(id, actor);
-        if (locked.supportCase().status() == input.status()) return detail(locked.supportCase(), actor);
-        if (input.status() == CaseStatus.OPEN) { requireActive(locked.institution()); requireBalance(locked.institution(), locked.supportCase().channel(), 1); }
-        db.update("UPDATE support_cases SET status=?,updated_at=NOW() WHERE id=?", input.status().name(), id);
-        profiles.recordStatus(id, input.status());
-        String description = (input.status() == CaseStatus.OPEN ? "Caso reabierto: " : "Caso cerrado: ") + clean(input.reason());
-        insertEntry(id, description, null, 0, false, actor.id());
-        audit(actor.username(), "CHANGE_CASE_STATUS", "CASE", id, description);
+        SupportCase current = locked.supportCase();
+        if (current.status() == input.status()) return detail(current, actor);
+        if (!current.status().canChangeTo(input.status()))
+            throw ApiException.conflict("Transición no permitida: " + current.status().label() + " → " + input.status().label() + ". Reabra el caso en En atención.");
+        if (input.status().active()) {
+            requireActive(locked.institution());
+            if (!current.status().active()) requireBalance(locked.institution(), current.channel(), 1);
+        }
+        String description = recordStatus(current, input.status(), clean(input.reason()), actor);
         notifications.caseEvent(id, "CHANGE_CASE_STATUS", description, false, actor.username());
         return detail(authorizedCase(id, actor), actor);
+    }
+
+    /** Caller holds institution and case locks. Status changes never create a charged entry. */
+    private String recordStatus(SupportCase current, CaseStatus next, String reason, User actor) {
+        return recordStatus(current, next, reason, actor, true);
+    }
+    private String recordStatus(SupportCase current, CaseStatus next, String reason, User actor, boolean historyEntry) {
+        long id = current.id();
+        db.update("UPDATE support_cases SET status=?,updated_at=NOW() WHERE id=?", next.name(), id);
+        profiles.recordStatus(id, current.status(), next);
+        if (!next.canRunTimer()) {
+            // Stop every running segment, retaining measured time and the explicit confirmation step.
+            List<Long> paused = db.queryForList("""
+                UPDATE work_timers SET status='PAUSED',
+                  elapsed_millis=elapsed_millis+GREATEST(0,FLOOR(EXTRACT(EPOCH FROM (NOW()-segment_started_at))*1000)::BIGINT),
+                  segment_started_at=NULL,updated_at=NOW()
+                WHERE case_id=? AND status='RUNNING' RETURNING id
+                """, Long.class, id);
+            for (long timer : paused)
+                audit(actor.username(), "TIMER_PAUSED", "TIMER", timer, "Cambio de estado del caso #" + id + " a " + next.label());
+        }
+        String description = (!current.status().active() && next.active() ? "Caso reabierto: "
+            : next == CaseStatus.CLOSED ? "Caso cerrado: " : "Cambio de estado: ")
+            + current.status().label() + " → " + next.label() + ". " + reason;
+        if (historyEntry) insertEntry(id, description, null, 0, false, actor.id());
+        audit(actor.username(), "CHANGE_CASE_STATUS", "CASE", id, description);
+        return description;
     }
     @Transactional
     public CaseDetail addEntry(long id, EntryInput input) {
@@ -326,7 +357,9 @@ public class HelpdeskService {
             throw ApiException.bad("Un comentario usa 0 minutos y canal vacío; una atención requiere minutos positivos y canal.");
         if (!isSupportStaff(actor.role()) && (input.minutes() != 0 || input.channel() != null || input.internal())) throw ApiException.forbidden();
         LockedCase locked = lockCase(id, actor); requireActive(locked.institution());
-        if (locked.supportCase().status() != CaseStatus.OPEN) throw ApiException.conflict("El caso está cerrado. Reábralo antes de registrar una atención.");
+        if (!locked.supportCase().status().active()) throw ApiException.conflict("El caso está resuelto o cerrado. Reábralo antes de registrar una atención.");
+        if (actor.role() == Role.USER && locked.supportCase().status() == CaseStatus.WAITING_CLIENT)
+            recordStatus(locked.supportCase(), CaseStatus.IN_PROGRESS, "El cliente respondió a la solicitud de información.", actor);
         if (input.minutes() > 0) { requireBalance(locked.institution(), input.channel(), input.minutes()); changeUsed(locked.institution().id(), input.channel(), input.minutes()); }
         long entryId = insertEntry(id, clean(input.description()), input.channel(), input.minutes(), input.internal(), actor.id());
         if (isSupportStaff(actor.role()) && !input.internal()) profiles.recordPublicResponse(id, entryId);

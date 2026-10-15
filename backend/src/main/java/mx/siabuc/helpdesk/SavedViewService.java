@@ -46,7 +46,7 @@ public class SavedViewService {
  private Filters filters(JsonNode value,Models.User actor){
   if(value==null||!value.isObject())throw ApiException.bad("Indique los filtros de la vista.");
   value.fieldNames().forEachRemaining(key->{if(!KEYS.contains(key))throw ApiException.bad("Filtro no permitido: "+key);});
-  String search=text(value,"search","",300),status=choice(value,"status",Set.of("all","OPEN","CLOSED")),assignment=choice(value,"assignment",Set.of("all","mine","unassigned"));
+  String search=text(value,"search","",300),status=choice(value,"status",Set.of("all","active","OPEN","IN_PROGRESS","WAITING_CLIENT","RESOLVED","CLOSED")),assignment=choice(value,"assignment",Set.of("all","mine","unassigned"));
   String category=choice(value,"category",Set.of("all","INSTALLATION","CATALOGING","LOANS","REPORTS","IMPORT","OTHER")),priority=choice(value,"priority",Set.of("all","LOW","NORMAL","HIGH","URGENT"));
   Long institution=null;JsonNode raw=value.get("institutionId");
   if(raw!=null&&!raw.isNull()){if(!raw.isIntegralNumber()||!raw.canConvertToLong()||raw.longValue()<=0)throw ApiException.bad("La institución debe ser un identificador válido.");institution=raw.longValue();}

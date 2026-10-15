@@ -1,3 +1,4 @@
+import { CaseStatus, isActiveCase } from './case-status';
 import { Component, EventEmitter, Input, OnChanges, Output, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -9,7 +10,7 @@ interface RemoteSession {id:number;caseId:number;adminId:number;adminName:string
 `],template:`
 <section aria-label="Agenda de sesiones remotas"><h3>Agenda de sesiones remotas</h3><p>Horarios en tu zona: {{timezone}}. Agendar o confirmar no descuenta minutos.</p><small>Describe el objetivo de la sesión. No escribas contraseñas ni claves de acceso remoto.</small>
 @if(error()){<div class="notice error" role="alert">{{error()}}</div>}@if(success()){<div class="notice success" role="status">{{success()}}</div>}
-@if(isSupportStaff()&&caseStatus==='OPEN'){
+@if(isSupportStaff()&&isActiveCase(caseStatus)){
 <form class="agenda-form" (ngSubmit)="propose()" #agendaForm="ngForm"><h4>{{rescheduleId?'Reprogramar sesión #'+rescheduleId:'Proponer una sesión'}}</h4><p>Responsable de la sesión: {{api.user()?.displayName}}</p>
 <div class="agenda-grid"><label>Inicio<input name="sessionStart" type="datetime-local" required [(ngModel)]="startsAt"></label><label>Fin<input name="sessionEnd" type="datetime-local" required [(ngModel)]="endsAt"></label></div>
 <label>Objetivo y preparativos<textarea name="sessionNote" required maxlength="5000" rows="3" [(ngModel)]="note"></textarea></label>
@@ -18,15 +19,16 @@ interface RemoteSession {id:number;caseId:number;adminId:number;adminName:string
 <button type="button" class="btn" [disabled]="busy()" (click)="reload()">Actualizar agenda</button>
 @for(s of sessions();track s.id){<article class="session-card"><h4>Sesión #{{s.id}} · {{label(s.status)}}</h4><p><strong>{{s.startsAt|date:'dd/MM/yyyy HH:mm'}} – {{s.endsAt|date:'dd/MM/yyyy HH:mm'}}</strong></p><p>Responsable: {{s.adminName}}</p><p>{{s.note}}</p>
 @if(s.replacesId){<small>Sustituye la sesión #{{s.replacesId}}.</small>}@if(s.response){<p>Respuesta{{s.respondedBy?' de '+s.respondedBy:''}}: {{s.response}}</p>}
-@if((api.user()?.role==='USER'&&s.status==='PROPOSED'&&caseStatus==='OPEN')||(canManage(s)&&(s.status==='PROPOSED'||s.status==='CONFIRMED'))){
+@if((api.user()?.role==='USER'&&s.status==='PROPOSED'&&isActiveCase(caseStatus))||(canManage(s)&&(s.status==='PROPOSED'||s.status==='CONFIRMED'))){
 <label>Comentario o motivo<textarea [name]="'response'+s.id" maxlength="2000" [(ngModel)]="responses[s.id]"></textarea></label><div class="agenda-actions">
 @if(api.user()?.role==='USER'){<button type="button" class="btn primary" [disabled]="busy()" (click)="respond(s,'confirm')">Confirmar horario</button><button type="button" class="btn" [disabled]="busy()" (click)="respond(s,'decline')">Rechazar propuesta</button>}
-@else {<button type="button" class="btn" [disabled]="busy()" (click)="respond(s,'cancel')">Cancelar sesión</button>@if(caseStatus==='OPEN'){<button type="button" class="btn" [disabled]="busy()" (click)="edit(s)">Reprogramar</button>}@if(s.status==='CONFIRMED'){<button type="button" class="btn" [disabled]="busy()" (click)="respond(s,'complete')">Marcar realizada</button>}}
+@else {<button type="button" class="btn" [disabled]="busy()" (click)="respond(s,'cancel')">Cancelar sesión</button>@if(isActiveCase(caseStatus)){<button type="button" class="btn" [disabled]="busy()" (click)="edit(s)">Reprogramar</button>}@if(s.status==='CONFIRMED'){<button type="button" class="btn" [disabled]="busy()" (click)="respond(s,'complete')">Marcar realizada</button>}}
 </div>}
 </article>}@empty{<p>No hay sesiones remotas programadas para este caso.</p>}
 </section>`})
 export class RemoteSessionsComponent extends PageState implements OnChanges {
-  readonly api=inject(ApiService);@Input({required:true})caseId=0;@Input()caseStatus:'OPEN'|'CLOSED'='OPEN';@Output()updated=new EventEmitter<void>();
+  readonly isActiveCase=isActiveCase;
+  readonly api=inject(ApiService);@Input({required:true})caseId=0;@Input()caseStatus:CaseStatus='OPEN';@Output()updated=new EventEmitter<void>();
   readonly sessions=signal<RemoteSession[]>([]);readonly timezone=Intl.DateTimeFormat().resolvedOptions().timeZone;
   startsAt='';endsAt='';note='';rescheduleId:number|null=null;responses:Record<number,string>={};private requestVersion=0;
   ngOnChanges(changes:Record<string,unknown>){if(changes['caseId']){this.requestVersion++;this.sessions.set([]);this.clearForm();this.responses={};this.reload();}}

@@ -1,4 +1,4 @@
-# Desactivar el envío de correos · versión 1.3.1
+# Desactivar el envío de correos · 1.8.3
 
 ## Desde la aplicación
 
@@ -9,7 +9,7 @@
 
 No se eliminan notificaciones ni registros de soporte. El estado SUPPRESSED permite distinguir avisos que no se enviarán por esta decisión administrativa. Mientras está pausado, las pruebas de correo y los reintentos manuales se bloquean. Un aviso ya enviado no cambia su historial.
 
-El control es global para la instalación, exclusivo de ADMIN, queda auditado y permanece en PostgreSQL después de reiniciar o reconstruir contenedores. Funciona desde el navegador en Windows y Linux. Los roles USER y BILLING no pueden cambiarlo. Desactivar repetidamente no duplica la auditoría si el estado no cambió.
+El control es global para la instalación, exclusivo de ADMIN, queda auditado y permanece en PostgreSQL después de reiniciar o reconstruir contenedores. Funciona desde el navegador en Windows y Linux. Los roles USER, TECH y BILLING no pueden cambiarlo. Desactivar repetidamente no duplica la auditoría si el estado no cambió.
 
 ## Límite del servidor
 
@@ -37,12 +37,12 @@ sudo docker compose up -d --no-deps --force-recreate backend
 
 La desactivación impide nuevas reclamaciones de envío. Un mensaje que ya estuviera en curso puede terminar de entregarse. Si falla y aún podría reintentarse, el sistema conserva la frontera de desactivación y lo marca SUPPRESSED: no reaparece después de reactivar.
 
-Si Postfix ya aceptó el mensaje, éste pertenece a su propia cola y puede seguir entregándose. Esta opción no elimina ni cancela mensajes ya aceptados por SMTP. Si necesita detener también los intentos del SMTP interno, puede usar `docker compose stop smtp` (con sudo cuando corresponda). Eso conserva su cola y volverá a procesarla al iniciarlo; no equivale a suprimir los avisos de la aplicación. Un mensaje aceptado por un servidor externo no puede recuperarse con estos controles.
+Si usa Postfix y ya aceptó el mensaje, éste pertenece a su propia cola y puede seguir entregándose. Esta opción no elimina ni cancela mensajes ya aceptados por SMTP. Para detener también los intentos del SMTP interno use `docker compose --profile local-smtp stop smtp` (con sudo cuando corresponda). Eso conserva su cola y volverá a procesarla al iniciarlo; no equivale a suprimir los avisos de la aplicación. Con Gmail directo no existe esa etapa local: un mensaje aceptado por el servidor externo no puede recuperarse con estos controles.
 
 ## Actualización y restauración
 
-Conserve `.env` y un respaldo. Instale los fuentes 1.3.1 y ejecute iniciar.bat en Windows o iniciar.sh en Linux. Flyway añade V4 sin modificar V1/V2/V3 ni eliminar los volúmenes.
+Conserve `.env`, los volúmenes y un respaldo, actualice el conjunto completo de fuentes 1.8.3 y ejecute `iniciar.bat` en Windows o `./iniciar.sh` en Linux. Flyway aplica las migraciones pendientes hasta V26 y conserva la pausa que ya exista. Una configuración nueva mantiene `MAIL_ENABLED=false`; la [guía de correo](CORREO.md) explica la activación del proveedor.
 
-V4 comienza con envío administrativo activado, respetando MAIL_ENABLED y el comportamiento anterior. Si necesita evitar entregas durante la actualización, establezca MAIL_ENABLED=false antes del arranque y después desactive el envío en la interfaz para suprimir los avisos previos. La pausa, su frontera de avisos y los estados SUPPRESSED se incluyen en el respaldo PostgreSQL.
+Como antecedente, V4 introdujo esta función en 1.3.1: comienza sin pausa administrativa, respetando `MAIL_ENABLED`. Si necesita evitar entregas durante una actualización, establezca `MAIL_ENABLED=false` antes del arranque y después pause el envío en la interfaz para suprimir los avisos previos. La pausa, su frontera de avisos y los estados `SUPPRESSED` se incluyen en el respaldo PostgreSQL.
 
 Restaure un respaldo anterior a V4 en una base nueva: pg_restore --clean no elimina tablas que no existen en el archivo antiguo. El siguiente arranque aplica V4 inicialmente sin pausa; revise MAIL_ENABLED antes de arrancar. Un respaldo con V4 restaura también su selección administrativa. El respaldo de BD no contiene la cola Postfix ni `.env`.

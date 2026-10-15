@@ -1,8 +1,10 @@
-# Reportes de cobranza
+# Reportes de cobranza — versión 1.8.3
+
+Guía vigente de SIABUC Helpdesk 1.8.3. Consulte el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md) para el recorrido completo por rol.
 
 Desde la versión 1.5.0, **Reportes de cobranza** está disponible para los usuarios de **Cobranza (BILLING)** y los **Administrativos (ADMIN)**. Permite consultar el historial de pagos, totalizar por institución y obtener totales generales, siempre separando las monedas. También muestra la situación actual de las pólizas institucionales.
 
-Las instituciones cliente no acceden a estos reportes, tampoco cuando se habilita el portal financiero de 1.6. Ese portal empieza desactivado por defecto y presenta un resumen propio de pólizas y pagos, con sus recibos/comprobantes y solicitudes, sin abrir informes generales ni historiales administrativos. Consulte [Portal financiero](PORTAL-FINANCIERO.md). Dar acceso financiero a Cobranza no abre los casos, sus notas internas, adjuntos ni los reportes técnicos de soporte.
+El rol Técnico (`TECH`) y las instituciones cliente (`USER`) no acceden a estos reportes, tampoco cuando se habilita el portal financiero institucional. Ese portal empieza desactivado por defecto y presenta un resumen propio de pólizas y pagos, con sus recibos/comprobantes y solicitudes, sin abrir informes generales ni historiales administrativos. Consulte [Portal financiero](PORTAL-FINANCIERO.md). Dar acceso financiero a Cobranza no abre los casos, sus notas internas, adjuntos ni los reportes técnicos de soporte.
 
 ## Consultar y filtrar
 
@@ -48,13 +50,15 @@ Cuando la póliza ya está totalmente pagada, un registro permitido de acreditac
 
 Crear la póliza por sí sola no acredita horas ni constituye un pago. Los pagos y sus anulaciones son los movimientos que afectan los totales correspondientes.
 
-## Qué cambia con las solicitudes, cotizaciones y recibos de 1.6
+## Relación con solicitudes, cotizaciones, recibos y conciliación
 
-Los informes conservan el criterio de 1.5: suman **pagos registrados**, incluyendo los creados al aprobar una solicitud. Una solicitud pendiente o rechazada, sus comprobantes o una cotización aceptada no representan por sí solos un ingreso ni minutos acreditados. Al aprobar, el pago generado entra en los reportes con su fecha `paidOn`, que puede ser anterior al día de aprobación; no se suma también la solicitud como un segundo movimiento.
+Los informes suman **pagos registrados**, incluyendo los creados al aprobar una solicitud. Una solicitud pendiente o rechazada, sus comprobantes o una cotización aceptada no representan por sí solos un ingreso ni minutos acreditados. Al aprobar, el pago generado entra en los reportes con su fecha `paidOn`, que puede ser anterior al día de aprobación; no se suma también la solicitud como un segundo movimiento.
 
 Convertir una cotización crea una póliza sin pagos: su contrato puede aparecer en la situación actual de pólizas y su pendiente de cobro, pero todavía no añade dinero recibido ni tiempo acreditado al periodo. Una renovación conserva la relación con la póliza anterior sin trasladar ni duplicar pagos. Las canceladas continúan excluidas de la deuda computable.
 
 Emitir o descargar un [recibo administrativo PDF](RECIBOS-PAGO.md) tampoco añade un ingreso ni altera los totales. El recibo acredita un registro administrativo y no es CFDI, factura ni constancia de una devolución bancaria. Los comprobantes descargables conservan evidencia documental; no se agregan como filas monetarias adicionales.
+
+Programar [parcialidades](PARCIALIDADES.md), aplicarles un pago existente o importar y conciliar un [CSV bancario](CONCILIACION-BANCARIA.md) no añade cobros al reporte. El pago se totaliza una sola vez. Para una emisión conservada a un corte histórico, utilice [Estados de cuenta](ESTADOS-CUENTA.md); el reporte de cobranza consulta los registros vigentes y la situación actual de pólizas.
 
 Consulte [Solicitudes de pago](SOLICITUDES-PAGO.md), [Cotizaciones y renovaciones](COTIZACIONES-RENOVACIONES.md) y [Pólizas y cobranza](POLIZAS-COBRANZA.md) para los estados y sus efectos.
 

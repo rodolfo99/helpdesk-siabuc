@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Configure a send-only Postfix service without evaluating environment as shell code.
 
-Only the dedicated Docker subnet and loopback may submit messages. There is no
+Only the container's Compose subnet and loopback may submit messages. There is no
 mailbox, web inbox, public relay, server-side SMTP authentication, or IMAP/POP.
 Pure parsing/rendering functions are importable by tests and do not read os.environ.
 """
@@ -26,7 +26,6 @@ class ConfigurationError(ValueError):
 class SMTPConfiguration:
     hostname: str
     local_ip: str
-    network_subnet: str
     relay_host: str
     relay_port: int
     relay_security: str
@@ -42,8 +41,6 @@ class SMTPConfiguration:
         return f"[{self.relay_host}]:{self.relay_port}" if self.relay_host else ""
 
 
-_PRIVATE_NETWORKS = tuple(ipaddress.ip_network(value) for value in
-                          ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"))
 _DNS_LABEL = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?")
 
 
@@ -72,14 +69,6 @@ def parse_configuration(env: Mapping[str, str]) -> SMTPConfiguration:
         raise ConfigurationError("SMTP_LOCAL_IP debe ser una dirección IPv4, sin corchetes, puerto ni prefijo de red.") from None
     if local_ip.is_unspecified or local_ip.is_multicast or str(local_ip) == "255.255.255.255":
         raise ConfigurationError("SMTP_LOCAL_IP debe identificar un equipo; no se admite la dirección genérica ni multicast o broadcast.")
-    raw_subnet = env.get("SMTP_NETWORK_SUBNET", "172.30.55.0/24")
-    try:
-        network = ipaddress.ip_network(raw_subnet, strict=True)
-    except ValueError:
-        raise ConfigurationError("SMTP_NETWORK_SUBNET debe ser una subred IPv4 privada alineada entre /24 y /28.") from None
-    if network.version != 4 or not 24 <= network.prefixlen <= 28 \
-            or not any(network.subnet_of(private) for private in _PRIVATE_NETWORKS):
-        raise ConfigurationError("SMTP_NETWORK_SUBNET debe pertenecer a RFC1918 y tener prefijo entre /24 y /28.")
     raw_relay = env.get("SMTP_RELAY_HOST", "")
     relay_host = _host(raw_relay, "SMTP_RELAY_HOST", fqdn=False) if raw_relay else ""
     raw_port = env.get("SMTP_RELAY_PORT", "587")
@@ -103,7 +92,7 @@ def parse_configuration(env: Mapping[str, str]) -> SMTPConfiguration:
         raise ConfigurationError("Las credenciales de relay requieren SMTP_RELAY_HOST.")
     if username and security == "NONE":
         raise ConfigurationError("La autenticación de relay requiere STARTTLS o SSL; no se permiten credenciales sin TLS.")
-    return SMTPConfiguration(hostname, str(local_ip), str(network), relay_host, int(raw_port), security, username, password)
+    return SMTPConfiguration(hostname, str(local_ip), relay_host, int(raw_port), security, username, password)
 
 
 def render_main_cf(config: SMTPConfiguration, map_type: str = "hash") -> str:
@@ -124,7 +113,9 @@ def render_main_cf(config: SMTPConfiguration, map_type: str = "hash") -> str:
         "myorigin": "$myhostname",
         "inet_interfaces": "all",
         "inet_protocols": "ipv4",
-        "mynetworks": f"127.0.0.1/32, {config.network_subnet}",
+        # Derive trust from the actual container interfaces, not a fixed CIDR.
+        # Compose attaches smtp only to its default bridge and publishes no port.
+        "mynetworks_style": "subnet",
         "mydestination": "",
         "relay_domains": "",
         "local_transport": "error:5.1.1 Local delivery is disabled",

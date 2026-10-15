@@ -1,5 +1,9 @@
 # Manual extendido de uso de SIABUC Helpdesk 1.8.1
 
+> **Documento histórico — manual de 1.8.1 del 14 de octubre de 2026.** Se conservan el alcance, los procedimientos y los resultados de esa entrega. Las referencias a la versión «actual», a la «última» evidencia y a funciones o fallos pendientes corresponden a ese momento; no describen el estado de 1.8.3.
+>
+> Para uso e instalación vigentes, consulte el [manual detallado 1.8.3](MANUAL-EXTENDIDO-1.8.3.md), el [índice de documentación](README.md) y las [notas de 1.8.3](VERSION-1.8.3.md).
+
 **Cliente institucional · Soporte técnico · Cobranza · Administración**  
 Edición documental: 14 de octubre de 2026.  
 Base: paquete `SIABUC-Helpdesk-1.8.1.zip` entregado en esta conversación.

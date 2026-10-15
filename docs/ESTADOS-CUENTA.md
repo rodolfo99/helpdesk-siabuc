@@ -1,10 +1,12 @@
-# Estados de cuenta institucionales — versión 1.7
+# Estados de cuenta institucionales — versión 1.8.3
+
+Guía vigente de SIABUC Helpdesk 1.8.3. Consulte el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md) para el recorrido completo por rol.
 
 El estado de cuenta reúne pólizas, pagos, importes pendientes y movimientos de minutos de **una institución**. Administración y Cobranza pueden generarlo; los usuarios clientes sólo pueden hacerlo y consultarlo para su propia institución cuando Administración habilita su portal financiero. El rol Técnico no tiene acceso financiero.
 
 ## Generar y consultar
 
-1. Abra **Estados de cuenta** (Administración/Cobranza), o el apartado **Estado de cuenta** dentro del portal financiero institucional.
+1. Abra **Estados de cuenta** (Administración/Cobranza), o **Finanzas institucionales → Estado de cuenta** para clientes habilitados.
 2. Seleccione institución y fecha de corte. Para clientes la institución está determinada por su cuenta.
 3. Pulse **Generar estado de cuenta**. Se conserva una emisión con folio `SIABUC-EC-##########`.
 4. Revise los importes por moneda, pólizas, pagos y movimientos de minutos; descargue el PDF si lo necesita.
@@ -55,7 +57,7 @@ Los pagos con importe cero que liberan horas de una póliza ya liquidada aparece
 
 Las pólizas muestran minutos contratados y acreditados por sus pagos. El saldo de institución muestra **asignados, usados y disponibles**, separados entre correo y remoto. Los cambios de los contadores institucionales se conservan como movimientos; variación disponible = cambio asignado − cambio usado. Esto incluye créditos, ajustes, consumos y sus reversos; **no se adivina una causa ni se atribuye a un técnico** a partir de un simple cambio numérico. No incluye textos de casos ni notas internas.
 
-Las aplicaciones de pago en esta versión son los vínculos de pagos con pólizas. El calendario de parcialidades tiene su propio detalle de distribución y recordatorios; sus fechas comprometidas no cambian el corte del estado de cuenta.
+En el estado de cuenta, las aplicaciones de pago son los vínculos de pagos con pólizas. El calendario de parcialidades tiene su propio detalle de distribución y recordatorios; sus fechas comprometidas no cambian el corte del estado de cuenta.
 
 ## Privacidad y conservación
 
@@ -79,4 +81,4 @@ Cliente autorizado: los mismos recursos bajo `/api/client-finance/statements`. L
 
 ## Verificación reproducible
 
-`InstitutionStatementIntegrationIT` cubre proyección pública, permisos/CSRF, efectos de ediciones y anulaciones sobre emisiones anteriores, límites temporales, idempotencia, PDF y ausencia de movimientos financieros al emitir. `tests/migrations/statements-v17.mjs` aplica SQL en una base aislada y comprueba la apertura, versiones, rollback e inmutabilidad. Son procedimientos de prueba; el resultado ejecutado de cada entorno se registra en `VALIDACION.md`.
+`InstitutionStatementIntegrationIT` cubre proyección pública, permisos/CSRF, efectos de ediciones y anulaciones sobre emisiones anteriores, límites temporales, idempotencia, PDF y ausencia de movimientos financieros al emitir. `tests/migrations/statements-v17.mjs` aplica SQL en una base aislada y comprueba la apertura, versiones, rollback e inmutabilidad. Son procedimientos de prueba; el resultado ejecutado de cada entorno se registra en [Validación](VALIDACION.md) y en las [notas de 1.8.3](VERSION-1.8.3.md).

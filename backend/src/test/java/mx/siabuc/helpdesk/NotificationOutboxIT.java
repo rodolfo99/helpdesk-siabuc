@@ -66,7 +66,7 @@ class NotificationOutboxIT extends ApiIntegrationSupport {
         assertRecipients(caseId, "CREATE_CASE", "contacto@example.test", "responsable@example.test");
         initialNotices.forEach(row -> assertThat(row.get("body").toString())
                 .contains("Administrativo que atiende: María Atención SIABUC", "\nRegistrado por: testadmin\n",
-                        "\nEstado: Abierto\n", "\n\nDescripción actual del caso:\nProblema original con el catálogo\n"));
+                        "\nEstado: Recibido\n", "\n\nDescripción actual del caso:\nProblema original con el catálogo\n"));
 
         JsonNode currentAdmin = json(admin.get("/auth/me"));
         assertStatus(admin.put("/cases/" + caseId, Map.of("title", "Catálogo revisado", "channel", "EMAIL",
@@ -84,7 +84,7 @@ class NotificationOutboxIT extends ApiIntegrationSupport {
         List<Map<String, Object>> statusNotices = rows(caseId, "CHANGE_CASE_STATUS");
         assertThat(statusNotices).hasSize(4);
         statusNotices.subList(2, 4).forEach(row -> assertThat(row.get("body").toString())
-                .contains("\nEstado: Abierto\n", "Descripción vigente después del diagnóstico", "Se requiere seguimiento adicional")
+                .contains("\nEstado: Recibido\n", "Descripción vigente después del diagnóstico", "Se requiere seguimiento adicional")
                 .doesNotContain("Estado: Activo", "Estado: Inactivo", "Estado: Desactivo"));
     }
 
@@ -127,7 +127,7 @@ class NotificationOutboxIT extends ApiIntegrationSupport {
             assertThat(row.get("recipient")).isEqualTo("");
             assertThat(row.get("last_error")).isNotNull();
             assertThat(row.get("body").toString()).contains("Administrativo que atiende: Sin administrativo asignado",
-                    "\nEstado: Abierto\n", "Para mayor información, consulte la plataforma Helpdesk.");
+                    "\nEstado: Recibido\n", "Para mayor información, consulte la plataforma Helpdesk.");
         });
         long institutionNotice = db.queryForObject("SELECT id FROM notification_outbox WHERE case_id=? AND recipient_type='INSTITUTION'", Long.class, caseId);
         assertStatus(admin.post("/notifications/" + institutionNotice + "/retry", Map.of()), 409);
