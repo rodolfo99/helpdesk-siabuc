@@ -105,9 +105,11 @@ try {
     await expect(page.locator('.entry-form')).toHaveCount(0);
     await expect(page.getByRole('button',{name:'Iniciar cronómetro',exact:true})).toBeDisabled();
     await page.getByRole('button',{name:'Cambiar estado',exact:true}).click();
+    await expect(page.locator('[name=statusTarget] option')).toHaveCount(2);
     assert.deepEqual(await page.locator('[name=statusTarget] option').evaluateAll(rows=>rows.map(r=>r.value)),['IN_PROGRESS','CLOSED']);
     await page.getByRole('button',{name:'Cancelar',exact:true}).click();
     await change('CLOSED');await page.getByRole('button',{name:'Cambiar estado',exact:true}).click();
+    await expect(page.locator('[name=statusTarget] option')).toHaveCount(1);
     assert.deepEqual(await page.locator('[name=statusTarget] option').evaluateAll(rows=>rows.map(r=>r.value)),['IN_PROGRESS']);
     await page.getByRole('button',{name:'Cancelar',exact:true}).click();await change('IN_PROGRESS');
     await expect(page.locator('.entry-form')).toBeVisible();
