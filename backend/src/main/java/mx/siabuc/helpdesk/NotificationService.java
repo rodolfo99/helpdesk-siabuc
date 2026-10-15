@@ -61,7 +61,7 @@ public class NotificationService {
             : c.assignedId() == null ? "Sin administrativo asignado" : "Administrativo no disponible";
         String body = "SIABUC — Notificación de soporte\n\nCaso: #" + c.id() + "\nInstitución cliente: " + c.institutionName()
             + "\nAdministrativo que atiende: " + responsible
-            + "\nTítulo: " + c.title() + "\nEstado: " + ("CLOSED".equals(c.status()) ? "Cerrado" : "Abierto")
+            + "\nTítulo: " + c.title() + "\nEstado: " + Models.CaseStatus.valueOf(c.status()).label()
             + "\nCanal principal: " + ("REMOTE".equals(c.channel()) ? "Escritorio remoto" : "Correo")
             + "\nEvento: " + eventLabel(eventType) + "\nRegistrado por: " + actor
             + (internal ? "\nVisibilidad: nota interna, sólo personal autorizado" : "")

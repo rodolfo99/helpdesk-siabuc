@@ -134,7 +134,7 @@ class ReportIntegrationIT extends ApiIntegrationSupport {
         try(PDDocument document=Loader.loadPDF(pdfBytes)) {
             assertThat(document.getNumberOfPages()).isGreaterThan(1);
             String content=new PDFTextStripper().getText(document);
-            assertThat(content).contains("Instalación, catalogación y préstamos", "Última línea: solución completa [U+1F600]", "Revisión técnica de instalación", "Correo: 15 min", "Abierto", "Página 2");
+            assertThat(content).contains("Instalación, catalogación y préstamos", "Última línea: solución completa [U+1F600]", "Revisión técnica de instalación", "Correo: 15 min", "Recibido", "Página 2");
         }
         assertBalance(institution,15,985,0,1000);
     }

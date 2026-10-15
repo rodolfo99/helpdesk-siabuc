@@ -1,3 +1,4 @@
+import { caseStatusLabel } from './case-status';
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, OnInit, Output, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -8,6 +9,7 @@ import { INCIDENT_STATUSES, IncidentCase, IncidentDetail, IncidentHistory, Incid
 `]})
 export class IncidentsComponent extends PageState implements OnInit,OnChanges {
  @Input() incidentId:number|null=null;@Input() embedded=false;@Output() close=new EventEmitter<void>();@Output() openCase=new EventEmitter<number>();
+  readonly caseStatusLabel=caseStatusLabel;
  readonly api=inject(ApiService);readonly statuses=INCIDENT_STATUSES;readonly statusLabel=incidentStatusLabel;readonly actionLabel=incidentActionLabel;
  readonly results=signal<IncidentPage|null>(null);readonly detail=signal<IncidentDetail|null>(null);readonly historyItem=signal<IncidentHistory|null>(null);readonly loading=signal(false);readonly searchingCases=signal(false);readonly caseOptions=signal<IncidentCase[]>([]);readonly creating=signal(false);readonly editing=signal(false);
  query='';status:IncidentStatus|''='';page=1;caseQuery='';progressNote='';publicTitle='';publicSummary='';publicationConfirmed=false;

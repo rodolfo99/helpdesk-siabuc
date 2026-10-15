@@ -1,4 +1,4 @@
-name: SIABUC 1.8.2 verify
+name: SIABUC 1.8.3 verify
 on:
   pull_request:
   workflow_dispatch:
@@ -14,7 +14,7 @@ jobs:
         env:
           POSTGRES_DB: siabuc_test
           POSTGRES_USER: siabuc
-          POSTGRES_PASSWORD: DisposableDB182Password
+          POSTGRES_PASSWORD: DisposableDB183Password
         ports: ['5432:5432']
         options: >-
           --health-cmd "pg_isready -U siabuc -d siabuc_test"
@@ -24,8 +24,8 @@ jobs:
       DB_PORT: '5432'
       DB_NAME: siabuc_test
       DB_USER: siabuc
-      DB_PASSWORD: DisposableDB182Password
-      ADMIN_PASSWORD: DisposableAdmin182Password
+      DB_PASSWORD: DisposableDB183Password
+      ADMIN_PASSWORD: DisposableAdmin183Password
       MAIL_ENABLED: 'false'
     steps:
       - uses: actions/checkout@v4
@@ -73,20 +73,26 @@ jobs:
       - name: Java 17 tests on PostgreSQL 17
         working-directory: backend
         run: mvn -B -ntp -Ppostgres-it verify
+      - name: Case workflow browser regression (simulated API)
+        working-directory: tests/e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          node case-workflow-v183.ui.mjs
       - name: Confirm version and source package
         run: |
           python3 - <<'PY'
           import json,pathlib
-          assert pathlib.Path('VERSION').read_text().strip() == '1.8.2'
-          assert json.loads(pathlib.Path('frontend/package.json').read_text())['version']=='1.8.2'
-          assert json.loads(pathlib.Path('frontend/package-lock.json').read_text())['version']=='1.8.2'
-          assert '1.8.2' in pathlib.Path('backend/pom.xml').read_text()
-          assert 'siabuc-helpdesk-1.8.2.jar' in pathlib.Path('backend/Dockerfile').read_text()
+          assert pathlib.Path('VERSION').read_text().strip() == '1.8.3'
+          assert json.loads(pathlib.Path('frontend/package.json').read_text())['version']=='1.8.3'
+          assert json.loads(pathlib.Path('frontend/package-lock.json').read_text())['version']=='1.8.3'
+          assert '1.8.3' in pathlib.Path('backend/pom.xml').read_text()
+          assert 'siabuc-helpdesk-1.8.3.jar' in pathlib.Path('backend/Dockerfile').read_text()
           assert not pathlib.Path('.env').exists()
           PY
-          python3 scripts/release-1.8.2.py --package --output release-output
+          python3 scripts/release-1.8.3.py --package --output release-output
       - uses: actions/upload-artifact@v4
         with:
-          name: SIABUC-Helpdesk-1.8.2-source
+          name: SIABUC-Helpdesk-1.8.3-source
           path: release-output/*
           retention-days: 14

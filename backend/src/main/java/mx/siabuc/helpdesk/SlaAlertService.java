@@ -28,7 +28,7 @@ public class SlaAlertService {
  public Map<String,Integer> scanAsAdmin(){requireAdmin();return Map.of("created",scanDueAlerts());}
  public int scanDueAlerts(){
   if(!current().enabled())return 0;int total=0;
-  for(Long caseId:db.queryForList("SELECT c.id FROM support_cases c JOIN institutions i ON i.id=c.institution_id WHERE c.status='OPEN' AND i.active ORDER BY c.institution_id,c.id",Long.class)){
+  for(Long caseId:db.queryForList("SELECT c.id FROM support_cases c JOIN institutions i ON i.id=c.institution_id WHERE c.status IN ('OPEN','IN_PROGRESS','WAITING_CLIENT') AND i.active ORDER BY c.institution_id,c.id",Long.class)){
    Integer created=transaction.execute(status->scanOne(caseId));if(created!=null)total+=created;
   }return total;
  }
@@ -36,7 +36,7 @@ public class SlaAlertService {
   // Same lock order as attention/accounting: institution first, then case. Each case is its own transaction.
   List<Long> ids=db.queryForList("SELECT institution_id FROM support_cases WHERE id=?",Long.class,caseId);if(ids.isEmpty())return 0;
   Boolean active=db.queryForObject("SELECT active FROM institutions WHERE id=? FOR UPDATE",Boolean.class,ids.get(0));if(!Boolean.TRUE.equals(active))return 0;
-  var rows=db.query("SELECT id,institution_id,title,assigned_admin_id FROM support_cases WHERE id=? AND status='OPEN' FOR UPDATE",(r,n)->new CaseRow(r.getLong(1),r.getLong(2),r.getString(3),r.getObject(4,Long.class)),caseId);
+  var rows=db.query("SELECT id,institution_id,title,assigned_admin_id FROM support_cases WHERE id=? AND status IN ('OPEN','IN_PROGRESS','WAITING_CLIENT') FOR UPDATE",(r,n)->new CaseRow(r.getLong(1),r.getLong(2),r.getString(3),r.getObject(4,Long.class)),caseId);
   Settings settings=current();if(rows.isEmpty()||!settings.enabled())return 0;
   CaseRow item=rows.get(0);var sla=profiles.profile(caseId).sla();Instant limit=Instant.now().plusSeconds(settings.leadMinutes()*60L);
   List<Long> recipients=db.queryForList("SELECT id FROM app_users WHERE active AND (role='ADMIN' OR (role='TECH' AND (?::bigint IS NULL OR id=?))) ORDER BY id",Long.class,item.assignedId(),item.assignedId());

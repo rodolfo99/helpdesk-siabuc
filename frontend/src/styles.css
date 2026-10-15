@@ -16,3 +16,11 @@ label{display:flex;flex-direction:column;gap:8px;font-size:11px;font-weight:600;
 @media(max-height:810px) and (min-width:741px){.sidebar{overflow:auto}.sidebar .brand{margin-bottom:26px}.sidebar-bottom{padding-top:25px}.side-note{display:none}.sidebar nav{gap:3px}.sidebar nav button{min-height:41px}}
 @media(max-width:740px){.receipt-grid{grid-template-columns:1fr 1fr;gap:18px}.payment-toolbar .filter-field{flex-basis:calc(50% - 12px)}.payment-toolbar .filter-field input{max-width:none;min-width:0}.receipt-content{padding-left:20px;padding-right:20px}.sidebar.mobile-open{overflow-y:auto}.financial-totals strong{font-size:20px}}
 @media(max-width:470px){.payment-toolbar .filter-field{flex-direction:column!important;align-items:stretch;gap:5px}.payment-balance{padding:16px}.receipt-amount{gap:10px;flex-wrap:wrap}.receipt-amount strong{font-size:23px}.receipt-grid b{font-size:11px}.financial-totals>div:not(.empty-state){flex-direction:column;align-items:flex-start;gap:8px}.sidebar-bottom{padding-top:20px}.sidebar .brand{margin-bottom:25px}.sidebar nav button{min-height:39px}.sidebar.mobile-open .side-note{display:none}}
+
+/* Support case workflow 1.8.3. Long waiting labels wrap on narrow screens. */
+.badge[data-case-status]{white-space:normal;line-height:1.45;text-align:center}
+.badge[data-case-status="OPEN"]{background:#e8f1ff;color:#235587}
+.badge[data-case-status="IN_PROGRESS"]{background:#e1f2eb;color:#12634f}
+.badge[data-case-status="WAITING_CLIENT"]{background:#fff2d8;color:#805312}
+.badge[data-case-status="RESOLVED"]{background:#eee6fa;color:#63408c}
+.badge[data-case-status="CLOSED"]{background:#e8edef;color:#52636b}

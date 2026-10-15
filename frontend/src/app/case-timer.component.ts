@@ -1,3 +1,4 @@
+import { CaseStatus, isActiveCase, canRunCaseTimer } from './case-status';
 import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService, PageState, errorMessage } from './api.service';
@@ -17,7 +18,7 @@ interface WorkTimer { id:number; caseId:number; status:'RUNNING'|'PAUSED'|'FINIS
 <div class="timer-clock" aria-live="off">{{clock()}}</div><p>{{statusLabel(t.status)}}</p>
 <div class="timer-actions">
 @if(t.status==='RUNNING'){<button type="button" class="btn" [disabled]="busy()" (click)="action('pause')">Pausar</button>}
-@if(t.status==='PAUSED'){<button type="button" class="btn" [disabled]="busy()||caseStatus==='CLOSED'" (click)="action('resume')">Continuar</button>}
+@if(t.status==='PAUSED'){<button type="button" class="btn" [disabled]="busy()||!canRunTimer(caseStatus)" (click)="action('resume')">Continuar</button>}
 @if(t.status==='RUNNING'||t.status==='PAUSED'){<button type="button" class="btn primary" [disabled]="busy()" (click)="action('finish')">Finalizar atención</button>}
 @if(t.status==='RUNNING'||t.status==='PAUSED'||t.status==='FINISHED'){<button type="button" class="btn" [disabled]="busy()" (click)="discardRequested=true">Descartar cronómetro</button>}
 </div>
@@ -29,19 +30,21 @@ interface WorkTimer { id:number; caseId:number; status:'RUNNING'|'PAUSED'|'FINIS
 <label>Descripción de la atención<textarea name="timerDescription" required maxlength="7500" rows="3" [(ngModel)]="description"></textarea></label>
 @if(minutes!==t.suggestedMinutes){<label>Motivo del ajuste de minutos<textarea name="timerReason" required maxlength="2000" [(ngModel)]="adjustmentReason"></textarea></label>}
 <label><input name="timerInternal" type="checkbox" [(ngModel)]="internal"> Nota interna; sólo personal de soporte</label>
-@if(caseStatus==='CLOSED'){<p class="notice">El caso está cerrado. Reábrelo para confirmar; el tiempo sigue guardado.</p>}
-<button class="btn primary" [disabled]="busy()||commitForm.invalid||caseStatus==='CLOSED'">Confirmar y descontar {{minutes||0}} minutos</button></form>}
+@if(!isActiveCase(caseStatus)){<p class="notice">El caso está resuelto o cerrado. Reábrelo para confirmar; el tiempo sigue guardado.</p>}
+<button class="btn primary" [disabled]="busy()||commitForm.invalid||!isActiveCase(caseStatus)">Confirmar y descontar {{minutes||0}} minutos</button></form>}
 @if(t.status==='COMMITTED'){<small>Atención registrada #{{t.entryId}}: {{t.confirmedMinutes}} minutos. No se volverán a descontar.</small>}
 }
-@if(!timer()||timer()?.status==='COMMITTED'||timer()?.status==='CANCELLED'){<button type="button" class="btn" [disabled]="busy()||caseStatus==='CLOSED'" (click)="start()">Iniciar cronómetro</button>}
+<p class="muted">El cronómetro sólo puede iniciar o continuar en Recibido o En atención. El tiempo medido se conserva al cambiar de estado.</p>
+@if(!timer()||timer()?.status==='COMMITTED'||timer()?.status==='CANCELLED'){<button type="button" class="btn" [disabled]="busy()||!canRunTimer(caseStatus)" (click)="start()">Iniciar cronómetro</button>}
 </section>}
 `})
 export class CaseTimerComponent extends PageState implements OnChanges,OnDestroy {
-  readonly api=inject(ApiService); @Input({required:true}) caseId=0; @Input() caseStatus:'OPEN'|'CLOSED'='OPEN'; @Output() updated=new EventEmitter<void>();
+  readonly isActiveCase=isActiveCase;readonly canRunTimer=canRunCaseTimer;
+  readonly api=inject(ApiService); @Input({required:true}) caseId=0; @Input() caseStatus:CaseStatus='OPEN'; @Output() updated=new EventEmitter<void>();
   readonly timer=signal<WorkTimer|null>(null); readonly displayedSeconds=signal(0);
   minutes=1; channel:'EMAIL'|'REMOTE'='EMAIL'; description=''; internal=false; adjustmentReason=''; discardRequested=false;
   private tick:ReturnType<typeof setInterval>|undefined; private observedAt=0; private requestVersion=0;
-  ngOnChanges(changes:Record<string,unknown>){if(changes['caseId']){this.requestVersion++;this.stopClock();this.timer.set(null);this.description='';this.adjustmentReason='';this.internal=false;this.discardRequested=false;if(['ADMIN','TECH'].includes(this.api.user()?.role??''))void this.load();}}
+  ngOnChanges(changes:Record<string,unknown>){if(changes['caseId']||changes['caseStatus']){this.requestVersion++;this.stopClock();this.timer.set(null);this.description='';this.adjustmentReason='';this.internal=false;this.discardRequested=false;if(['ADMIN','TECH'].includes(this.api.user()?.role??''))void this.load();}}
   ngOnDestroy(){this.requestVersion++;this.stopClock();}
   private stopClock(){if(this.tick)clearInterval(this.tick);this.tick=undefined;}
   private accept(t:WorkTimer|null){this.stopClock();this.timer.set(t);this.observedAt=Date.now();this.displayedSeconds.set(t?.elapsedSeconds??0);if(t?.status==='FINISHED')this.minutes=Math.max(1,t.suggestedMinutes);if(t?.status==='RUNNING')this.tick=setInterval(()=>this.displayedSeconds.set(t.elapsedSeconds+Math.max(0,Math.floor((Date.now()-this.observedAt)/1000))),1000);}

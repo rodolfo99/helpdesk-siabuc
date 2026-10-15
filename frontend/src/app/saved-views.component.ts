@@ -14,7 +14,7 @@ interface SavedCaseView {id:number;name:string;filters:CaseViewFilters;revision:
  </div>
  @if(deletePrompt()) {<div class="notice warning">¿Eliminar «{{selected()?.name}}»? Los casos se conservan.<div class="form-actions"><button type="button" class="btn danger" (click)="remove()" [disabled]="busy()">Confirmar eliminación</button><button type="button" class="btn secondary" (click)="deletePrompt.set(false)" [disabled]="busy()">Cancelar</button></div></div>}
  <form class="saved-grid" (ngSubmit)="save(false)"><label>Nombre de la vista<input name="savedViewName" [(ngModel)]="name" maxlength="100" placeholder="Ej. Mis casos pendientes" required [disabled]="busy()"></label><button class="btn secondary" [disabled]="busy()||!name.trim()">Guardar filtros como nueva vista</button><button type="button" class="btn secondary" (click)="save(true)" [disabled]="busy()||!selected()||!name.trim()">Actualizar vista seleccionada</button></form>
- <p class="muted">Guarda búsqueda, estado, responsable, institución, categoría y prioridad. Para «mis casos pendientes», selecciona Abiertos y Mis casos antes de guardar.</p>
+ <p class="muted">Guarda búsqueda, estado, responsable, institución, categoría y prioridad. Para «mis casos pendientes», selecciona Pendientes de resolver y Mis casos antes de guardar.</p>
 </section>
 `,styles:[`.saved-views{padding:18px 22px;border-top:1px solid var(--line)}.saved-heading{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px}.saved-grid{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin-bottom:12px}.saved-grid label{min-width:210px;flex:1}.saved-grid .btn{min-height:42px}.muted{font-size:12px;line-height:1.6}.saved-views p{margin:8px 0 0}`]})
 export class SavedViewsComponent extends PageState implements OnInit {

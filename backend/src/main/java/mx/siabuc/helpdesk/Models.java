@@ -12,7 +12,21 @@ public final class Models {
     public record SupportStaff(long id, String displayName, Role role) {}
     public enum PaymentMethod { TRANSFER, DEPOSIT, CASH, CREDIT_CARD, DEBIT_CARD, CHECK, OTHER, CARD }
     public enum Channel { EMAIL, REMOTE }
-    public enum CaseStatus { OPEN, CLOSED }
+    public enum CaseStatus {
+        // Keep OPEN on the wire and in existing data; its visible name is now Recibido.
+        OPEN("Recibido"), IN_PROGRESS("En atención"), WAITING_CLIENT("Requiere respuesta del cliente"),
+        RESOLVED("Resuelto"), CLOSED("Cerrado");
+        private final String label;
+        CaseStatus(String label) { this.label = label; }
+        public String label() { return label; }
+        public boolean active() { return this != RESOLVED && this != CLOSED; }
+        public boolean canRunTimer() { return this == OPEN || this == IN_PROGRESS; }
+        public boolean canChangeTo(CaseStatus next) {
+            if (next == this) return true;
+            if (active()) return next != OPEN;
+            return next == IN_PROGRESS || next == OPEN || (this == RESOLVED && next == CLOSED);
+        }
+    }
     public record User(long id, String username, String displayName, Role role, Long institutionId, boolean active, String email) {}
     public record Institution(long id, String name, String contactName, String email, String phone, String notes,
         boolean active, long emailAllocatedMinutes, long emailUsedMinutes, long emailRemainingMinutes,

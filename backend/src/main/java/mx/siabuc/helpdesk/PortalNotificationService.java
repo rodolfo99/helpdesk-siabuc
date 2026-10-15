@@ -51,7 +51,7 @@ public class PortalNotificationService {
         return db.query("""
             SELECT c.id,c.title,c.waiting_for,c.updated_at,i.name,COALESCE(u.display_name,'Sin administrativo asignado') AS assigned_name
             FROM support_cases c JOIN institutions i ON i.id=c.institution_id LEFT JOIN app_users u ON u.id=c.assigned_admin_id
-            WHERE c.status='OPEN' AND i.active AND
+            WHERE c.status IN ('OPEN','IN_PROGRESS','WAITING_CLIENT') AND i.active AND
               ((? IN ('ADMIN','TECH') AND c.waiting_for='ADMIN' AND (c.assigned_admin_id=? OR c.assigned_admin_id IS NULL))
                OR (?='USER' AND c.waiting_for='CLIENT' AND c.institution_id=?))
             ORDER BY c.updated_at,c.id LIMIT 100

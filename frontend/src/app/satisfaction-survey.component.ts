@@ -1,3 +1,4 @@
+import { CaseStatus } from './case-status';
 import {Component,Input,OnChanges,inject,signal} from '@angular/core';
 import {DatePipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
@@ -5,7 +6,7 @@ import {ApiService,PageState,errorMessage} from './api.service';
 import {newRequestId} from './payment-utils';
 
 interface Survey{id:number;caseId:number;score:number;comment:string;respondentName:string;respondentUsername:string;administratorId:number|null;administratorName:string;createdAt:string;}
-interface SurveyView{caseId:number;caseStatus:'OPEN'|'CLOSED';canRespond:boolean;survey:Survey|null;}
+interface SurveyView{caseId:number;caseStatus:CaseStatus;canRespond:boolean;survey:Survey|null;}
 @Component({selector:'app-satisfaction-survey',standalone:true,imports:[FormsModule,DatePipe],template:`
 <section class="panel survey-panel" aria-label="Encuesta de satisfacción">
 <h2>¿Cómo fue la atención?</h2><p>Comparte la experiencia de tu institución en este caso. La encuesta es opcional y no consume minutos.</p>
@@ -25,7 +26,7 @@ interface SurveyView{caseId:number;caseStatus:'OPEN'|'CLOSED';canRespond:boolean
     </div><label>Comentario (opcional)<textarea name="satisfactionComment" [(ngModel)]="comment" maxlength="2000" rows="3" placeholder="¿Qué hicimos bien o qué podemos mejorar?"></textarea></label><small>{{comment.length}} / 2000 caracteres. No incluyas contraseñas ni datos personales ajenos al caso.</small></fieldset>
     <p>Se guarda una única respuesta por institución y caso, con tu nombre y fecha. El administrativo responsable se toma de la asignación actual, al enviar.</p>
     <button class="btn primary" [disabled]="busy()||surveyForm.invalid||!score">{{busy()?'Enviando…':'Enviar evaluación'}}</button></form>
-  } @else {<p>{{data.caseStatus==='OPEN'?'La encuesta estará disponible cuando el caso esté cerrado.':'La institución aún no ha respondido. Sólo un usuario cliente puede enviar la evaluación.'}}</p>}
+  } @else {<p>{{data.caseStatus!=='CLOSED'?'La encuesta estará disponible cuando el caso esté cerrado.':'La institución aún no ha respondido. Sólo un usuario cliente puede enviar la evaluación.'}}</p>}
 }
 @if(!loading()&&!view()){<button type="button" class="btn secondary" [disabled]="busy()" (click)="load()">Actualizar encuesta</button>}
 @if(error()&&view()){<button type="button" class="btn secondary" [disabled]="busy()" (click)="load()">Consultar respuesta guardada</button>}

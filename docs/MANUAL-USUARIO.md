@@ -1,5 +1,7 @@
 # Manual de uso
 
+Desde **1.8.3**, consulte [los cinco estados de los casos y sus transiciones](VERSION-1.8.3.md). Use **Cambiar estado** en el detalle, seleccione el destino y escriba el motivo. **Pendientes de resolver** agrupa Recibido, En atención y Requiere respuesta del cliente; Resuelto se muestra separado de Cerrado. Los ejemplos de cierre y reapertura de este manual se realizan desde ese selector.
+
 Desde 1.4 también están disponibles [clasificación, ficha técnica y SLA](CLASIFICACION-SLA.md), [adjuntos y recorrido del caso](HELPDESK-1.4.md), [campana y alertas de saldo](AVISOS-INTERNOS.md), [cronómetro y agenda](CRONOMETRO-AGENDA.md) y [reportes Excel/PDF](REPORTES.md). Estas guías complementan los flujos y permisos siguientes.
 
 Desde 1.5, el usuario **Cobranza** dispone de [pólizas, abonos y acreditación de horas](POLIZAS-COBRANZA.md), [comprobantes de pago](COMPROBANTES-PAGO.md) y [reportes financieros](REPORTES-COBRANZA.md). Administración conserva la supervisión y la autorización para anular pagos.

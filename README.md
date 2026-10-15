@@ -1,8 +1,25 @@
-# SIABUC Helpdesk 1.8.2
+# SIABUC Helpdesk 1.8.3
 
 Sistema de atención técnica con servidor **Spring Boot 3.5.16 / Java 17**, cliente **Angular 21.2.25** y base de datos **PostgreSQL 17**. Conserva instituciones, usuarios, casos, pagos, actualizaciones descriptivas y auditoría. El tiempo por correo y por escritorio remoto se administra en **dos bolsas independientes de minutos enteros**.
 
-## Estado de la versión 1.8.2
+## Estados de casos en 1.8.3
+
+**Recibido → En atención → Requiere respuesta del cliente → Resuelto → Cerrado.**
+Administración y técnicos pueden cambiar el estado con un motivo desde el detalle.
+La respuesta del cliente en espera devuelve el caso a En atención. Resolver o cerrar
+conserva el historial y exige reabrir antes de registrar más trabajo. Los cronómetros
+se pausan al esperar, resolver o cerrar; los minutos se descuentan sólo al confirmar
+una atención. Esperar al cliente no suspende el SLA; resolver registra la resolución
+sin que el cierre posterior cambie su fecha.
+
+Consulte [transiciones, migración y uso de 1.8.3](docs/VERSION-1.8.3.md).
+Los identificadores `OPEN` y `CLOSED` existentes se conservan; `OPEN` se muestra
+como Recibido. La migración V26 conserva casos, saldos y fechas, y amplía las
+vistas guardadas antiguas de abiertos a todos los casos pendientes.
+
+La evidencia de versiones anteriores se conserva a continuación con su alcance.
+
+## Antecedente de la versión 1.8.1
 
 **Código integrado en `main`.** Evolución de 1.7 con mejoras del portal institucional, categorías editoriales, guía de primeros pasos y correcciones de compilación. Conserva los mecanismos de autenticación y las reglas de soporte, pólizas, minutos y cobranza.
 
@@ -75,7 +92,7 @@ Crear paquetes, cotizar, programar parcialidades, importar o conciliar movimient
 - Asignación de un responsable ADMIN/TECH por institución y caso; correo de contacto por cuenta.
 - Registro de pagos y acreditación atómica de minutos, con referencias únicas y protección ante reintentos duplicados.
 - Avisos SMTP al cliente y responsable por cambios de casos, incluido el cierre; avisos de pagos y anulaciones, cola persistente y reintentos.
-- Cada aviso de caso identifica la institución cliente y el administrativo que atiende, incluye la descripción actual, el detalle de la actualización y el estado **Abierto** o **Cerrado**, e invita a consultar la plataforma Helpdesk.
+- Cada aviso de caso identifica la institución cliente y el administrativo que atiende, incluye la descripción actual, el detalle de la actualización y el estado actual: **Recibido**, **En atención**, **Requiere respuesta del cliente**, **Resuelto** o **Cerrado**, e invita a consultar la plataforma Helpdesk.
 - Activación y pausa persistente del envío desde **Correo y notificaciones**, exclusiva de administradores, sin reiniciar: los avisos anteriores y los generados durante la pausa quedan sin envío; al reactivar sólo se notifican eventos nuevos.
 - Gmail SMTP directo opcional en 1.8.2; Postfix es un servicio heredado opcional, con cola persistente.
 - Categorías, prioridades, ficha técnica y plazos de primera respuesta y resolución calculados con horario laboral configurable.

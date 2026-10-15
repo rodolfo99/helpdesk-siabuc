@@ -35,7 +35,7 @@ class NotificationDetailIntegrationIT extends ApiIntegrationSupport {
         assertThat(detail.path("recipientType").asText()).isEqualTo("INSTITUTION");
         assertThat(detail.path("recipientEntityId").asLong()).isEqualTo(institution);
         assertThat(detail.path("body").asText()).isEqualTo(originalBody)
-                .contains("Descripción actual del caso:", "Estado: Abierto")
+                .contains("Descripción actual del caso:", "Estado: Recibido")
                 .doesNotContain("Descripción que no pertenecía al aviso original");
         assertThat(detail.path("internal").asBoolean()).isFalse();
         assertThat(detail.path("createdAt").asText()).isNotBlank();

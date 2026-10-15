@@ -76,10 +76,11 @@ public class CaseProfileService {
             """,caseId,entryId);
     }
     @Transactional(propagation=Propagation.MANDATORY)
-    public void recordStatus(long caseId,Models.CaseStatus status) {
-        if(status==Models.CaseStatus.CLOSED)
-            db.update("UPDATE case_profiles SET resolved_at=NOW(),updated_at=NOW() WHERE case_id=?",caseId);
-        else db.update("UPDATE case_profiles SET resolved_at=NULL,resolution_started_at=NOW(),updated_at=NOW() WHERE case_id=?",caseId);
+    public void recordStatus(long caseId,Models.CaseStatus previous,Models.CaseStatus status) {
+        if(!status.active())
+            db.update("UPDATE case_profiles SET resolved_at=COALESCE(resolved_at,NOW()),updated_at=NOW() WHERE case_id=?",caseId);
+        else if(!previous.active())
+            db.update("UPDATE case_profiles SET resolved_at=NULL,resolution_started_at=NOW(),updated_at=NOW() WHERE case_id=?",caseId);
     }
     public Profile profile(long caseId) { return view(row(caseId)); }
     @Transactional
@@ -93,7 +94,7 @@ public class CaseProfileService {
         db.queryForObject("SELECT id FROM support_cases WHERE id=? FOR UPDATE",Long.class,caseId);
         if(!Boolean.TRUE.equals(active)) throw ApiException.conflict("La institución está dada de baja.");
         Row before=row(caseId);
-        if(!"OPEN".equals(before.status())) throw ApiException.conflict("Reabra el caso para modificar su ficha técnica.");
+        if(!Models.CaseStatus.valueOf(before.status()).active()) throw ApiException.conflict("Reabra el caso para modificar su ficha técnica.");
         db.update("""
             UPDATE case_profiles SET category=?,priority=?,siabuc_version=?,operating_system=?,error_message=?,reproduction_steps=?,updated_at=NOW()
             WHERE case_id=?
@@ -116,7 +117,7 @@ public class CaseProfileService {
         Goal goal=r.settings().goals().get(r.priority());
         Instant responseDue=deadline(r.opened(),goal.firstResponseMinutes(),r.settings());
         Instant resolutionDue=deadline(r.resolutionStarted(),goal.resolutionMinutes(),r.settings());
-        Instant now=Instant.now(); boolean closed="CLOSED".equals(r.status());
+        Instant now=Instant.now(); boolean closed=!Models.CaseStatus.valueOf(r.status()).active();
         String responseState=state(responseDue,r.responded(),now,closed);
         String resolutionState=state(resolutionDue,r.resolved(),now,closed);
         return new Profile(r.id(),r.category(),r.priority(),r.version(),r.os(),r.error(),r.steps(),new Sla(r.settings().timezone(),responseDue,
