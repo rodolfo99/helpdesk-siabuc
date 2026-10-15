@@ -48,7 +48,7 @@ class CaseClaimIntegrationIT extends ApiIntegrationSupport {
         assertThat(notices.stream().map(row -> row.get("recipient")))
                 .containsExactlyInAnyOrder("contacto@example.test", "testadmin@example.test");
         assertThat(notices).allSatisfy(row -> assertThat(row.get("body").toString())
-                .contains("Administrativo que atiende: " + administrator.path("displayName").asText(), "Caso tomado por", "Estado: Abierto"));
+                .contains("Administrativo que atiende: " + administrator.path("displayName").asText(), "Caso tomado por", "Estado: En atención"));
 
         assertThat(success(admin.post("/cases/" + caseId + "/claim", null))).isEqualTo(claimed);
         assertThat(claimNotices(caseId)).isEqualTo(notices);

@@ -37,6 +37,21 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          cache: maven
       - name: PostgreSQL 17 integration and unit tests
         working-directory: backend
-        run: mvn -B -ntp -Ppostgres-it verify
+        run: |
+          mvn --version
+          for attempt in 1 2 3; do
+            if mvn -B -ntp -U -Ppostgres-it verify > maven-verify.log 2>&1; then
+              cat maven-verify.log
+              exit 0
+            fi
+            cat maven-verify.log
+            # Retry dependency transport failures only; assertion failures stop immediately.
+            if ! grep -Eq 'Could not transfer artifact|Connection reset|Failed to read artifact descriptor|Could not resolve dependencies|could not be resolved' maven-verify.log; then
+              exit 1
+            fi
+            if [ "$attempt" -lt 3 ]; then sleep 10; fi
+          done
+          exit 1
