@@ -90,8 +90,9 @@ async function registerEntry(kind, minutes, description, internal = false) {
   await expect(page.locator('.timeline-entry').filter({ hasText: description })).toBeVisible();
   await expect(page.getByRole('status')).toContainText(kind === 'COMMENT' ? 'Comentario agregado' : 'Atención registrada');
 }
-async function changeStatus(buttonName, reason, resultStatus) {
-  await page.getByRole('button', { name: buttonName, exact: true }).click();
+async function changeStatus(target, reason, resultStatus) {
+  await page.getByRole('button', { name: 'Cambiar estado', exact: true }).click();
+  await page.locator('[name=statusTarget]').selectOption(target);
   await page.getByLabel('Motivo', { exact: true }).fill(reason);
   await mutate('POST', `/cases/${caseId}/status`, () => page.getByRole('button', { name: 'Confirmar cambio' }).click());
   await expect(page.locator('.case-heading .badge')).toHaveText(resultStatus);
@@ -186,9 +187,9 @@ try {
     await mutate('PUT', `/cases/${caseId}`, () => page.getByRole('button', { name: 'Guardar cambios' }).click());
     await expect(page.getByRole('button', { name: 'Guardar cambios' })).toHaveCount(0);
     await expect(page.getByRole('status')).toContainText('Caso actualizado');
-    await changeStatus('Cerrar caso', 'Solución entregada y probada.', 'Cerrado');
+    await changeStatus('CLOSED', 'Solución entregada y probada.', 'Cerrado');
     await expect(page.getByText('Este caso está cerrado', { exact: true })).toBeVisible();
-    await changeStatus('Reabrir caso', 'Seguimiento adicional autorizado con saldo disponible.', 'Abierto');
+    await changeStatus('IN_PROGRESS', 'Seguimiento adicional autorizado con saldo disponible.', 'En atención');
     await expect(page.locator('.timeline-entry').filter({ hasText: internalNote })).toBeVisible();
   });
   await step('Denegación de sobregiro en interfaz y servidor; agotamiento exacto de ambos canales', async () => {
@@ -231,7 +232,7 @@ try {
     const visibleDetail = await api(`/cases/${caseId}`);
     assert.ok(visibleDetail.body.entries.every(entry => !entry.internal));
     await expect(page.getByLabel('Tipo de registro')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Cerrar caso', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Cambiar estado', exact: true })).toHaveCount(0);
     await page.getByLabel('Tu comentario').fill('Confirmamos recepción de las indicaciones y agradecemos el seguimiento.');
     await mutate('POST', `/cases/${caseId}/entries`, () => page.getByRole('button', { name: 'Agregar al historial' }).click());
     await expect(page.getByRole('status')).toContainText('Comentario agregado');
