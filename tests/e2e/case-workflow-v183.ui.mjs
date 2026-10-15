@@ -60,6 +60,7 @@ async function open(role='ADMIN') {
     if(path==='/api/institutions')return reply([institution]);
     if(path==='/api/cases')return reply(items);
     if(path==='/api/case-profiles')return reply(items.map(c=>({caseId:c.id,category:'OTHER',priority:'NORMAL'})));
+    if(path==='/api/backups/status')return reply({settings:{enabled:false,dailyTime:'02:00',timeZone:'America/Mexico_City',retentionDays:30,keepLast:3,destinationConfirmed:false,updatedAt:now},worker:{online:false,writable:false,destinationLabel:'',lastError:'',lastSeenAt:null},runs:[],lastFailure:null});
     if(path==='/api/inbox')return reply({items:[],unreadCount:0,pendingReplies:[]});
     if(path==='/api/users')return reply([{id:1,displayName:'Soporte',role:'ADMIN',active:true}]);
     if(path==='/api/saved-views')return reply(saved);
