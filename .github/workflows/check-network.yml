@@ -37,6 +37,8 @@ jobs:
           import json,sys
           cfg=json.load(sys.stdin)
           services=cfg["services"]
+          assert set(cfg["networks"])=={"default"}
+          assert not cfg["networks"]["default"].get("ipam")
           for name in ("db","backend"):
               assert not services[name].get("ports"), (name,services[name].get("ports"))
           assert "smtp" not in services
@@ -59,7 +61,10 @@ jobs:
         run: |
           docker compose --profile local-smtp -f docker-compose.yml -f docker-compose.dev.yml config --format json | python3 -c '
           import json,sys
-          s=json.load(sys.stdin)["services"]
+          cfg=json.load(sys.stdin)
+          s=cfg["services"]
+          assert set(cfg["networks"])=={"default"}
+          assert set(s["smtp"]["networks"])=={"default"}
           for name in ("db","smtp"):
               ports=s[name].get("ports",[])
               assert len(ports)==1, (name,ports)

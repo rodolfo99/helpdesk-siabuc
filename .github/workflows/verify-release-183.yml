@@ -49,7 +49,11 @@ jobs:
           export SMTP_HOST=smtp.gmail.com
           docker compose config --format json | python3 -c '
           import json,sys
-          s=json.load(sys.stdin)["services"]
+          cfg=json.load(sys.stdin)
+          s=cfg["services"]
+          assert set(cfg["networks"])=={"default"}
+          assert not cfg["networks"]["default"].get("ipam")
+          assert set(s["backend"]["networks"])=={"default"}
           assert "smtp" not in s
           assert not s["db"].get("ports")
           assert not s["backend"].get("ports")
@@ -60,11 +64,21 @@ jobs:
         run: |
           SMTP_HOST=smtp docker compose --profile local-smtp config --format json | python3 -c '
           import json,sys
-          s=json.load(sys.stdin)["services"]
+          cfg=json.load(sys.stdin)
+          s=cfg["services"]
+          assert set(cfg["networks"])=={"default"}
+          assert not cfg["networks"]["default"].get("ipam")
+          assert set(s["smtp"]["networks"])=={"default"}
+          assert "SMTP_NETWORK_SUBNET" not in s["smtp"]["environment"]
           assert "smtp" in s
           assert not s["smtp"].get("ports")
           print("Postfix opcional disponible")
           '
+      - name: SMTP on the automatic Compose network (no message sent)
+        run: |
+          trap 'docker compose --profile local-smtp logs smtp; docker compose --profile local-smtp rm -sf smtp' EXIT
+          docker compose --profile local-smtp up -d --build --wait --wait-timeout 180 smtp
+          docker compose --profile local-smtp run --rm --no-deps -T --entrypoint python3 smtp - < tests/smtp/compose_network_smoke.py
       - name: Frontend build and tests
         working-directory: frontend
         run: |

@@ -7,7 +7,7 @@
 - **Spring Boot:** autenticación, autorización, reglas de negocio, acceso JDBC, transacciones y auditoría. El cliente no decide permisos ni saldos.
 - **PostgreSQL:** persistencia relacional, restricciones de integridad y bloqueos de filas. Las migraciones Flyway crean el esquema en el primer inicio y aplican extensiones versionadas al actualizar.
 - **SMTP/outbox:** cola PostgreSQL creada junto con los eventos, procesador periódico y conexión de correo configurable. No se realiza I/O SMTP dentro de la transacción de negocio.
-- **Postfix interno:** SMTP de salida en Docker, autorizado únicamente para loopback y la subred dedicada al backend. Entrega directamente por MX o mediante relay. Cola durable `smtp_queue`, sin buzones ni bandeja web.
+- **Postfix opcional:** SMTP de salida en el perfil `local-smtp`, autorizado para loopback y los contenedores de la red `default` del proyecto. Docker asigna la subred; no se crea una red SMTP dedicada. Entrega directamente por MX o mediante relay. Cola durable `smtp_queue`, sin buzones ni bandeja web.
 - **Worker de respaldos:** servicio Docker `backup`, con acceso a PostgreSQL y a un directorio privado del anfitrión. Ejecuta `pg_dump` y conserva estado/hash/retención sin montar el socket Docker ni el volumen de datos de PostgreSQL. Su calendario se instala desactivado.
 - **Mailpit opcional:** sumidero y bandeja local para pruebas de correo, perfil Docker `mail-test`.
 

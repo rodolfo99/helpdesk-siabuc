@@ -85,6 +85,19 @@ base nueva el respaldo compatible con la versión anterior.
 Se conserva Gmail SMTP directo y Postfix opcional de 1.8.2. Esta versión no
 modifica credenciales ni incorpora otros requisitos preliminares institucionales.
 
+## Docker sin red SMTP dedicada
+
+Se elimina `smtp_net` y su IPAM con subred fija. El backend y el Postfix opcional
+usan la red `default` que Compose crea para el proyecto. Postfix deriva sus
+clientes permitidos de la subred real del contenedor, compartida con los demás
+servicios; el puerto SMTP sigue sin publicarse en el despliegue normal y sólo
+escucha en loopback del anfitrión con el override de desarrollo.
+
+La clave heredada `SMTP_NETWORK_SUBNET` se acepta y se ignora; no se genera en
+configuraciones nuevas ni requiere editar un `.env` existente. Consulte
+[SMTP interno](SMTP-INTERNO.md#acceso-restringido-y-red) para operación y limpieza
+de una red antigua vacía tras recrear los contenedores.
+
 ## Validación
 
 La suite Java incorpora el recorrido de los cinco estados, permisos, idempotencia,
@@ -93,6 +106,10 @@ Una prueba de migración aplica V1–V25 con datos y después V26 en un esquema
 desechable. La prueba de navegador `tests/e2e/case-workflow-v183.ui.mjs` comprueba
 selector, filtros, historial, permisos visuales y visualización móvil con API
 simulada. Consulte los checks de la PR para resultados y SHA exactos.
+
+CI también valida que Compose use una sola red sin subred fija en ambos modos
+de correo. Un smoke con Postfix real comprueba EHLO, MAIL, RCPT y RSET desde otro
+contenedor de esa red, sin DATA ni envío de un mensaje al exterior.
 
 Estas verificaciones no acreditan por sí solas entrega SMTP real, actualización
 de producción ni restauración en el equipo de destino. La evidencia histórica

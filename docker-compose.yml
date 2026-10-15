@@ -51,9 +51,6 @@ services:
       db:
         condition: service_healthy
     # El SMTP local no es requisito del backend: puede enviar directo a Gmail.
-    networks:
-      - default
-      - smtp_net
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/api/health"]
       interval: 10s
@@ -94,7 +91,6 @@ services:
     environment:
       SMTP_HOSTNAME: ${SMTP_HOSTNAME:-mail.siabuc.internal}
       SMTP_LOCAL_IP: ${SMTP_LOCAL_IP:-127.0.0.1}
-      SMTP_NETWORK_SUBNET: ${SMTP_NETWORK_SUBNET:-172.30.55.0/24}
       SMTP_RELAY_HOST: ${SMTP_RELAY_HOST:-}
       SMTP_RELAY_PORT: ${SMTP_RELAY_PORT:-587}
       SMTP_RELAY_SECURITY: ${SMTP_RELAY_SECURITY:-STARTTLS}
@@ -103,8 +99,7 @@ services:
     # SMTP accesible en smtp:25 desde Docker. Host loopback solo en desarrollo.
     volumes:
       - smtp_queue:/var/spool/postfix
-    networks:
-      - smtp_net
+    # Comparte la red default de Compose; no requiere una subred SMTP fija.
     # HEALTHCHECK comes from smtp/Dockerfile and only performs SMTP EHLO/NOOP.
     restart: unless-stopped
 
@@ -160,11 +155,3 @@ volumes:
   postgres_data:
   mailpit_data:
   smtp_queue:
-
-networks:
-  default:
-  smtp_net:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: ${SMTP_NETWORK_SUBNET:-172.30.55.0/24}

@@ -1,10 +1,10 @@
-# Servidor SMTP interno · versión 1.2
+# Servidor SMTP interno · configuración vigente en 1.8.3
 
 El servicio Docker `smtp` contiene **Postfix para enviar correo**. Spring entrega allí los avisos y Postfix los transmite al servidor del destinatario o a un relay autorizado. No proporciona buzones, IMAP, POP3 ni una bandeja web. El puerto SMTP no se publica hacia Internet.
 
-## Inicio predeterminado
+## Inicio opcional
 
-En una instalación nueva, `./iniciar.sh` genera `.env`, construye Postfix e inicia PostgreSQL, SMTP, Spring y Angular. Spring usa estos valores:
+Desde 1.8.2, una instalación nueva tiene el correo desactivado y Gmail directo preseleccionado. Postfix se activa opcionalmente con `./configurar.sh --smtp-interno`; después, `./iniciar.sh` habilita el perfil `local-smtp`. Spring usa estos valores para conectarse al servicio interno:
 
 ```dotenv
 MAIL_ENABLED=true
@@ -16,7 +16,6 @@ SMTP_LOCAL_IP=127.0.0.1
 MAIL_FROM=soporte@[127.0.0.1]
 SMTP_HOSTNAME=mail.siabuc.internal
 SMTP_INTERNAL_PORT=2525
-SMTP_NETWORK_SUBNET=172.30.55.0/24
 SMTP_RELAY_HOST=
 ```
 
@@ -53,7 +52,6 @@ Estas variables son distintas de `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME` y `SM
 | `SMTP_LOCAL_IP` | `127.0.0.1` | IPv4 del anfitrión utilizada en el saludo saliente. El asistente deriva el remitente de esta IP. |
 | `SMTP_HOSTNAME` | `mail.siabuc.internal` | Nombre técnico completo de Postfix; no es el dominio del remitente. |
 | `SMTP_INTERNAL_PORT` | `2525` | Puerto publicado únicamente en `127.0.0.1`; dentro de Docker es 25. |
-| `SMTP_NETWORK_SUBNET` | `172.30.55.0/24` | Red privada dedicada a Spring y Postfix. Admite red IPv4 RFC1918 de /24 a /28. |
 | `SMTP_RELAY_HOST` | Vacío | Vacío: entrega directa. Con valor: relay saliente, sin protocolo ni puerto. |
 | `SMTP_RELAY_PORT` | `587` | Puerto del relay. |
 | `SMTP_RELAY_SECURITY` | `STARTTLS` | `STARTTLS`, `SSL` o `NONE`. |
@@ -84,11 +82,13 @@ Establezca el secreto con `./configurar.sh --smtp-interno`. Para TLS implícito 
 
 ## Acceso restringido y red
 
-Sólo se permite enviar a los clientes de la red Docker dedicada y a loopback; los demás clientes se rechazan. La configuración sigue el [control de acceso SMTP de Postfix](https://www.postfix.org/SMTPD_ACCESS_README.html). No se usa una red permitida universal ni se publica el servicio en `0.0.0.0`.
+Desde 1.8.3 no existe una red `smtp_net` ni una subred SMTP fija. Postfix comparte la red `default` del proyecto con los demás servicios. Docker asigna la subred y Postfix obtiene las redes conectadas mediante [`mynetworks_style=subnet`](https://www.postfix.org/postconf.5.html#mynetworks_style). Se permite enviar a los contenedores de esa red y a loopback; los demás clientes se rechazan con `permit_mynetworks, reject`. El servicio SMTP no publica puertos en el despliegue normal.
 
-Spring y Postfix se comunican sin autenticación ni TLS dentro de esa red privada. No hay credenciales en ese tramo. Si utiliza `./iniciar-dev.sh`, Spring se conecta a `127.0.0.1:SMTP_INTERNAL_PORT` y el script inicia Postfix junto con la base. Los procesos locales del mismo anfitrión pueden utilizar ese puerto: administre el acceso al equipo.
+Spring y Postfix se comunican sin autenticación ni TLS dentro de la red del proyecto. No hay credenciales en ese tramo. Si utiliza `./iniciar-dev.sh` con SMTP interno, Spring se conecta a `127.0.0.1:SMTP_INTERNAL_PORT` y el script inicia Postfix junto con la base. Los procesos locales del mismo anfitrión pueden utilizar ese puerto: administre el acceso al equipo.
 
-Si Docker informa solapamiento de direcciones, elija otra subred privada libre en `SMTP_NETWORK_SUBNET`. Debe conservar la misma variable tanto para IPAM como para la lista de confianza del contenedor; Compose lo hace automáticamente. No conecte contenedores ajenos a esa red.
+`SMTP_NETWORK_SUBNET` ya no se genera ni configura la red; si existe en un `.env` anterior, se acepta y se ignora. No conecte contenedores ajenos a la red del proyecto ni utilice `network_mode: host`: Postfix confía en las subredes de sus interfaces.
+
+Al actualizar con `./iniciar.sh`, Compose recrea los servicios afectados. Una red antigua vacía puede permanecer en Docker; después de verificar que no tiene contenedores conectados, puede retirarla con `docker network inspect NOMBRE_DEL_PROYECTO_smtp_net` y `docker network rm NOMBRE_DEL_PROYECTO_smtp_net`, usando el nombre real del proyecto. No borre volúmenes ni use una limpieza global de redes.
 
 ## Cola y diagnóstico
 

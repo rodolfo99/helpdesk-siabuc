@@ -4,7 +4,6 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
-import ipaddress
 from pathlib import Path
 import stat
 import subprocess
@@ -23,7 +22,6 @@ SPEC.loader.exec_module(smtp)
 def relay_env(**overrides: str) -> dict[str, str]:
     values = {
         "SMTP_HOSTNAME": "smtp.siabuc.test",
-        "SMTP_NETWORK_SUBNET": "172.30.55.0/24",
         "SMTP_RELAY_HOST": "relay.example.test",
         "SMTP_RELAY_PORT": "587",
         "SMTP_RELAY_SECURITY": "STARTTLS",
@@ -91,26 +89,18 @@ class SmtpConfigurationTests(unittest.TestCase):
         self.assertEqual(rendered["smtp_tls_security_level"], "none")
         self.assertEqual(rendered["smtp_tls_wrappermode"], "no")
 
-    def test_trust_is_limited_to_loopback_and_one_private_bounded_subnet(self) -> None:
-        for subnet in ("10.25.30.0/24", "172.16.25.0/25", "192.168.20.64/26", "10.25.30.0/27", "172.31.55.16/28"):
-            with self.subTest(subnet=subnet):
-                config = smtp.parse_configuration({"SMTP_NETWORK_SUBNET": subnet})
-                rendered = settings(smtp.render_main_cf(config))
-                trusted = [ipaddress.ip_network(value.strip()) for value in rendered["mynetworks"].replace(",", " ").split()]
-                self.assertEqual(set(trusted), {ipaddress.ip_network("127.0.0.1/32"), ipaddress.ip_network(subnet)})
-                restrictions = rendered["smtpd_relay_restrictions"]
-                rules = [value.strip() for value in restrictions.split(",")]
-                self.assertEqual(rules[0], "permit_mynetworks")
-                self.assertIn(rules[-1], {"reject", "reject_unauth_destination"})
-                self.assertEqual(len(rules), 2)
-                self.assertNotIn("permit_sasl_authenticated", restrictions)
+    def test_trust_follows_container_subnet_and_rejects_other_clients(self) -> None:
+        rendered = settings(smtp.render_main_cf(smtp.parse_configuration({})))
+        self.assertEqual(rendered["mynetworks_style"], "subnet")
+        self.assertNotIn("mynetworks", rendered)  # An explicit CIDR would override auto-detection.
+        for key in ("smtpd_client_restrictions", "smtpd_relay_restrictions", "smtpd_recipient_restrictions"):
+            self.assertEqual(rendered[key], "permit_mynetworks, reject")
 
-    def test_public_broad_hostbit_and_ipv6_networks_are_rejected(self) -> None:
-        for subnet in ("0.0.0.0/0", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "192.168.10.0/23",
-                       "192.168.10.0/29", "192.168.10.1/24", "8.8.8.0/24", "100.64.0.0/24", "127.0.0.0/24",
-                       "169.254.0.0/24", "198.18.0.0/24", "::/0", "fd00::/64", "not-a-network"):
-            with self.subTest(subnet=subnet), self.assertRaises(smtp.ConfigurationError):
-                smtp.parse_configuration({"SMTP_NETWORK_SUBNET": subnet})
+    def test_obsolete_subnet_cannot_override_automatic_trust(self) -> None:
+        expected = smtp.render_main_cf(smtp.parse_configuration({}))
+        for subnet in ("172.30.55.0/24", "0.0.0.0/0", "not-a-network"):
+            with self.subTest(subnet=subnet):
+                self.assertEqual(smtp.render_main_cf(smtp.parse_configuration({"SMTP_NETWORK_SUBNET": subnet})), expected)
 
     def test_hostname_rejects_control_characters_and_invalid_dns_labels(self) -> None:
         for hostname in ("localhost", "-smtp.example.test", "smtp-.example.test", "smtp..test", "smtp example.test",

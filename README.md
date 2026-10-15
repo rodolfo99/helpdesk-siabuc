@@ -231,7 +231,7 @@ No es necesario editar docker-compose.yml ni cambiar el nombre del proyecto. Los
 
 ## Correo, responsables y pagos
 
-En 1.8.2 una instalación nueva inicia con envío desactivado y Gmail directo preseleccionado; configure `./configurar.sh --gmail-directo` para activarlo. Las instalaciones heredadas pueden conservar Postfix en `smtp:25`. Postfix se inicia automáticamente y conserva su cola en un volumen. El remitente usa la IP local entre corchetes: `soporte@[192.168.1.50]`, por ejemplo. El valor inicial `soporte@[127.0.0.1]` permite arrancar localmente; configure la IP LAN real del anfitrión y, si lo necesita, un relay autorizado:
+Desde 1.8.2 una instalación nueva inicia con envío desactivado y Gmail directo preseleccionado; configure `./configurar.sh --gmail-directo` para activarlo. Las instalaciones heredadas pueden conservar Postfix en `smtp:25`. En ese modo, Postfix se inicia automáticamente y conserva su cola en un volumen. Desde 1.8.3 comparte la red predeterminada del proyecto: se elimina `smtp_net` y no se reserva una subred SMTP fija. El remitente usa la IP local entre corchetes: `soporte@[192.168.1.50]`, por ejemplo. El valor inicial `soporte@[127.0.0.1]` permite arrancar localmente; configure la IP LAN real del anfitrión y, si lo necesita, un relay autorizado:
 
 ```bash
 ./configurar.sh --smtp-interno
