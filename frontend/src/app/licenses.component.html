@@ -1,0 +1,42 @@
+<div class="page-heading"><div><div class="eyebrow">SOPORTE POR LICENCIA</div><h1>Licencias</h1><p>Horas incluidas, adicionales y disponibles de correo y escritorio remoto.</p></div>
+  @if(isAdmin()){<button class="btn primary" (click)="create()" [disabled]="busy()">Nueva licencia</button>}
+</div>
+@if(error()){<div class="notice error" role="alert">{{error()}}</div>}
+@if(success()){<div class="notice success" role="status">{{success()}}</div>}
+@if(creating && defaults; as d){
+  <section class="panel form-panel"><h2>Nueva licencia</h2>
+    @if(!d.configured){<p class="notice info">Primero guarda las horas predeterminadas en Configuración de soporte. Después vuelve a abrir Nueva licencia.</p>}
+    <form (ngSubmit)="save()" #licenseForm="ngForm"><fieldset [disabled]="busy()">
+      <div class="form-grid"><label>Institución titular<select name="licenseInstitution" [(ngModel)]="institutionId" required><option [ngValue]="null">Selecciona una institución</option>@for(i of activeInstitutions();track i.id){<option [ngValue]="i.id">{{i.name}}</option>}</select></label>
+      <label>Número de licencia<input name="licenseNumber" [(ngModel)]="number" required maxlength="100"></label></div>
+      <p>Horas incluidas de correo: <b>{{time(d.emailMinutes)}}</b>. Escritorio remoto: <b>{{time(d.remoteMinutes)}}</b>.</p>
+      <p class="notice info">Al guardar se agregarán estas horas al saldo de la licencia y al total institucional. Si el saldo ya está registrado, evita acreditarlo de nuevo.</p>
+    </fieldset><div class="form-actions"><button type="button" class="btn secondary" (click)="creating=false" [disabled]="busy()">Cancelar</button><button class="btn primary" [disabled]="busy() || licenseForm.invalid || !d.configured">Guardar licencia y acreditar horas</button></div></form>
+  </section>
+}
+@if(selected; as item){
+  <section class="panel form-panel"><div class="panel-heading"><div><h2>Licencia {{item.number}}</h2><p>{{item.institutionName}}</p></div>
+    @if(isAdmin()){<button class="btn primary" (click)="startTopup()" [disabled]="busy()">Agregar horas</button>}
+  </div><div class="table-scroll"><table><thead><tr><th>Canal</th><th>Incluido al alta</th><th>Total asignado</th><th>Utilizado</th><th>Disponible</th></tr></thead><tbody>
+    <tr><td>Correo</td><td>{{time(item.initialEmailMinutes)}}</td><td>{{time(item.emailAllocatedMinutes)}}</td><td>{{time(item.emailUsedMinutes)}}</td><td>{{time(item.emailRemainingMinutes)}}</td></tr>
+    <tr><td>Escritorio remoto</td><td>{{time(item.initialRemoteMinutes)}}</td><td>{{time(item.remoteAllocatedMinutes)}}</td><td>{{time(item.remoteUsedMinutes)}}</td><td>{{time(item.remoteRemainingMinutes)}}</td></tr>
+  </tbody></table></div>
+  @if(adding && isAdmin()){
+    <form (ngSubmit)="topup()" #hoursForm="ngForm"><h3>Asignación adicional de horas</h3><p>Para una compra utiliza el pago de una póliza vinculada a esta licencia. Esta asignación manual no registra dinero.</p>
+      <fieldset [disabled]="busy()"><div class="budget-form">
+        <fieldset><legend>Correo</legend><div class="time-inputs"><label>Horas de correo adicionales<input type="number" name="topupEmailHours" [(ngModel)]="emailHours" min="0" step="1" required></label><label>Minutos de correo adicionales<input type="number" name="topupEmailMinutes" [(ngModel)]="emailMinutes" min="0" max="59" step="1" required></label></div></fieldset>
+        <fieldset><legend>Escritorio remoto</legend><div class="time-inputs"><label>Horas de remoto adicionales<input type="number" name="topupRemoteHours" [(ngModel)]="remoteHours" min="0" step="1" required></label><label>Minutos de remoto adicionales<input type="number" name="topupRemoteMinutes" [(ngModel)]="remoteMinutes" min="0" max="59" step="1" required></label></div></fieldset>
+      </div><label>Motivo de la asignación<textarea name="topupReason" [(ngModel)]="reason" rows="3" required maxlength="2000"></textarea></label></fieldset>
+      <div class="form-actions"><button type="button" class="btn secondary" (click)="adding=false" [disabled]="busy()">Cancelar</button><button class="btn primary" [disabled]="busy() || hoursForm.invalid">Confirmar horas adicionales</button></div>
+    </form>
+  }
+  @if(isAdmin()){
+    <h3>Historial de horas</h3><div class="table-scroll"><table><thead><tr><th>Fecha / responsable</th><th>Movimiento</th><th>Correo</th><th>Remoto</th><th>Motivo</th></tr></thead><tbody>
+      @for(m of history();track m.id){<tr><td>{{m.createdAt | date:'dd/MM/yyyy HH:mm'}}<small>{{m.createdBy}}</small></td><td>{{kind(m.kind)}}@if(m.paymentId){<small>Pago #{{m.paymentId}}</small>}@if(m.entryId){<small>Atención #{{m.entryId}}</small>}</td><td>{{delta(m.emailMinutes)}}</td><td>{{delta(m.remoteMinutes)}}</td><td>{{m.reason}}</td></tr>}
+    </tbody></table></div>
+  }</section>
+}
+<section class="panel"><div class="toolbar"><label class="search-field">Buscar licencia o institución<input [(ngModel)]="filter" placeholder="Número de licencia o institución"></label></div><div class="table-scroll"><table><thead><tr><th>Licencia</th><th>Institución</th><th>Correo disponible</th><th>Remoto disponible</th><th>Detalle</th></tr></thead><tbody>
+  @for(item of filtered();track item.id){<tr><td>{{item.number}}</td><td>{{item.institutionName}}</td><td>{{time(item.emailRemainingMinutes)}}</td><td>{{time(item.remoteRemainingMinutes)}}</td><td><button class="text-button" (click)="select(item)" [disabled]="busy()">Ver licencia {{item.number}}</button></td></tr>}
+  @empty{<tr><td colspan="5">No hay licencias para mostrar.</td></tr>}
+</tbody></table></div></section>

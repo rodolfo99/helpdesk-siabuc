@@ -57,6 +57,7 @@ async function open(role='ADMIN') {
     }
     if(path==='/api/auth/csrf')return reply({token:'qa'});
     if(path==='/api/auth/me')return reply({id:1,username:'qa',displayName:'Soporte',role,institutionId:role==='USER'?1:null,active:true});
+    if(path==='/api/licenses')return reply([]);
     if(path==='/api/institutions')return reply([institution]);
     if(path==='/api/cases')return reply(items);
     if(path==='/api/case-profiles')return reply(items.map(c=>({caseId:c.id,category:'OTHER',priority:'NORMAL'})));

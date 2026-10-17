@@ -6,7 +6,7 @@ Autenticación: sesión HttpOnly, cookie de CSRF `XSRF-TOKEN`, cabecera `X-XSRF-
 
 User: `{id,username,displayName,role,institutionId,active,email}`.
 Institution: `{id,name,contactName,email,phone,notes,active,emailAllocatedMinutes,emailUsedMinutes,emailRemainingMinutes,remoteAllocatedMinutes,remoteUsedMinutes,remoteRemainingMinutes,supportAdminId}`.
-Case: `{id,institutionId,institutionName,title,description,channel,status,createdBy,createdAt,updatedAt,totalMinutes,assignedAdminId,assignedAdminName}`.
+Case: `{id,institutionId,institutionName,title,description,channel,status,createdBy,createdAt,updatedAt,totalMinutes,assignedAdminId,assignedAdminName,licenseId,licenseNumber}`.
 Entry: `{id,caseId,description,channel,minutes,internal,createdBy,createdAt,voided,voidReason}`. `channel` null si comentario sin consumo.
 CaseDetail: campos de Case más `entries:Entry[]`.
 Audit: `{id,actor,action,entityType,entityId,details,createdAt}`.
@@ -14,13 +14,13 @@ Error: `{message}` y HTTP 400 validación, 401 sin sesión o cuenta no disponibl
 
 - GET `/institutions`: array (ADMIN/TECH/BILLING todas incluidas bajas; USER solo propia activa).
 - POST `/institutions` ADMIN: `{name,contactName,email,phone,notes,emailAllocatedMinutes,remoteAllocatedMinutes,supportAdminId}`.
-- PUT `/institutions/{id}` ADMIN: campos anteriores más `active`; no permite asignado menor que usado.
+- PUT `/institutions/{id}` ADMIN: campos anteriores más `active`; no permite asignado menor que usado más el saldo reservado para licencias.
 - DELETE `/institutions/{id}` ADMIN: baja lógica sin perder casos.
 - GET `/users` ADMIN: User[].
 - POST `/users` ADMIN: `{username,displayName,password,role,institutionId,active,email}`. USER requiere institución; ADMIN/TECH/BILLING null.
 - PUT `/users/{id}` ADMIN: mismos campos, password opcional vacío conserva. Username, rol e institución son inmutables. No desactivar al último administrador. Para cambiar el ámbito de acceso, crear otra cuenta y desactivar la anterior. Restablecer la contraseña revoca las sesiones de esa cuenta.
 - GET `/cases`: Case[] filtrados en servidor por institución del usuario; ADMIN/TECH todos.
-- POST `/cases`: `{institutionId,title,description,channel,assignedAdminId,profile?}`; USER sólo su institución. Requiere institución activa y saldo del canal mayor que cero. Crea en `OPEN` y devuelve HTTP 201 con `CaseDetail`; no consume minutos por crear el caso. El portal cliente dispone además de `/client-portal/tickets`, descrito al final.
+- POST `/cases`: `{institutionId,title,description,channel,assignedAdminId,profile?,licenseId?}`; USER sólo su institución. Requiere institución activa y saldo del canal mayor que cero. Crea en `OPEN` y devuelve HTTP 201 con `CaseDetail`; no consume minutos por crear el caso. El portal cliente dispone además de `/client-portal/tickets`, descrito al final.
 - GET `/cases/{id}`: CaseDetail, USER no recibe entradas internas.
 - PUT `/cases/{id}` ADMIN/TECH: `{title,description,channel,assignedAdminId}`; registra historial público, auditoría y aviso. TECH puede editar los datos pero no cambiar el responsable. Esta edición de datos se permite también en casos finales; no reabre el caso.
 - POST `/cases/{id}/status` ADMIN/TECH: `{status,reason}`; devuelve HTTP 200 con `CaseDetail`. El motivo es obligatorio. Las transiciones y condiciones de reapertura se detallan en [Estados de atención](#estados-de-atención).
@@ -272,3 +272,25 @@ auditoría y notificación existentes. Respuesta 201 con `CaseDetail`.
 usa `/api/client-portal/tickets`. Los casos nuevos nacen en `OPEN`
 (Recibido) y utilizan el flujo de cinco estados de 1.8.3. La autenticación
 continúa basada en usuarios y sesiones; una póliza no es una credencial.
+
+
+## Ampliación V27: configuración y saldos de licencias
+
+El contrato de 1.8.3 se amplía de forma opcional para conservar casos y pólizas anteriores. Unidad de tiempo: minutos enteros; cada canal admite de 0 a 1 000 000 000. La migración no modifica saldos históricos.
+
+| Método y ruta | Permiso | Entrada / resultado |
+| --- | --- | --- |
+| GET `/license-support-defaults` | ADMIN | `{emailMinutes,remoteMinutes,configured,revision}` |
+| PUT `/license-support-defaults` | ADMIN | `{emailMinutes,remoteMinutes,revision}`; devuelve la configuración con nueva revisión. Una revisión obsoleta devuelve 409. |
+| GET `/licenses?institutionId=...` | Sesión activa | Licencias y saldos; USER siempre queda restringido a su institución, aunque envíe otro filtro. |
+| POST `/licenses` | ADMIN | `{institutionId,number,defaultsRevision}`; 201 con licencia creada. Requiere configuración guardada y revisión actual. |
+| POST `/licenses/{id}/hours` | ADMIN | `{requestId,emailMinutes,remoteMinutes,reason}`; UUID para reintento idempotente, algún canal positivo y motivo obligatorio. |
+| GET `/licenses/{id}/history` | ADMIN | Movimientos con autor/fecha, motivo, minutos y referencias a pago/atención. |
+
+License: `{id,institutionId,institutionName,number,defaultsRevision,initialEmailMinutes,initialRemoteMinutes,emailAllocatedMinutes,remoteAllocatedMinutes,emailUsedMinutes,remoteUsedMinutes,emailRemainingMinutes,remoteRemainingMinutes}`.
+
+`POST /cases` y `POST /client-portal/tickets` aceptan `licenseId` opcional. Se valida pertenencia a la institución; el portal obtiene ésta de la sesión. Los casos devueltos añaden `licenseId` y `licenseNumber`, ambos nulos para antecedentes. La licencia no se cambia mediante PUT del caso. Al omitirla, el saldo utilizable es el institucional menos el reservado para licencias, por canal.
+
+`POST /policies` acepta `licenseId` opcional y su respuesta lo incluye junto con `licenseNumber`. PUT conserva el vínculo original y rechaza cambios. El pago o aprobación de solicitud de pago utiliza la licencia fijada en la póliza; el cliente no puede cambiar el destino en el movimiento financiero. Las renovaciones conservan la licencia anterior; las cotizaciones nuevas sin antecedente crean pólizas sin licencia.
+
+Cada consumo o acreditación actualiza la licencia y el agregado institucional dentro de la misma transacción y bajo el bloqueo institucional. La anulación verifica el saldo de la misma licencia, sin tomar prestado de otra. Los saldos sin licencia permanecen independientes para compatibilidad. Los cambios de valores predeterminados no modifican datos anteriores.

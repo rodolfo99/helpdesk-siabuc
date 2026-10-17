@@ -85,7 +85,7 @@ public class QuoteService {
         require(q,"ACCEPTED");lockInstitution(q.institutionId(),true);
         if(q.previousPolicyId()!=null&&db.queryForObject("SELECT COUNT(*) FROM policy_renewals WHERE previous_policy_id=?",Long.class,q.previousPolicyId())>0)
             throw ApiException.conflict("La póliza anterior ya tiene una renovación. Consulte la nueva póliza antes de crear otra renovación.");
-        PolicyService.Detail created=policies.create(new PolicyService.PolicyInput(q.institutionId(),clean(input.policyFolio()),q.description(),q.validFrom(),q.validUntil(),q.agreedAmount(),q.emailMinutes(),q.remoteMinutes()),actor);
+        PolicyService.Detail created=policies.create(new PolicyService.PolicyInput(q.institutionId(),clean(input.policyFolio()),q.description(),q.validFrom(),q.validUntil(),q.agreedAmount(),q.emailMinutes(),q.remoteMinutes(),q.previousPolicyId()==null?null:policies.policy(q.previousPolicyId()).licenseId()),actor);
         long policyId=created.policy().id();db.update("UPDATE support_quotes SET status='CONVERTED',converted_policy_id=?,conversion_folio=?,updated_at=NOW() WHERE id=?",policyId,clean(input.policyFolio()),id);
         if(q.previousPolicyId()!=null)db.update("INSERT INTO policy_renewals(institution_id,previous_policy_id,new_policy_id,quote_id,created_by) VALUES(?,?,?,?,?)",q.institutionId(),q.previousPolicyId(),policyId,id,actor.id());
         event(id,"CONVERT_QUOTE",actor,"Póliza "+created.policy().folio()+" creada desde cotización aceptada"+(q.previousPolicyId()==null?"":"; renueva la póliza "+q.previousPolicyFolio())+". No se registraron pagos ni se acreditaron minutos.");

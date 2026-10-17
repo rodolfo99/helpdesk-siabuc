@@ -160,3 +160,14 @@ V26 amplía la restricción de estado y su longitud a 20 caracteres. Conserva `O
 Los tres primeros estados permanecen activos. Los cambios manuales son de ADMIN/TECH, requieren motivo y registran historial, auditoría y avisos sin consumo. Tomar un caso Recibido lo pone En atención; una respuesta pública del cliente hace lo mismo desde Requiere respuesta del cliente. La reapertura desde Resuelto/Cerrado exige institución activa y saldo positivo en el canal principal.
 
 Requiere respuesta del cliente pausa cronómetros en ejecución conservando el tiempo medido, pero **no pausa ni reinicia el SLA**. Resuelto y Cerrado detienen el SLA de resolución y bloquean nuevas atenciones hasta reabrir; cerrar después de resolver conserva la fecha de resolución. Reabrir inicia una nueva ventana de resolución sin borrar la primera respuesta registrada. Los cambios de estado nunca confirman ni cobran un cronómetro automáticamente. Consulte [VERSION-1.8.3.md](VERSION-1.8.3.md) para transiciones y validación.
+
+
+## Ampliación V27: subcuentas de soporte por licencia
+
+`license_support_defaults` conserva valores por canal, configuración explícita y revisión para detectar ediciones concurrentes. `support_licenses` conserva titular institucional, número único sin distinción de mayúsculas/espacios exteriores, dotación inicial y contadores por canal. `license_support_history` registra dotación, recarga manual, pago, consumo y sus anulaciones.
+
+Los vínculos opcionales `support_cases.license_id` y `support_policies.license_id` tienen claves foráneas compuestas con `institution_id`: no pueden referir a licencias de otra institución. Los vínculos son inmutables en la edición normal. La licencia de un pago se obtiene de su póliza, incluidos los pagos aprobados desde solicitudes y las renovaciones.
+
+Se preserva `institutions` como total agregado para reportes existentes. El saldo disponible sin licencia es el total restante menos la suma de saldos restantes de licencias. El bloqueo de la institución serializa alta de licencia, asignación, consumo, pago y anulación; no se modifica el orden previo institución → póliza/caso → pago/entrada. Los ajustes institucionales no pueden retirar saldo reservado a licencias. El alta toma además un bloqueo compartido de la configuración para conservar la revisión mostrada y acreditarla una sola vez.
+
+V27 no altera filas históricas: no infiere titulares, claves ni distribución de saldos. Una actualización requiere respaldo y ensayo; un backend anterior a V27 no debe operar sobre esta base porque no conoce los saldos reservados. Véase [Licencias y horas](LICENCIAS-HORAS.md).

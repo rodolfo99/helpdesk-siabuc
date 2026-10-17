@@ -1,5 +1,7 @@
 # Documentación de SIABUC Helpdesk 1.8.3
 
+**Ampliación posterior a 1.8.3:** consulte [Licencias y horas predeterminadas](LICENCIAS-HORAS.md). Las pólizas pueden vincularse a una licencia y sus pagos acreditan esa bolsa; los saldos anteriores permanecen sin licencia.
+
 El [manual detallado 1.8.3](MANUAL-EXTENDIDO-1.8.3.md) es la guía principal de uso,
 instalación y operación. Estas guías describen el código de la versión indicada
 en `VERSION`; los resultados de pruebas se asocian a una revisión concreta en
