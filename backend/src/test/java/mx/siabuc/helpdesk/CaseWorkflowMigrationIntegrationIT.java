@@ -31,13 +31,21 @@ class CaseWorkflowMigrationIntegrationIT extends ApiIntegrationSupport {
                     fixture.update("INSERT INTO saved_case_views(owner_id,name,filters) VALUES (1,'Pendientes','{\"status\":\"OPEN\",\"search\":\"catálogo\"}'),(1,'Cerrados','{\"status\":\"CLOSED\"}')");
                 } finally { connection.setSchema("public"); }
             }
-            var result=Flyway.configure().dataSource(source).schemas(schema).defaultSchema(schema).load().migrate();
+            var result=Flyway.configure().dataSource(source).schemas(schema).defaultSchema(schema).target("26").load().migrate();
             assertThat(result.migrationsExecuted).isEqualTo(1);
             assertThat(db.queryForList("SELECT status FROM "+schema+".support_cases ORDER BY id",String.class)).containsExactly("OPEN","CLOSED");
             assertThat(db.queryForObject("SELECT email_used_minutes FROM "+schema+".institutions WHERE id=1",Long.class)).isEqualTo(12);
             assertThat(db.queryForObject("SELECT description FROM "+schema+".case_entries WHERE case_id=1",String.class)).isEqualTo("Atención anterior");
             assertThat(db.queryForObject("SELECT filters->>'status' FROM "+schema+".saved_case_views WHERE name='Pendientes'",String.class)).isEqualTo("active");
             assertThat(db.queryForObject("SELECT filters->>'search' FROM "+schema+".saved_case_views WHERE name='Pendientes'",String.class)).isEqualTo("catálogo");
+            var licenses=Flyway.configure().dataSource(source).schemas(schema).defaultSchema(schema).target("27").load().migrate();
+            assertThat(licenses.migrationsExecuted).isEqualTo(1);
+            assertThat(db.queryForObject("SELECT email_allocated_minutes FROM "+schema+".institutions WHERE id=1",Long.class)).isEqualTo(60);
+            assertThat(db.queryForObject("SELECT email_used_minutes FROM "+schema+".institutions WHERE id=1",Long.class)).isEqualTo(12);
+            assertThat(db.queryForObject("SELECT count(*) FROM "+schema+".support_licenses",Long.class)).isZero();
+            assertThat(db.queryForObject("SELECT count(*) FROM "+schema+".license_support_history",Long.class)).isZero();
+            assertThat(db.queryForObject("SELECT count(*) FROM "+schema+".support_cases WHERE license_id IS NULL",Long.class)).isEqualTo(2);
+            assertThat(db.queryForObject("SELECT configured FROM "+schema+".license_support_defaults WHERE id=1",Boolean.class)).isFalse();
             for(String state:new String[]{"IN_PROGRESS","WAITING_CLIENT","RESOLVED","CLOSED"})
                 assertThat(db.update("UPDATE "+schema+".support_cases SET status=? WHERE id=1",state)).isEqualTo(1);
             assertThatThrownBy(()->db.update("UPDATE "+schema+".support_cases SET status='INVALID' WHERE id=1")).isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);

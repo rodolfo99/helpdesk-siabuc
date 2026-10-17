@@ -144,7 +144,11 @@ class LicenseIntegrationIT extends ApiIntegrationSupport {
         var ticket=Map.of("title","Ayuda con SIABUC","description","Solicito ayuda con la importación de registros.","channel","EMAIL","licenseId",other);
         assertStatus(user.post("/client-portal/tickets",ticket),409);
         var own=new LinkedHashMap<String,Object>(ticket);own.put("licenseId",mine);own.put("institutionId",b);
-        assertThat(success(user.post("/client-portal/tickets",own)).path("institutionId").asLong()).isEqualTo(a);
+        assertStatus(user.post("/client-portal/tickets",own),400);
+        own.remove("institutionId");
+        var created=success(user.post("/client-portal/tickets",own));
+        assertThat(created.path("institutionId").asLong()).isEqualTo(a);
+        assertThat(created.path("licenseId").asLong()).isEqualTo(mine);
         assertStatus(admin.post("/policies",policyInput(a,other)),409);
         for (String role : new String[]{"TECH","BILLING"}) {
             String name=unique(role);var data=userPayload(name,a,true);data.put("role",role);data.put("institutionId",null);
