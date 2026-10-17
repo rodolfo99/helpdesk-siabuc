@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/client-portal")
 public class ClientPortalController {
     public record TicketInput(String title, String description, Models.Channel channel,
-                              CaseProfileService.ProfileInput profile) {}
+                              CaseProfileService.ProfileInput profile, Long licenseId) {}
 
     private final HelpdeskService service;
     public ClientPortalController(HelpdeskService service) { this.service = service; }
@@ -31,6 +31,6 @@ public class ClientPortalController {
         if (description.length() < 20 || description.length() > 5000)
             throw ApiException.bad("La descripción debe contener entre 20 y 5,000 caracteres.");
         return service.createCase(new Models.CaseInput(
-            user.institutionId(), title, description, input.channel(), null, input.profile()));
+            user.institutionId(), title, description, input.channel(), null, input.profile(), input.licenseId()));
     }
 }

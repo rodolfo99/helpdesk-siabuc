@@ -33,18 +33,18 @@ public final class Models {
         long remoteAllocatedMinutes, long remoteUsedMinutes, long remoteRemainingMinutes, Long supportAdminId) {}
     public record SupportCase(long id, long institutionId, String institutionName, String title, String description,
         Channel channel, CaseStatus status, String createdBy, Instant createdAt, Instant updatedAt, long totalMinutes,
-        Long assignedAdminId, String assignedAdminName) {}
+        Long assignedAdminId, String assignedAdminName, Long licenseId, String licenseNumber) {}
     public record Entry(long id, long caseId, String description, Channel channel, long minutes, boolean internal,
         String createdBy, Instant createdAt, boolean voided, String voidReason) {}
     public record CaseDetail(long id, long institutionId, String institutionName, String title, String description,
         Channel channel, CaseStatus status, String createdBy, Instant createdAt, Instant updatedAt, long totalMinutes,
-        List<Entry> entries, Long assignedAdminId, String assignedAdminName) {}
+        List<Entry> entries, Long assignedAdminId, String assignedAdminName, Long licenseId, String licenseNumber) {}
     public record Audit(long id, String actor, String action, String entityType, Long entityId, String details, Instant createdAt) {}
     public record InstitutionInput(String name, String contactName, String email, String phone, String notes,
         Long emailAllocatedMinutes, Long remoteAllocatedMinutes, Boolean active, Long supportAdminId) {}
     public record UserInput(String username, String displayName, String password, Role role, Long institutionId, Boolean active, String email) {}
     public record CaseInput(Long institutionId, String title, String description, Channel channel, Long assignedAdminId,
-        CaseProfileService.ProfileInput profile) {}
+        CaseProfileService.ProfileInput profile, Long licenseId) {}
     public record CaseEdit(String title, String description, Channel channel, Long assignedAdminId) {}
     public record EntryInput(String description, Channel channel, Long minutes, Boolean internal) {}
     public record StatusInput(CaseStatus status, String reason) {}

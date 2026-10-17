@@ -25,16 +25,17 @@ public class HelpdeskService {
     private final CaseProfileService profiles;
     private final PortalEventService portalEvents;
     private final PolicyService policies;
+    private final LicenseService licenses;
     private final String bootstrapUsername;
     private final String bootstrapPassword;
     private final String bootstrapEmail;
     public HelpdeskService(JdbcTemplate db, PasswordEncoder passwords, NotificationService notifications,
-            CaseProfileService profiles, PortalEventService portalEvents, PolicyService policies,
+            CaseProfileService profiles, PortalEventService portalEvents, PolicyService policies, LicenseService licenses,
             @Value("${app.admin-username}") String bootstrapUsername,
             @Value("${app.admin-password}") String bootstrapPassword,
             @Value("${app.admin-email:}") String bootstrapEmail) {
         this.db = db; this.passwords = passwords; this.notifications = notifications;
-        this.profiles = profiles; this.portalEvents = portalEvents; this.policies = policies;
+        this.profiles = profiles; this.portalEvents = portalEvents; this.policies = policies; this.licenses = licenses;
         this.bootstrapUsername = bootstrapUsername; this.bootstrapPassword = bootstrapPassword;
         this.bootstrapEmail = bootstrapEmail;
     }
@@ -46,15 +47,16 @@ public class HelpdeskService {
         r.getLong("email_allocated_minutes"), r.getLong("email_used_minutes"), r.getLong("email_allocated_minutes") - r.getLong("email_used_minutes"),
         r.getLong("remote_allocated_minutes"), r.getLong("remote_used_minutes"), r.getLong("remote_allocated_minutes") - r.getLong("remote_used_minutes"), r.getObject("support_admin_id", Long.class));
     private static final String CASE_SELECT = """
-        SELECT c.*, i.name AS institution_name, u.username AS creator, COALESCE(a.display_name,'') AS assigned_admin_name,
+        SELECT c.*, i.name AS institution_name, u.username AS creator, COALESCE(a.display_name,'') AS assigned_admin_name, l.number AS license_number,
           COALESCE((SELECT SUM(e.minutes) FROM case_entries e WHERE e.case_id=c.id AND NOT e.voided),0) AS total_minutes
         FROM support_cases c JOIN institutions i ON i.id=c.institution_id JOIN app_users u ON u.id=c.created_by
         LEFT JOIN app_users a ON a.id=c.assigned_admin_id
+        LEFT JOIN support_licenses l ON l.id=c.license_id
         """;
     private static final RowMapper<SupportCase> CASE = (r, n) -> new SupportCase(r.getLong("id"), r.getLong("institution_id"),
         r.getString("institution_name"), r.getString("title"), r.getString("description"), Channel.valueOf(r.getString("channel")),
         CaseStatus.valueOf(r.getString("status")), r.getString("creator"), r.getTimestamp("created_at").toInstant(),
-        r.getTimestamp("updated_at").toInstant(), r.getLong("total_minutes"), r.getObject("assigned_admin_id", Long.class), r.getString("assigned_admin_name"));
+        r.getTimestamp("updated_at").toInstant(), r.getLong("total_minutes"), r.getObject("assigned_admin_id", Long.class), r.getString("assigned_admin_name"), r.getObject("license_id", Long.class), r.getString("license_number"));
     private static final RowMapper<Entry> ENTRY = (r, n) -> new Entry(r.getLong("id"), r.getLong("case_id"),
         r.getString("description"), r.getString("channel") == null ? null : Channel.valueOf(r.getString("channel")),
         r.getLong("minutes"), r.getBoolean("internal"), r.getString("creator"), r.getTimestamp("created_at").toInstant(),
@@ -134,8 +136,9 @@ public class HelpdeskService {
         User actor = admin(); validateInstitution(input);
         if (input.active() == null) throw ApiException.bad("Indique si la institución está activa.");
         Institution old = institution(id, true);
-        if (input.emailAllocatedMinutes() < old.emailUsedMinutes() || input.remoteAllocatedMinutes() < old.remoteUsedMinutes())
-            throw ApiException.conflict("El tiempo asignado no puede ser menor que el tiempo ya utilizado.");
+        if (input.emailAllocatedMinutes() < old.emailUsedMinutes() + licenses.reserved(id, Channel.EMAIL)
+                || input.remoteAllocatedMinutes() < old.remoteUsedMinutes() + licenses.reserved(id, Channel.REMOTE))
+            throw ApiException.conflict("El tiempo asignado debe cubrir lo utilizado y los saldos reservados para licencias.");
         db.update("""
             UPDATE institutions SET name=?,contact_name=?,email=?,phone=?,notes=?,active=?,email_allocated_minutes=?,
             remote_allocated_minutes=?,support_admin_id=?,updated_at=NOW() WHERE id=?
@@ -237,7 +240,7 @@ public class HelpdeskService {
         List<Entry> entries = db.query("SELECT e.*,u.username AS creator FROM case_entries e JOIN app_users u ON u.id=e.created_by WHERE e.case_id=?" +
             (isSupportStaff(actor.role()) ? "" : " AND NOT e.internal") + " ORDER BY e.id", ENTRY, c.id());
         return new CaseDetail(c.id(), c.institutionId(), c.institutionName(), c.title(), c.description(), c.channel(), c.status(),
-            c.createdBy(), c.createdAt(), c.updatedAt(), c.totalMinutes(), entries, c.assignedAdminId(), c.assignedAdminName());
+            c.createdBy(), c.createdAt(), c.updatedAt(), c.totalMinutes(), entries, c.assignedAdminId(), c.assignedAdminName(), c.licenseId(), c.licenseNumber());
     }
     private record LockedCase(SupportCase supportCase, Institution institution) {}
     private LockedCase lockCase(long id, User actor) {
@@ -252,7 +255,7 @@ public class HelpdeskService {
         User actor = supportActor(); validateCase(input.title(), input.description(), input.channel());
         if (input.institutionId() == null) throw ApiException.bad("Indique la institución del caso.");
         if (actor.role() == Role.USER && !Objects.equals(actor.institutionId(), input.institutionId())) throw ApiException.forbidden();
-        Institution institution = institution(input.institutionId(), true); requireActive(institution); requireBalance(institution, input.channel(), 1);
+        Institution institution = institution(input.institutionId(), true); requireActive(institution); licenses.requireBalance(institution, input.licenseId(), input.channel(), 1);
         if (actor.role() == Role.USER && input.assignedAdminId() != null) throw ApiException.forbidden();
         if (actor.role() == Role.TECH && input.assignedAdminId() != null && input.assignedAdminId() != actor.id())
             throw ApiException.forbidden();
@@ -261,8 +264,8 @@ public class HelpdeskService {
         if (input.assignedAdminId() == null && assigned != null && !activeSupportStaff(assigned)) assigned = null;
         if (assigned == null && isSupportStaff(actor.role())) assigned = actor.id();
         validateSupportAssignment(assigned);
-        Long id = db.queryForObject("INSERT INTO support_cases(institution_id,title,description,channel,created_by,assigned_admin_id) VALUES (?,?,?,?,?,?) RETURNING id", Long.class,
-            input.institutionId(), clean(input.title()), clean(input.description()), input.channel().name(), actor.id(), assigned);
+        Long id = db.queryForObject("INSERT INTO support_cases(institution_id,title,description,channel,created_by,assigned_admin_id,license_id) VALUES (?,?,?,?,?,?,?) RETURNING id", Long.class,
+            input.institutionId(), clean(input.title()), clean(input.description()), input.channel().name(), actor.id(), assigned, input.licenseId());
         profiles.initialize(id, input.profile());
         audit(actor.username(), "CREATE_CASE", "CASE", id, "Caso abierto; canal=" + input.channel());
         notifications.caseEvent(id, "CREATE_CASE", "Caso abierto: " + clean(input.title()) + "\n" + clean(input.description()), false, actor.username());
@@ -316,7 +319,7 @@ public class HelpdeskService {
             throw ApiException.conflict("Transición no permitida: " + current.status().label() + " → " + input.status().label() + ". Reabra el caso en En atención.");
         if (input.status().active()) {
             requireActive(locked.institution());
-            if (!current.status().active()) requireBalance(locked.institution(), current.channel(), 1);
+            if (!current.status().active()) licenses.requireBalance(locked.institution(), current.licenseId(), current.channel(), 1);
         }
         String description = recordStatus(current, input.status(), clean(input.reason()), actor);
         notifications.caseEvent(id, "CHANGE_CASE_STATUS", description, false, actor.username());
@@ -360,8 +363,9 @@ public class HelpdeskService {
         if (!locked.supportCase().status().active()) throw ApiException.conflict("El caso está resuelto o cerrado. Reábralo antes de registrar una atención.");
         if (actor.role() == Role.USER && locked.supportCase().status() == CaseStatus.WAITING_CLIENT)
             recordStatus(locked.supportCase(), CaseStatus.IN_PROGRESS, "El cliente respondió a la solicitud de información.", actor);
-        if (input.minutes() > 0) { requireBalance(locked.institution(), input.channel(), input.minutes()); changeUsed(locked.institution().id(), input.channel(), input.minutes()); }
+        if (input.minutes() > 0) { licenses.requireBalance(locked.institution(), locked.supportCase().licenseId(), input.channel(), input.minutes()); changeUsed(locked.institution().id(), input.channel(), input.minutes()); }
         long entryId = insertEntry(id, clean(input.description()), input.channel(), input.minutes(), input.internal(), actor.id());
+        if (input.minutes() > 0) licenses.usage(locked.supportCase().licenseId(), entryId, input.channel(), input.minutes(), actor, "Atención del caso #" + id);
         if (isSupportStaff(actor.role()) && !input.internal()) profiles.recordPublicResponse(id, entryId);
         db.update("UPDATE support_cases SET updated_at=NOW() WHERE id=?", id);
         audit(actor.username(), "CREATE_ENTRY", "ENTRY", entryId, "Caso=" + id + "; minutos=" + input.minutes() + "; canal=" + input.channel() + "; interno=" + input.internal());
@@ -376,6 +380,7 @@ public class HelpdeskService {
         if (entry.voided()) throw ApiException.conflict("Este registro ya fue anulado; sus minutos no pueden devolverse otra vez.");
         if (entry.minutes() <= 0) throw ApiException.conflict("Sólo se anulan atenciones con consumo de minutos. Los comentarios conservan su trazabilidad.");
         changeUsed(locked.institution().id(), entry.channel(), -entry.minutes());
+        licenses.usage(locked.supportCase().licenseId(), entryId, entry.channel(), -entry.minutes(), actor, clean(input.reason()));
         db.update("UPDATE case_entries SET voided=TRUE,void_reason=? WHERE id=?", clean(input.reason()), entryId);
         db.update("UPDATE support_cases SET updated_at=NOW() WHERE id=?", id);
         audit(actor.username(), "VOID_ENTRY", "ENTRY", entryId, "Caso=" + id + "; reintegro=" + entry.minutes() + "; canal=" + entry.channel() + "; motivo=" + clean(input.reason()));
@@ -393,10 +398,6 @@ public class HelpdeskService {
         portalEvents.checkBalance(id);
     }
     private void requireActive(Institution i) { if (!i.active()) throw ApiException.conflict("La institución está dada de baja."); }
-    private void requireBalance(Institution i, Channel channel, long required) {
-        long remaining = channel == Channel.EMAIL ? i.emailRemainingMinutes() : i.remoteRemainingMinutes();
-        if (remaining < required) throw ApiException.conflict("Saldo insuficiente de " + (channel == Channel.EMAIL ? "soporte por correo" : "escritorio remoto") + ". Disponibles: " + remaining + " minutos.");
-    }
     private void validateCase(String title, String description, Channel channel) {
         required(title, "Título", 220); required(description, "Descripción", 10000);
         if (channel == null) throw ApiException.bad("Indique el canal de atención.");
@@ -437,6 +438,7 @@ public class HelpdeskService {
         audit(actor.username(), "CREATE_PAYMENT", "PAYMENT", id, "Institución=" + institution.id() + "; referencia=" + clean(input.reference())
             + "; importe=" + input.amount().toPlainString() + " " + input.currency() + "; correo=" + input.emailMinutes() + "; remoto=" + input.remoteMinutes());
         Payment recorded = payment(id);
+        licenses.payment(recorded, actor, false, "Pago " + recorded.reference());
         policies.paymentEvent(recorded, actor, false, null);
         String movement = input.amount().signum() == 0 ? "Acreditación de minutos de una póliza previamente liquidada. "
             : input.emailMinutes() == 0 && input.remoteMinutes() == 0 ? "Abono recibido sin nueva acreditación de minutos. " : "Pago recibido y minutos acreditados. ";
@@ -453,6 +455,9 @@ public class HelpdeskService {
         Payment payment = payment(id);
         if (payment.voided()) throw ApiException.conflict("Este pago ya fue anulado.");
         policies.validatePaymentVoid(payment);
+        Long licenseId = licenses.policyLicense(payment.policyId());
+        licenses.requireBalance(institution, licenseId, Channel.EMAIL, payment.emailMinutes());
+        licenses.requireBalance(institution, licenseId, Channel.REMOTE, payment.remoteMinutes());
         if (institution.emailRemainingMinutes() < payment.emailMinutes() || institution.remoteRemainingMinutes() < payment.remoteMinutes())
             throw ApiException.conflict("No quedan suficientes minutos disponibles en ambos canales para retirar toda la acreditación del pago.");
         db.update("UPDATE institutions SET email_allocated_minutes=email_allocated_minutes-?,remote_allocated_minutes=remote_allocated_minutes-?,updated_at=NOW() WHERE id=?",
@@ -462,6 +467,7 @@ public class HelpdeskService {
         audit(actor.username(), "VOID_PAYMENT", "PAYMENT", id, "Anulación; correo retirado=" + payment.emailMinutes() + "; remoto retirado="
             + payment.remoteMinutes() + "; motivo=" + clean(input.reason()));
         Payment voided = payment(id);
+        licenses.payment(voided, actor, true, clean(input.reason()));
         policies.paymentEvent(voided, actor, true, input.reason());
         notifications.paymentEvent(id, "VOID_PAYMENT", "Pago anulado; minutos acreditados retirados. Motivo: " + clean(input.reason()), actor.username());
         return voided;

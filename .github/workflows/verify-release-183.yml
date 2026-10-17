@@ -102,12 +102,13 @@ jobs:
             if [ "$attempt" -lt 3 ]; then sleep 10; fi
           done
           exit 1
-      - name: Case workflow browser regression (simulated API)
+      - name: Case workflow and license browser regression (simulated API)
         working-directory: tests/e2e
         run: |
           npm ci
           npx playwright install --with-deps chromium
           node case-workflow-v183.ui.mjs
+          node licenses.ui.mjs
       - name: Confirm version and source package
         run: |
           python3 - <<'PY'

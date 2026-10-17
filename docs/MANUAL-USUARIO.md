@@ -1,5 +1,7 @@
 # Manual de uso — SIABUC Helpdesk 1.8.3
 
+**Ampliación posterior a 1.8.3:** consulte [Licencias y horas predeterminadas](LICENCIAS-HORAS.md). Las pólizas pueden vincularse a una licencia y sus pagos acreditan esa bolsa; los saldos anteriores permanecen sin licencia.
+
 Esta guía resume la operación vigente. El [manual detallado de SIABUC Helpdesk 1.8.3](MANUAL-EXTENDIDO-1.8.3.md) desarrolla la instalación, los recorridos por rol, los casos de uso y la resolución de problemas. Las [notas 1.8.3](VERSION-1.8.3.md) explican la actualización y sus límites de validación.
 
 El soporte utiliza cinco estados: **Recibido**, **En atención**, **Requiere respuesta del cliente**, **Resuelto** y **Cerrado**. En el detalle se cambian mediante **Cambiar estado**, seleccionando el destino y escribiendo el motivo. **Pendientes de resolver** agrupa los primeros tres; Resuelto y Cerrado se muestran separados.

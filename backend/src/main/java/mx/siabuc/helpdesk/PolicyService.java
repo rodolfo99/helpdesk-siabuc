@@ -15,22 +15,24 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class PolicyService {
     public record PolicyInput(Long institutionId,String folio,String description,LocalDate validFrom,LocalDate validUntil,
-            BigDecimal agreedAmount,Long emailMinutes,Long remoteMinutes) {}
+            BigDecimal agreedAmount,Long emailMinutes,Long remoteMinutes,Long licenseId) {}
     public record Policy(long id,long institutionId,String institutionName,String folio,String description,
             LocalDate validFrom,LocalDate validUntil,BigDecimal agreedAmount,String currency,long emailMinutes,long remoteMinutes,
             String status,String validity,BigDecimal paidAmount,BigDecimal remainingAmount,long creditedEmailMinutes,
             long creditedRemoteMinutes,long remainingEmailMinutes,long remainingRemoteMinutes,long paymentCount,long activePaymentCount,
-            String createdBy,Instant createdAt,Instant updatedAt,String cancelReason,String cancelledBy,Instant cancelledAt) {}
+            String createdBy,Instant createdAt,Instant updatedAt,String cancelReason,String cancelledBy,Instant cancelledAt,Long licenseId,String licenseNumber) {}
     public record History(long id,long policyId,String action,String description,Long paymentId,String createdBy,Instant createdAt) {}
     public record Detail(Policy policy,List<History> history,List<Models.Payment> payments) {}
     private final JdbcTemplate db;
-    public PolicyService(JdbcTemplate db) { this.db=db; }
+    private final LicenseService licenses;
+    public PolicyService(JdbcTemplate db, LicenseService licenses) { this.db=db; this.licenses=licenses; }
     private static final String SELECT="""
-        SELECT s.*,i.name AS institution_name,u.username AS creator,v.username AS canceller,
+        SELECT s.*,l.number AS license_number,i.name AS institution_name,u.username AS creator,v.username AS canceller,
           COALESCE(t.paid_amount,0) AS paid_amount,COALESCE(t.credited_email,0) AS credited_email,
           COALESCE(t.credited_remote,0) AS credited_remote,COALESCE(t.payment_count,0) AS payment_count,
           COALESCE(t.active_payment_count,0) AS active_payment_count
         FROM support_policies s JOIN institutions i ON i.id=s.institution_id
+        LEFT JOIN support_licenses l ON l.id=s.license_id
         JOIN app_users u ON u.id=s.created_by LEFT JOIN app_users v ON v.id=s.cancelled_by
         LEFT JOIN (SELECT policy_id,SUM(CASE WHEN NOT voided THEN amount ELSE 0 END) AS paid_amount,
           SUM(CASE WHEN NOT voided THEN email_minutes ELSE 0 END) AS credited_email,
@@ -46,7 +48,7 @@ public class PolicyService {
             from,until,amount,r.getString("currency"),email,remote,r.getString("status"),today.isBefore(from)?"UPCOMING":today.isAfter(until)?"EXPIRED":"CURRENT",
             paid,amount.subtract(paid),emailPaid,remotePaid,email-emailPaid,remote-remotePaid,r.getLong("payment_count"),r.getLong("active_payment_count"),
             r.getString("creator"),instant(r.getTimestamp("created_at")),instant(r.getTimestamp("updated_at")),r.getString("cancel_reason"),
-            r.getString("canceller"),instant(r.getTimestamp("cancelled_at")));
+            r.getString("canceller"),instant(r.getTimestamp("cancelled_at")),r.getObject("license_id",Long.class),r.getString("license_number"));
     };
     public List<Policy> list(Long institutionId) {
         if(institutionId!=null && institutionId<=0) throw ApiException.bad("Identificador de institución inválido.");
@@ -69,18 +71,19 @@ public class PolicyService {
     }
     @Transactional
     public Detail create(PolicyInput input,Models.User actor) {
-        validate(input);lockInstitution(input.institutionId(),true);uniqueFolio(input.folio(),null);
+        validate(input);lockInstitution(input.institutionId(),true);licenses.validateLink(input.institutionId(),input.licenseId());uniqueFolio(input.folio(),null);
         Long id=db.queryForObject("""
-            INSERT INTO support_policies(institution_id,folio,description,valid_from,valid_until,agreed_amount,email_minutes,remote_minutes,created_by)
-            VALUES(?,?,?,?,?,?,?,?,?) RETURNING id
+            INSERT INTO support_policies(institution_id,folio,description,valid_from,valid_until,agreed_amount,email_minutes,remote_minutes,created_by,license_id)
+            VALUES(?,?,?,?,?,?,?,?,?,?) RETURNING id
             """,Long.class,input.institutionId(),clean(input.folio()),clean(input.description()),java.sql.Date.valueOf(input.validFrom()),
-            java.sql.Date.valueOf(input.validUntil()),input.agreedAmount(),input.emailMinutes(),input.remoteMinutes(),actor.id());
+            java.sql.Date.valueOf(input.validUntil()),input.agreedAmount(),input.emailMinutes(),input.remoteMinutes(),actor.id(),input.licenseId());
         event(id,"CREATE_POLICY",null,actor,"Póliza creada. "+snapshot(input));
         return detail(id);
     }
     @Transactional
     public Detail update(long id,PolicyInput input,Models.User actor) {
         validate(input);Policy initial=policy(id);
+        if(!java.util.Objects.equals(initial.licenseId(),input.licenseId())) throw ApiException.conflict("No puede cambiarse la licencia de una póliza existente.");
         if(initial.institutionId()!=input.institutionId()) throw ApiException.conflict("No puede cambiarse la institución de una póliza existente.");
         lockInstitution(initial.institutionId(),true);lockForAccounting(id,initial.institutionId());Policy p=policy(id);
         if(!p.status().equals("ACTIVE")) throw ApiException.conflict("La póliza está cancelada y no puede modificarse.");
@@ -171,9 +174,9 @@ public class PolicyService {
             throw ApiException.bad("Los minutos contratados deben ser enteros de 0 a 1000000000.");
         if(p.emailMinutes()==0 && p.remoteMinutes()==0)throw ApiException.bad("La póliza debe contratar minutos en al menos un canal.");
     }
-    private static PolicyInput asInput(Policy p) { return new PolicyInput(p.institutionId(),p.folio(),p.description(),p.validFrom(),p.validUntil(),p.agreedAmount(),p.emailMinutes(),p.remoteMinutes()); }
+    private static PolicyInput asInput(Policy p) { return new PolicyInput(p.institutionId(),p.folio(),p.description(),p.validFrom(),p.validUntil(),p.agreedAmount(),p.emailMinutes(),p.remoteMinutes(),p.licenseId()); }
     private static String snapshot(PolicyInput p) {
-        return "Folio: "+clean(p.folio())+"; vigencia: "+p.validFrom()+" a "+p.validUntil()+"; importe contratado: $"+p.agreedAmount().toPlainString()
+        return "Folio: "+clean(p.folio())+"; licencia: "+p.licenseId()+"; vigencia: "+p.validFrom()+" a "+p.validUntil()+"; importe contratado: $"+p.agreedAmount().toPlainString()
             +" MXN; correo: "+p.emailMinutes()+" min; remoto: "+p.remoteMinutes()+" min. Descripción: "+clean(p.description());
     }
     private static void required(String value,String field,int max) { if(value==null || value.isBlank() || value.length()>max || value.indexOf('\0')>=0)throw ApiException.bad(field+" es obligatorio y admite hasta "+max+" caracteres."); }

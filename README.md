@@ -2,6 +2,12 @@
 
 Sistema de atención técnica con servidor **Spring Boot 3.5.16 / Java 17**, cliente **Angular 21.2.25** y base de datos **PostgreSQL 17**. Conserva instituciones, usuarios, casos, pagos, actualizaciones descriptivas y auditoría. El tiempo por correo y por escritorio remoto se administra en **dos bolsas independientes de minutos enteros**.
 
+## Ampliación en desarrollo: horas por licencia
+
+Administración puede cambiar por separado las horas incluidas de **correo** y **escritorio remoto** desde **Configuración de soporte → Horas predeterminadas de las licencias**. Se aplican una sola vez al crear cada licencia; las existentes conservan su saldo. **Licencias** permite registrar el número institucional, agregar horas con motivo y consultar el historial. Los casos y las pólizas pueden vincularse a una licencia.
+
+Esta ampliación incorpora **V27** sobre la base 1.8.3; no constituye por sí sola una nueva entrega empaquetada. Los saldos anteriores quedan sin licencia, sin reparto ni acreditación automática. La dotación inicial debe configurarse antes del primer alta. Consulte [Licencias y horas](docs/LICENCIAS-HORAS.md), incluido el cuidado para no duplicar horas ya registradas y la restricción de retroceso a un backend anterior.
+
 ## Estados de casos en 1.8.3
 
 **Recibido → En atención → Requiere respuesta del cliente → Resuelto → Cerrado.**
@@ -23,7 +29,7 @@ Docker usa una sola red predeterminada del proyecto, sin `smtp_net` ni subred SM
 
 ## Alcance institucional pendiente
 
-La versión **no** implementa todavía licencias SIABUC9 ni descargas oficiales de instaladores, Federación de Identidades UCOL, ingreso únicamente con número de póliza/correo, recuperación mediante clave de licencia, modificación verificada de correo de licencia, cambios a las reglas de atención sin saldo, publicación HTTPS institucional, Google Analytics ni importación automática de sistemas anteriores. Que el frontend pueda mostrar una ruta como `/poliza` no significa que exista ya una integración institucional o un sistema de autenticación distinto.
+El registro local de soporte por licencia no implementa validación o activación comercial de SIABUC9. Continúan pendientes las descargas oficiales de instaladores, Federación de Identidades UCOL, ingreso únicamente con número de póliza/correo, recuperación mediante clave de licencia, modificación verificada de correo de licencia, cambios a las reglas de atención sin saldo, publicación HTTPS institucional, Google Analytics ni importación automática de sistemas anteriores. Que el frontend pueda mostrar una ruta como `/poliza` no significa que exista ya una integración institucional o un sistema de autenticación distinto.
 
 **Funciones heredadas de 1.7 preservadas:** rol de técnico, vistas guardadas y alertas SLA, plantillas de respuesta, incidencias generales, catálogo de paquetes y tarifas, calendario de parcialidades, conciliación bancaria CSV y estados de cuenta institucionales.
 
@@ -118,10 +124,10 @@ La actualización conserva usuarios, casos, pólizas y registros **únicamente s
 1. **Antes de reemplazar nada**, cree y compruebe un respaldo con `./respaldar.sh`. Almacénelo fuera del servidor. Pruebe la restauración **en una instalación desechable** y no en la base en uso.
 2. Descomprima el código 1.8.3 en **otra carpeta**. Copie allí su `.env` sin compartirlo ni subirlo al repositorio. Conserve los mismos identificadores `COMPOSE_PROJECT_NAME`, `DB_NAME`, `DB_USER` y parámetros efectivos de conexión; revise `BACKUP_DIRECTORY` si usa una ruta relativa.
 3. Para detectar errores antes del arranque, ejecute `./compilar.sh --docker` en la carpeta nueva. Este paso **no aplica las migraciones** a la base ni implica que las pruebas de integración hayan pasado.
-4. Después de validar en una **base de pruebas**, detenga la instalación anterior con `./detener.sh` y, desde la carpeta nueva, ejecute `./iniciar.sh`. Flyway aplicará las migraciones pendientes hasta **V26** a la base conectada; desde 1.8.2 sólo falta V26. No modifique ni borre los scripts V1–V25. Los casos antiguos OPEN se muestran como Recibido; no se infiere su etapa de atención.
+4. Después de validar en una **base de pruebas**, detenga la instalación anterior con `./detener.sh` y, desde la carpeta nueva, ejecute `./iniciar.sh`. Flyway aplicará las migraciones pendientes hasta **V27** en esta rama. La entrega histórica 1.8.3 aplicaba hasta V26; esta ampliación añade V27. No modifique ni borre los scripts V1–V25. Los casos antiguos OPEN se muestran como Recibido; no se infiere su etapa de atención.
 5. Verifique inicio de sesión, aislamiento de instituciones, saldos, casos, pólizas, cobranza, adjuntos, correo y respaldos. **Verifique en el destino SMTP, Docker, LAN y respaldos antes de actualizar producción** y completar la validación del entorno.
 
-Después de V26, no ejecute un backend anterior sobre esa base: no reconoce los nuevos estados. Para retroceder restaure una copia compatible en una base nueva. No ejecute `docker compose down -v` ni destruya el volumen de PostgreSQL. La operación `./restaurar.sh` **reemplaza datos** y no forma parte de una actualización normal. Consulte [respaldo y restauración](docs/RESPALDO-RESTAURACION.md).
+Después de V27, no ejecute un backend anterior sobre esa base: no respeta los saldos reservados para licencias; los anteriores a V26 tampoco reconocen los nuevos estados. Para retroceder restaure una copia compatible en una base nueva. No ejecute `docker compose down -v` ni destruya el volumen de PostgreSQL. La operación `./restaurar.sh` **reemplaza datos** y no forma parte de una actualización normal. Consulte [respaldo y restauración](docs/RESPALDO-RESTAURACION.md).
 
 ## Inicio rápido desde cero con Docker
 
