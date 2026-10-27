@@ -1,4 +1,6 @@
-# SIABUC Helpdesk 1.8.4
+# SIABUC Helpdesk 1.8.5
+
+**Actualización de seguridad:** Node.js 24.22.1, Nginx 1.30.6, herramientas Angular 21 corregidas, auditorías npm e imágenes en CI y Dependabot. [Cambios, política de auditoría y validación](docs/VERSION-1.8.5.md).
 
 **Revisión de arranque — permisos de respaldos:** `iniciar.sh` verifica escritura con la identidad del contenedor. En Linux, si recibe acceso denegado, ajusta el propietario de la carpeta configurada a `BACKUP_UID:BACKUP_GID`, asegura acceso del propietario y vuelve a comprobar. Conserva los archivos existentes y el estado del calendario. [Actualización y alcance](docs/VERSION-1.8.4.md).
 
@@ -8,7 +10,7 @@ Sistema de atención técnica con servidor **Spring Boot 3.5.16 / Java 17**, cli
 
 Administración puede cambiar por separado las horas incluidas de **correo** y **escritorio remoto** desde **Configuración de soporte → Horas predeterminadas de las licencias**. Se aplican una sola vez al crear cada licencia; las existentes conservan su saldo. **Licencias** permite registrar el número institucional, agregar horas con motivo y consultar el historial. Los casos y las pólizas pueden vincularse a una licencia.
 
-La versión 1.8.4 incluye las licencias de **V27** y corrige la preparación de permisos de respaldos. No añade nuevas migraciones sobre V27. Los saldos anteriores quedan sin licencia, sin reparto ni acreditación automática. La dotación inicial debe configurarse antes del primer alta. Consulte [Licencias y horas](docs/LICENCIAS-HORAS.md), incluido el cuidado para no duplicar horas ya registradas y la restricción de retroceso a un backend anterior.
+La versión 1.8.5 conserva las licencias de **V27** y la preparación de permisos de respaldos de 1.8.4. No añade nuevas migraciones sobre V27. Los saldos anteriores quedan sin licencia, sin reparto ni acreditación automática. La dotación inicial debe configurarse antes del primer alta. Consulte [Licencias y horas](docs/LICENCIAS-HORAS.md), incluido el cuidado para no duplicar horas ya registradas y la restricción de retroceso a un backend anterior.
 
 ## Estados de casos en 1.8.3
 
@@ -25,7 +27,7 @@ Los identificadores `OPEN` y `CLOSED` existentes se conservan; `OPEN` se muestra
 como Recibido. La migración V26 conserva casos, saldos y fechas, y amplía las
 vistas guardadas antiguas de abiertos a todos los casos pendientes.
 
-**Documentación vigente:** [manual integrado 1.8.4](docs/MANUAL-EXTENDIDO-LICENCIAS.md) · [índice completo](docs/README.md) · [actualización y cambios](docs/VERSION-1.8.4.md) · [resultados verificables](docs/VALIDACION.md) · [contrato API](docs/API-CONTRACT.md).
+**Documentación vigente:** [manual integrado 1.8.5](docs/MANUAL-EXTENDIDO-LICENCIAS.md) · [índice completo](docs/README.md) · [actualización y cambios](docs/VERSION-1.8.5.md) · [resultados verificables](docs/VALIDACION.md) · [contrato API](docs/API-CONTRACT.md).
 
 Docker usa una sola red predeterminada del proyecto, sin `smtp_net` ni subred SMTP fija. Las instalaciones nuevas tienen el correo desactivado y Gmail directo preseleccionado. Postfix sólo se inicia al elegir `SMTP_HOST=smtp`; conserva su cola en un volumen.
 
@@ -42,8 +44,8 @@ El registro local de soporte por licencia no implementa validación o activació
 | Necesito… | Guía |
 | --- | --- |
 | Instalar desde cero en Ubuntu | [Guía paso a paso para instalación nueva](docs/INSTALACION-DESDE-CERO.md) |
-| Instalar o actualizar conservando mis datos | [Actualización 1.8.4](docs/VERSION-1.8.4.md) · [Windows](docs/WINDOWS.md) · [Operación Linux/Docker](docs/OPERACION.md) |
-| Atender casos, usar adjuntos, cronómetro y agenda | [Manual integrado 1.8.4](docs/MANUAL-EXTENDIDO-LICENCIAS.md) · [Guía de uso](docs/MANUAL-USUARIO.md) |
+| Instalar o actualizar conservando mis datos | [Actualización 1.8.5](docs/VERSION-1.8.5.md) · [Windows](docs/WINDOWS.md) · [Operación Linux/Docker](docs/OPERACION.md) |
+| Atender casos, usar adjuntos, cronómetro y agenda | [Manual integrado 1.8.5](docs/MANUAL-EXTENDIDO-LICENCIAS.md) · [Guía de uso](docs/MANUAL-USUARIO.md) |
 | Registrar pólizas, pagos y horas adquiridas | [Pólizas y cobranza](docs/POLIZAS-COBRANZA.md) |
 | Cotizar, renovar o validar pagos pendientes | [Cotizaciones y renovaciones](docs/COTIZACIONES-RENOVACIONES.md) · [Solicitudes de pago](docs/SOLICITUDES-PAGO.md) |
 | Habilitar la consulta financiera del cliente | [Portal financiero](docs/PORTAL-FINANCIERO.md) |
@@ -118,16 +120,16 @@ Crear paquetes, cotizar, programar parcialidades, importar o conciliar movimient
 
 Los permisos se comprueban en el servidor. Los adjuntos de soporte respetan la institución y la visibilidad de la entrada; Administración/Cobranza consultan todos los comprobantes de pago; el portal financiero habilitado permite al cliente consultar sólo los de su institución. La campana sigue funcionando con el correo pausado y muestra a Cobranza sus avisos de saldo.
 
-Para actualizar desde una versión anterior, respalde primero y conserve `.env`, `COMPOSE_PROJECT_NAME`, los volúmenes y las migraciones existentes. Siga la [guía de 1.8.4](docs/VERSION-1.8.4.md); las guías de [1.7](docs/VERSION-1.7.md), [migración 1.0/1.1](docs/MIGRACION-1.1.md) y [SMTP interno](docs/SMTP-INTERNO.md#actualizar-una-instalación-anterior) siguen disponibles para instalaciones históricas. No cambie una configuración SMTP que ya funciona sin necesidad comprobada.
+Para actualizar desde una versión anterior, respalde primero y conserve `.env`, `COMPOSE_PROJECT_NAME`, los volúmenes y las migraciones existentes. Siga la [guía de 1.8.5](docs/VERSION-1.8.5.md); las guías de [1.7](docs/VERSION-1.7.md), [migración 1.0/1.1](docs/MIGRACION-1.1.md) y [SMTP interno](docs/SMTP-INTERNO.md#actualizar-una-instalación-anterior) siguen disponibles para instalaciones históricas. No cambie una configuración SMTP que ya funciona sin necesidad comprobada.
 
-## Actualizar una instalación existente a 1.8.4
+## Actualizar una instalación existente a 1.8.5
 
 La actualización conserva usuarios, casos, pólizas y registros **únicamente si se utiliza la misma base de datos**. Copiar `.env` por sí solo no copia PostgreSQL; tampoco incluye respaldos ni colas SMTP. Para actualizar desde una instalación previa:
 
 1. **Antes de reemplazar nada**, cree y compruebe un respaldo con `./respaldar.sh`. Almacénelo fuera del servidor. Pruebe la restauración **en una instalación desechable** y no en la base en uso.
-2. Descomprima el código 1.8.4 en **otra carpeta**. Copie allí su `.env` sin compartirlo ni subirlo al repositorio. Conserve los mismos identificadores `COMPOSE_PROJECT_NAME`, `DB_NAME`, `DB_USER` y parámetros efectivos de conexión; revise `BACKUP_DIRECTORY` si usa una ruta relativa.
+2. Descomprima el código 1.8.5 en **otra carpeta**. Copie allí su `.env` sin compartirlo ni subirlo al repositorio. Conserve los mismos identificadores `COMPOSE_PROJECT_NAME`, `DB_NAME`, `DB_USER` y parámetros efectivos de conexión; revise `BACKUP_DIRECTORY` si usa una ruta relativa.
 3. Para detectar errores antes del arranque, ejecute `./compilar.sh --docker` en la carpeta nueva. Este paso **no aplica las migraciones** a la base ni implica que las pruebas de integración hayan pasado.
-4. Después de validar en una **base de pruebas**, detenga la instalación anterior con `./detener.sh` y, desde la carpeta nueva, ejecute `./iniciar.sh`. Flyway aplicará las migraciones pendientes hasta **V27**. La entrega histórica 1.8.3 aplicaba hasta V26 y la ampliación de licencias añadió V27; 1.8.4 conserva estas migraciones. No modifique ni borre los scripts V1–V25. Los casos antiguos OPEN se muestran como Recibido; no se infiere su etapa de atención.
+4. Después de validar en una **base de pruebas**, detenga la instalación anterior con `./detener.sh` y, desde la carpeta nueva, ejecute `./iniciar.sh`. Flyway aplicará las migraciones pendientes hasta **V27**. La entrega histórica 1.8.3 aplicaba hasta V26 y la ampliación de licencias añadió V27; 1.8.5 conserva estas migraciones. No modifique ni borre los scripts V1–V25. Los casos antiguos OPEN se muestran como Recibido; no se infiere su etapa de atención.
 5. Verifique inicio de sesión, aislamiento de instituciones, saldos, casos, pólizas, cobranza, adjuntos, correo y respaldos. **Verifique en el destino SMTP, Docker, LAN y respaldos antes de actualizar producción** y completar la validación del entorno.
 
 Después de V27, no ejecute un backend anterior sobre esa base: no respeta los saldos reservados para licencias; los anteriores a V26 tampoco reconocen los nuevos estados. Para retroceder restaure una copia compatible en una base nueva. No ejecute `docker compose down -v` ni destruya el volumen de PostgreSQL. La operación `./restaurar.sh` **reemplaza datos** y no forma parte de una actualización normal. Consulte [respaldo y restauración](docs/RESPALDO-RESTAURACION.md).
@@ -266,7 +268,7 @@ docker compose logs --tail=100 db
 
 ## Compilar y ejecutar con Java y Angular locales
 
-Requiere JDK 17 o posterior, Maven 3.9, Node.js 24 LTS, npm, Python 3.10+ y Docker para PostgreSQL; Postfix sólo si se eligió el modo interno.
+Requiere JDK 17 o posterior, Maven 3.9, Node.js 24.22.1 LTS (ver `.nvmrc`), npm, Python 3.10+ y Docker para PostgreSQL; Postfix sólo si se eligió el modo interno.
 
 ```bash
 ./configurar.sh
@@ -276,7 +278,7 @@ Requiere JDK 17 o posterior, Maven 3.9, Node.js 24 LTS, npm, Python 3.10+ y Dock
 
 `compilar.sh` ejecuta `mvn package`, `npm ci` y `npm run build`. Produce:
 
-- `backend/target/siabuc-helpdesk-1.8.4.jar`
+- `backend/target/siabuc-helpdesk-1.8.5.jar`
 - `frontend/dist/helpdesk/browser/`
 
 `iniciar-dev.sh` inicia PostgreSQL y, con `SMTP_HOST=smtp`, Postfix con Docker, compila Spring, instala las dependencias de Angular y ejecuta Spring y `ng serve` en una terminal. Lee los mismos puertos y contraseñas de `.env`; ambos procesos escuchan en `127.0.0.1`. Los registros se guardan en `.runtime/`. **Ctrl+C** detiene Spring y Angular; después `./detener.sh` detiene PostgreSQL y Postfix. No ejecute el modo Docker completo y el modo de desarrollo al mismo tiempo sobre los mismos puertos.
@@ -285,7 +287,7 @@ Para ejecutar todo sin Docker, conectar un PostgreSQL propio o servir los archiv
 
 ## Guía rápida de uso por rol
 
-El [manual integrado 1.8.4](docs/MANUAL-EXTENDIDO-LICENCIAS.md) detalla procedimientos, pantallas, permisos y casos prácticos. Este resumen permite comenzar según la cuenta:
+El [manual integrado 1.8.5](docs/MANUAL-EXTENDIDO-LICENCIAS.md) detalla procedimientos, pantallas, permisos y casos prácticos. Este resumen permite comenzar según la cuenta:
 
 | Rol | Primeras acciones | Restricciones importantes |
 | --- | --- | --- |
@@ -347,7 +349,7 @@ La restauración detiene Spring, Angular y Postfix de Docker, valida el SHA-256 
 
 El [índice documental](docs/README.md) reúne todas las guías vigentes y el archivo histórico.
 
-- **[Manual integrado SIABUC Helpdesk 1.8.4](docs/MANUAL-EXTENDIDO-LICENCIAS.md)**: procedimientos por rol, instalación, soporte, finanzas, correo, respaldos y diagnóstico.
+- **[Manual integrado SIABUC Helpdesk 1.8.5](docs/MANUAL-EXTENDIDO-LICENCIAS.md)**: procedimientos por rol, instalación, soporte, finanzas, correo, respaldos y diagnóstico.
 - [Guía de uso](docs/MANUAL-USUARIO.md) y [cambios/migración 1.8.3](docs/VERSION-1.8.3.md).
 - [Operación](docs/OPERACION.md), [Windows](docs/WINDOWS.md) y [respaldo/restauración](docs/RESPALDO-RESTAURACION.md).
 - [Contrato API](docs/API-CONTRACT.md), [arquitectura](docs/ARQUITECTURA.md) y [pruebas de navegador](tests/e2e/README.md).
@@ -362,10 +364,10 @@ Las pruebas de integración contra PostgreSQL se ejecutan con `mvn -Ppostgres-it
 Desde una copia clonada de Git con los cambios versionados:
 
 ```bash
-python3 scripts/release-1.8.4.py --package --output release-output
+python3 scripts/release-1.8.5.py --package --output release-output
 ```
 
-Genera `SIABUC-Helpdesk-1.8.4.zip` y su `.zip.sha256`; comprueba CRC y contenido e incluye un manifiesto por archivo. El ZIP no contiene credenciales ni datos de la instalación y requiere compilar para ejecutarlo. Este empaquetador usa `git ls-files`: para regenerar el paquete desde una entrega ZIP, obtenga primero un checkout del repositorio; el ZIP no incluye `.git`.
+Genera `SIABUC-Helpdesk-1.8.5.zip` y su `.zip.sha256`; comprueba CRC y contenido e incluye un manifiesto por archivo. El ZIP no contiene credenciales ni datos de la instalación y requiere compilar para ejecutarlo. Este empaquetador usa `git ls-files`: para regenerar el paquete desde una entrega ZIP, obtenga primero un checkout del repositorio; el ZIP no incluye `.git`.
 
 ## Estructura
 
@@ -375,7 +377,7 @@ siabuc-helpdesk/
   frontend/               Angular, proxy de desarrollo y Nginx
   smtp/                   Dockerfile y configuración Postfix de salida
   backup/                 Servicio de copias PostgreSQL programadas, inicialmente apagadas
-  docs/                   Manual integrado 1.8.4, índice, guías, API y validación
+  docs/                   Manual integrado 1.8.5, índice, guías, API y validación
   scripts/manage.py       Operación y lectura segura de configuración
   docker-compose.yml      PostgreSQL + Spring + Nginx + backup; Postfix opcional
   .env.example            Plantilla sin contraseñas utilizables
@@ -386,5 +388,5 @@ siabuc-helpdesk/
   compilar.sh / .bat      Compilar imágenes; .sh también permite compilación local
   respaldar.sh / .bat     Crear copia PostgreSQL
   restaurar.sh / .bat     Recuperar copia PostgreSQL
-  scripts/release-1.8.4.py Empaquetar fuentes 1.8.4 con manifiesto SHA-256
+  scripts/release-1.8.5.py Empaquetar fuentes 1.8.5 con manifiesto SHA-256
 ```

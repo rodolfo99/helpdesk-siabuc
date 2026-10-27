@@ -1,0 +1,120 @@
+name: Dependency and image security
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '23 14 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  npm-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - directory: frontend
+            name: frontend
+          - directory: tests/e2e
+            name: browser-tests
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+      - name: Install the exact lockfile without lifecycle scripts
+        working-directory: ${{ matrix.directory }}
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Audit production and development dependencies
+        working-directory: ${{ matrix.directory }}
+        run: npm audit --audit-level=high --json > npm-audit.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: npm-audit-${{ matrix.name }}
+          path: ${{ matrix.directory }}/npm-audit.json
+          if-no-files-found: error
+          retention-days: 14
+  images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [frontend, backend, backup, smtp, db]
+    env:
+      SERVICE: ${{ matrix.service }}
+      IMAGE: siabuc-security-${{ matrix.service }}:${{ github.sha }}
+      DB_NAME: siabuc_security
+      DB_USER: siabuc
+      DB_PASSWORD: DisposableSecurityDatabase185
+      ADMIN_PASSWORD: DisposableSecurityAdmin185
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build or pull the final runtime image
+        run: |
+          if [ "$SERVICE" = db ]; then
+            source_image=$(docker compose config --format json | python3 -c 'import json,sys; print(json.load(sys.stdin)["services"]["db"]["image"])')
+            docker pull "$source_image"
+            docker tag "$source_image" "$IMAGE"
+          else
+            docker build --pull --tag "$IMAGE" "$SERVICE"
+          fi
+          docker image inspect "$IMAGE" > image-inspect.json
+      - name: Check the patched Node builder and final Nginx image
+        if: matrix.service == 'frontend'
+        run: |
+          docker build --target build --tag siabuc-security-node frontend
+          test "$(docker run --rm --entrypoint node siabuc-security-node -p process.versions.node)" = "$(cat .nvmrc)"
+          docker run --rm --entrypoint sh "$IMAGE" -ec '
+            nginx -v 2>&1 | grep -Fx "nginx version: nginx/1.30.6"
+            nginx -t
+            ! command -v node
+            ! command -v npm
+            test -s /usr/share/nginx/html/index.html
+          '
+          container=$(docker run -d -p 127.0.0.1::80 "$IMAGE")
+          trap 'docker logs "$container"; docker rm -f "$container"' EXIT
+          port=$(docker port "$container" 80/tcp | cut -d: -f2)
+          curl --fail --retry 10 --retry-connrefused --retry-delay 1 -D nginx-headers.txt "http://127.0.0.1:$port/" -o nginx-index.html
+          curl --fail "http://127.0.0.1:$port/cases" -o nginx-route.html
+          cmp nginx-index.html nginx-route.html
+          grep -qi '^X-Content-Type-Options: nosniff' nginx-headers.txt
+          grep -qi '^X-Frame-Options: DENY' nginx-headers.txt
+      - name: Check backend runtime identity and packaged JAR
+        if: matrix.service == 'backend'
+        run: |
+          docker run --rm --entrypoint sh "$IMAGE" -ec '
+            test "$(id -u)" = 10001
+            test -s /app/app.jar
+            java -version
+            ! command -v mvn
+          '
+      - name: Scan OS and application packages (fail on HIGH or CRITICAL)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE }}
+          scanners: vuln
+          format: json
+          output: trivy.json
+          severity: HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: '1'
+          timeout: 10m0s
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: image-security-${{ matrix.service }}
+          path: |
+            image-inspect.json
+            trivy.json
+            nginx-headers.txt
+          if-no-files-found: error
+          retention-days: 14
