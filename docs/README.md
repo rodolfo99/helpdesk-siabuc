@@ -14,6 +14,7 @@ se haya ejecutado en el servidor de destino.
 
 | Necesidad | Documento vigente |
 | --- | --- |
+| Instalación limpia en Ubuntu con Docker Compose | [Instalación desde cero](INSTALACION-DESDE-CERO.md) |
 | Recorrido completo por rol | [Manual integrado 1.8.4](MANUAL-EXTENDIDO-LICENCIAS.md) |
 | Actualización y permisos de respaldos en el arranque | [Versión 1.8.4](VERSION-1.8.4.md) |
 | Uso cotidiano y primeros pasos | [Manual de usuario](MANUAL-USUARIO.md) |
