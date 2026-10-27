@@ -1,4 +1,4 @@
-# Respaldos automáticos · 1.8.3
+# Respaldos automáticos · 1.8.4
 
 Desde 1.6.0, SIABUC Helpdesk incluye un servicio Docker llamado **`backup`** y una sección **Respaldos**, exclusiva de **ADMIN**. El calendario comienza **desactivado** en una instalación nueva o al aplicar V16 por primera vez. Una actualización posterior, incluida 1.8.3, conserva el estado guardado; un respaldo también lo recupera al restaurar. Iniciar Docker o abrir la página no cambia ese estado.
 
@@ -25,7 +25,7 @@ BACKUP_DIRECTORY=/srv/siabuc/copias
 
 Usa una carpeta exclusiva para estas copias. Evita la raíz del disco, la del proyecto o una carpeta pública. Las copias contienen datos de clientes, historial, cuentas y comprobantes. No incluyas `.env` ni copias reales en el repositorio.
 
-Al generar una configuración nueva, los scripts eligen el UID/GID del usuario actual en Linux; en Windows usan `0`. Si copias `.env.example`, puedes ajustar `BACKUP_UID` y `BACKUP_GID` al dueño de la carpeta. El proceso con UID `0` dispone sólo de la capacidad de acceso a archivos necesaria para escribir en ese destino privado; no tiene acceso al socket Docker ni al volumen de PostgreSQL. Si eliges otro UID/GID, prepara los permisos del directorio para ese usuario. No se cambian automáticamente los permisos de carpetas preexistentes. En Windows se aplican también los permisos y el acceso a archivos compartidos de Docker Desktop.
+Al generar una configuración nueva, los scripts eligen el UID/GID del usuario actual en Linux; en Windows usan `0`. Se conserva la identidad de un `.env` existente. El proceso con UID `0` dispone sólo de la capacidad de acceso a archivos necesaria para escribir en ese destino privado; no tiene acceso al socket Docker ni al volumen de PostgreSQL. En esta revisión, el arranque comprueba escritura con `BACKUP_UID:BACKUP_GID` y corrige en Linux el acceso denegado sobre la carpeta de destino. Los archivos que contiene conservan sus propietarios y permisos. En Windows se aplican los permisos y el acceso a archivos compartidos de Docker Desktop; el arranque los comprueba y comunica los fallos sin aplicar `chown`.
 
 ## 2. Iniciar el servicio
 
@@ -41,7 +41,11 @@ rem Windows, Docker Desktop en modo contenedores Linux
 iniciar.bat
 ```
 
-Los scripts crean el directorio si falta y construyen el servicio `backup`. No corrigen propietario ni permisos de una carpeta existente, ni sustituyen la comprobación de escritura del worker. El worker espera a que el backend esté saludable y haya aplicado sus migraciones. Si ejecutas `docker compose` directamente, crea primero la carpeta indicada: el montaje usa `create_host_path: false` para no crear silenciosamente una ruta equivocada.
+Los scripts crean el directorio si falta con permisos privados `0700` y construyen la imagen `backup`. Antes de arrancar el resto de servicios, un contenedor temporal con la identidad del worker crea y elimina un archivo de prueba en el mismo montaje. Si recibe acceso denegado en Linux, otro contenedor temporal ajusta únicamente el propietario de esa carpeta a `BACKUP_UID:BACKUP_GID` y añade acceso `rwx` para el propietario, conservando los demás bits de acceso. Después se repite la prueba con el usuario normal. Una carpeta que ya permite escribir no se modifica.
+
+La reparación no es recursiva, no modifica archivos de respaldos y no cambia el calendario. El contenedor temporal recibe `CHOWN` y `FOWNER` sólo durante la reparación; el worker normal conserva sus capacidades actuales. Un disco lleno, un montaje de sólo lectura o un fallo de Docker detiene el arranque sin intentar cambiar propietarios. También se rechazan enlaces simbólicos, raíces y destinos generales protegidos. Use una carpeta exclusiva de copias. Consulte [actualización de permisos](VERSION-1.8.4.md).
+
+El worker espera a que el backend esté saludable y haya aplicado sus migraciones. Si ejecutas `docker compose` directamente, no se ejecuta esta preparación: crea y configura primero la carpeta indicada; el montaje usa `create_host_path: false`. `iniciar.sh --solo-bd` conserva su funcionamiento y no prepara respaldos.
 
 Para revisar el servicio:
 

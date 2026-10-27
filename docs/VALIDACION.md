@@ -1,6 +1,20 @@
 # Validación de SIABUC Helpdesk
 
-## Evidencia vigente: 1.8.3
+## Verificación de 1.8.4
+
+El workflow [SIABUC 1.8.4 verify](https://github.com/rodolfo99/helpdesk-siabuc/actions/workflows/verify-release-184.yml)
+comprueba la revisión indicada en cada ejecución: suites de backend y frontend,
+Compose/SMTP, empaquetado y la regresión de permisos con Docker real en un proyecto
+exclusivo de prueba. Consulte el SHA y el resultado del workflow antes de atribuir
+sus resultados a un paquete. La prueba de permisos no es una restauración.
+
+Al preparar el cambio se ejecutaron localmente 70 pruebas de operación: 69
+aprobadas y una omitida porque el entorno no permite cambiar UID. Las 13 de SMTP
+aprobaron. La regresión con cambio real de UID y la prueba Docker se ejecutan
+explícitamente en CI. No se ha validado esta revisión en Windows nativo ni en el
+servidor del usuario. [Alcance y comandos](VERSION-1.8.4.md).
+
+## Evidencia histórica: 1.8.3
 
 La revisión `15e9b2c4e1e94d97632b2e90dc389bfc727d5c71` completó 233 pruebas Java
 con PostgreSQL 17 nativo, 71 Python, 10 frontend, compilación Angular y cuatro
