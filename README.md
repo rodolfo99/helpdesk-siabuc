@@ -41,6 +41,7 @@ El registro local de soporte por licencia no implementa validación o activació
 
 | Necesito… | Guía |
 | --- | --- |
+| Instalar desde cero en Ubuntu | [Guía paso a paso para instalación nueva](docs/INSTALACION-DESDE-CERO.md) |
 | Instalar o actualizar conservando mis datos | [Actualización 1.8.4](docs/VERSION-1.8.4.md) · [Windows](docs/WINDOWS.md) · [Operación Linux/Docker](docs/OPERACION.md) |
 | Atender casos, usar adjuntos, cronómetro y agenda | [Manual integrado 1.8.4](docs/MANUAL-EXTENDIDO-LICENCIAS.md) · [Guía de uso](docs/MANUAL-USUARIO.md) |
 | Registrar pólizas, pagos y horas adquiridas | [Pólizas y cobranza](docs/POLIZAS-COBRANZA.md) |
