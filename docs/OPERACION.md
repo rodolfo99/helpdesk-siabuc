@@ -1,4 +1,4 @@
-# Instalación, compilación y operación · 1.8.3
+# Instalación, compilación y operación · 1.8.4
 
 En Linux se usan los scripts Bash `.sh`. En Windows se usan los `.bat` desde CMD o PowerShell con Docker Desktop y contenedores Linux; consulte [WINDOWS.md](WINDOWS.md). El desarrollo nativo se ejecuta en Linux o dentro de WSL2. Utilice JDK 17, Maven 3.9 y Node.js 24 con su npm; los scripts comprueban Java 17 o posterior y Node 24 o posterior, mientras que las imágenes Docker fijan Java 17 y Node 24. El despliegue Docker sólo requiere Python 3.10+, el motor Docker y Docker Compose con soporte para `up --wait` en el anfitrión.
 
@@ -15,7 +15,7 @@ Para elegir la contraseña PostgreSQL antes del primer arranque, ejecute `./conf
 
 La cuenta administrativa se inicializa cuando no existe un administrador activo. Durante la operación normal siempre debe conservar al menos uno. No existe un usuario invitado ni una contraseña fija para la instalación. Las contraseñas de demostraciones o pruebas automatizadas no se usan en este flujo.
 
-Para actualizar a 1.8.3, conserve `.env`, el nombre del proyecto y los volúmenes, y cree primero un respaldo. Flyway aplica las migraciones pendientes hasta V26; V1–V25 se conservan. V26 añade los cinco estados de casos sin eliminar datos ni cambiar saldos. Consulte [VERSION-1.8.3.md](VERSION-1.8.3.md) para compatibilidad y retroceso. La [migración a 1.1](MIGRACION-1.1.md) se conserva como referencia histórica de V2/V3, no como lista completa de la versión actual.
+Para actualizar a 1.8.4, conserve `.env`, el nombre del proyecto y los volúmenes, y cree primero un respaldo. Flyway aplica las migraciones pendientes hasta V27; V1–V27 se conservan sin cambios respecto de la ampliación de licencias. V26 añade los cinco estados de casos sin eliminar datos ni cambiar saldos. Consulte [VERSION-1.8.4.md](VERSION-1.8.4.md) y [Licencias](LICENCIAS-HORAS.md) para compatibilidad y retroceso. La [migración a 1.1](MIGRACION-1.1.md) se conserva como referencia histórica de V2/V3, no como lista completa de la versión actual.
 
 Una configuración nueva preselecciona Gmail directo con `MAIL_ENABLED=false`, sin usuario, contraseña ni remitente. Un `.env` anterior conserva su proveedor y activación; si no incluía correo, sigue desactivado. `./configurar.sh --gmail-directo` configura Gmail sin Postfix; no prueba autenticación ni envía mensajes. Al reactivar se respetará también la pausa administrativa guardada en PostgreSQL.
 
@@ -57,7 +57,7 @@ npm run build
 npm test
 ```
 
-Artefactos: `backend/target/siabuc-helpdesk-1.8.3.jar` y `frontend/dist/helpdesk/browser/`. `npm ci` utiliza el archivo `package-lock.json` entregado. No sustituya `npm ci` por actualizaciones de dependencias durante una instalación reproducible.
+Artefactos: `backend/target/siabuc-helpdesk-1.8.4.jar` y `frontend/dist/helpdesk/browser/`. `npm ci` utiliza el archivo `package-lock.json` entregado. No sustituya `npm ci` por actualizaciones de dependencias durante una instalación reproducible.
 
 `mvn package` compila también las clases de prueba y ejecuta pruebas unitarias si existen. Los archivos `*IT.java` se ejecutan únicamente con el perfil `postgres-it`. Una compilación satisfactoria no significa por sí sola que se ejecutaron esas pruebas de integración.
 
@@ -112,7 +112,7 @@ from scripts.manage import ROOT, config
 env = os.environ.copy()
 env.update(config())
 env.update(DB_HOST="127.0.0.1", SERVER_ADDRESS="127.0.0.1")
-subprocess.run(["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.8.3.jar")], env=env, check=True)
+subprocess.run(["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.8.4.jar")], env=env, check=True)
 PY
 ```
 
@@ -183,7 +183,7 @@ Para restablecer una contraseña de usuario del helpdesk, utilice otra cuenta ad
 
 ## Respaldo
 
-Desde 1.6, el servicio Docker `backup` ofrece calendario, retención e historial. El calendario comienza **desactivado** en una instalación nueva o al aplicar V16 por primera vez; las actualizaciones posteriores y las restauraciones conservan su configuración guardada. La sección **Respaldos** permite activarlo o desactivarlo expresamente. La carpeta se define con `BACKUP_DIRECTORY`; los scripts crean el destino si falta, sin corregir permisos de carpetas existentes. Consulte [Respaldos automáticos](RESPALDOS-AUTOMATICOS.md) para Linux/Windows, permisos y prueba de recuperación aislada. Los siguientes scripts manuales siguen funcionando con el calendario apagado.
+Desde 1.6, el servicio Docker `backup` ofrece calendario, retención e historial. El calendario comienza **desactivado** en una instalación nueva o al aplicar V16 por primera vez; las actualizaciones posteriores y las restauraciones conservan su configuración guardada. La sección **Respaldos** permite activarlo o desactivarlo expresamente. La carpeta se define con `BACKUP_DIRECTORY`; los scripts crean el destino si falta y verifican escritura desde Docker. Ante acceso denegado en Linux, ajustan únicamente la carpeta al UID/GID configurado, sin modificar los archivos contenidos, y vuelven a comprobar antes de iniciar servicios. Consulte también [la revisión de arranque](VERSION-1.8.4.md). Consulte [Respaldos automáticos](RESPALDOS-AUTOMATICOS.md) para Linux/Windows, permisos y prueba de recuperación aislada. Los siguientes scripts manuales siguen funcionando con el calendario apagado.
 
 Consulte también la [guía completa de respaldo y restauración](RESPALDO-RESTAURACION.md), con los pasos en orden, parámetros, ejemplos y solución de errores.
 

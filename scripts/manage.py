@@ -591,7 +591,7 @@ def build_native() -> None:
     run(["mvn", "-B", "-ntp", "package"], cwd=ROOT / "backend")
     run(["npm", "ci"], cwd=ROOT / "frontend")
     run(["npm", "run", "build"], cwd=ROOT / "frontend")
-    print("Compilación terminada: backend/target/siabuc-helpdesk-1.8.3.jar y frontend/dist/helpdesk/browser/.")
+    print("Compilación terminada: backend/target/siabuc-helpdesk-1.8.4.jar y frontend/dist/helpdesk/browser/.")
 
 
 def wait_http(url: str, process: subprocess.Popen, log_path: Path, timeout: int = 180) -> None:
@@ -650,7 +650,7 @@ def development(values: dict[str, str]) -> None:
     previous_sigterm = signal.signal(signal.SIGTERM, interrupted)
     try:
         commands = [
-            (["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.8.3.jar")],
+            (["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.8.4.jar")],
              ROOT / "backend", RUNTIME / "backend.log", f"http://127.0.0.1:{values['SERVER_PORT']}/api/health"),
             (["npm", "start", "--", "--host", "127.0.0.1", "--port", values["FRONTEND_PORT"]],
              ROOT / "frontend", RUNTIME / "frontend.log", f"http://127.0.0.1:{values['FRONTEND_PORT']}/"),
@@ -690,16 +690,90 @@ def development(values: dict[str, str]) -> None:
 
 
 def prepare_automatic_backup_directory(values: dict[str, str]) -> Path:
-    """Create only the configured destination; never chmod/chown an existing host directory."""
+    """Create a dedicated destination; permission repair is confined to its bind mount."""
     destination = Path(values.get("BACKUP_DIRECTORY", "./backups/automatic")).expanduser()
     if not destination.is_absolute():
         destination = ROOT / destination
+    # Reject links before resolving: an automatic repair must not follow a link
+    # to a different directory. Normal filesystem mount points remain supported.
+    if any(path.is_symlink() for path in (destination, *destination.parents)):
+        fail("BACKUP_DIRECTORY no admite enlaces simbólicos; indique la carpeta real exclusiva de copias.")
     destination = destination.resolve()
-    if destination == ROOT or destination == Path(destination.anchor):
-        fail("BACKUP_DIRECTORY debe ser una carpeta exclusiva de copias, no la raíz del disco ni del proyecto.")
+    protected = {ROOT.resolve(), *ROOT.resolve().parents, Path.home().resolve(), Path(destination.anchor)}
+    if os.name == "posix":
+        protected.update(Path(path) for path in (
+            "/bin", "/boot", "/dev", "/etc", "/home", "/lib", "/lib64", "/media", "/mnt",
+            "/opt", "/proc", "/root", "/run", "/sbin", "/srv", "/sys", "/tmp", "/usr", "/var"))
+    if destination in protected:
+        fail("BACKUP_DIRECTORY debe ser una carpeta exclusiva de copias, no una raíz, carpeta personal o del sistema.")
     destination.mkdir(parents=True, exist_ok=True, mode=0o700)
     if not destination.is_dir():
         fail("BACKUP_DIRECTORY no es un directorio.")
+    return destination
+
+
+# Executed with the normal backup service identity. Exit 73 identifies only an
+# access denial; disk-full, read-only mounts and Docker failures must not chown.
+BACKUP_WRITE_PROBE = """import os, sys, tempfile
+try:
+    descriptor, path = tempfile.mkstemp(prefix='.siabuc-write-check-', dir=sys.argv[1])
+    os.close(descriptor)
+    os.unlink(path)
+except PermissionError:
+    sys.exit(73)
+except OSError:
+    sys.exit(74)
+"""
+
+# A short-lived container has CHOWN/FOWNER only for this step. Never recurse or
+# change a backup file; retain existing group/other access bits on the directory.
+BACKUP_PERMISSION_REPAIR = """import os, stat, sys
+descriptor = os.open(sys.argv[1], os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+try:
+    previous = os.fstat(descriptor)
+    os.fchown(descriptor, int(sys.argv[2]), int(sys.argv[3]))
+    os.fchmod(descriptor, stat.S_IMODE(previous.st_mode) | 0o700)
+finally:
+    os.close(descriptor)
+"""
+
+
+def verify_automatic_backup_permissions(values: dict[str, str]) -> Path:
+    """Repair a denied directory, then verify the same mount/user used by backup."""
+    destination = prepare_automatic_backup_directory(values)
+    uid, gid = values["BACKUP_UID"], values["BACKUP_GID"]
+    compose(values, "build", "backup")
+
+    def probe() -> int:
+        try:
+            compose(values, "run", "--rm", "--no-deps", "-T", "--entrypoint", "python3",
+                    "backup", "-c", BACKUP_WRITE_PROBE, "/backups",
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            return 0
+        except subprocess.CalledProcessError as error:
+            return error.returncode
+
+    result = probe()
+    if result == 73 and not IS_WINDOWS:
+        # Recheck the source immediately before a privileged operation. Docker
+        # performs the ownership change in its own UID namespace (rootless too).
+        prepare_automatic_backup_directory(values)
+        print(f"Preparando permisos de respaldos: {destination} para UID/GID {uid}:{gid}.", flush=True)
+        try:
+            compose(values, "run", "--rm", "--no-deps", "-T", "--user", "0:0",
+                    "--cap-add", "CHOWN", "--cap-add", "FOWNER", "--entrypoint", "python3",
+                    "backup", "-c", BACKUP_PERMISSION_REPAIR, "/backups", uid, gid,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except subprocess.CalledProcessError:
+            fail(f"No se pudieron ajustar los permisos de {destination} para {uid}:{gid}. "
+                 "Revise los permisos/ACL y el montaje del destino. No se modificaron archivos de respaldo.")
+        result = probe()
+    if result:
+        advice = ("Revise los permisos de la carpeta compartida en Docker Desktop." if IS_WINDOWS else
+                  "Revise los permisos/ACL, el espacio libre y que el montaje permita escritura.")
+        fail(f"No se pudo verificar escritura en {destination} desde backup (UID/GID {uid}:{gid}). "
+             f"{advice} No se inició el resto de servicios.")
+    print(f"Escritura de respaldos verificada: {destination} (UID/GID {uid}:{gid}).")
     return destination
 
 
@@ -834,7 +908,7 @@ def main() -> None:
             compose(values, "up", "-d", "--wait", "--wait-timeout", "180", "db")
             print(f"PostgreSQL listo en 127.0.0.1:{values['DB_PORT']}.")
         else:
-            prepare_automatic_backup_directory(values)
+            verify_automatic_backup_permissions(values)
             compose(values, "up", "-d", "--build", "--wait", "--wait-timeout", "300")
             print(f"SIABUC Helpdesk web: http://{values['WEB_BIND_HOST']}:{values['FRONTEND_PORT']} (si usa 0.0.0.0, sustituya por su IP LAN).")
             credentials(values)

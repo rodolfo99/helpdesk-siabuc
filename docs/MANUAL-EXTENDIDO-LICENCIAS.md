@@ -1,8 +1,8 @@
-# Manual extendido de SIABUC Helpdesk con licencias
+# Manual extendido de SIABUC Helpdesk 1.8.4 con licencias
 
 **Cliente institucional · Soporte técnico · Cobranza · Administración · Operación**
-Edición documental: 16 de octubre de 2026. Ampliación de licencias y horas de soporte.
-Base de aplicación: **1.8.3**, con la ampliación de licencias y migraciones **V1-V27**. Esta edición describe la rama `feature/licencias-horas-predeterminadas` y la [PR #19](https://github.com/rodolfo99/helpdesk-siabuc/pull/19); no implica una nueva versión publicada ni un despliegue en producción.
+Edición documental: 26 de octubre de 2026. Licencias, horas de soporte y preparación de permisos de respaldos.
+Versión de aplicación: **1.8.4**, con licencias y migraciones **V1-V27**. Incluye la ampliación integrada mediante la [PR #19](https://github.com/rodolfo99/helpdesk-siabuc/pull/19) y la [preparación de permisos durante el arranque](VERSION-1.8.4.md). Los resultados de CI no acreditan despliegue en producción.
 
 Este manual integra el manual 1.8.3 y la ampliación de licencias. Para configurar las horas incluidas, empieza en el apartado 5.5; para adquirir horas mediante una póliza, consulta el capítulo 15. Describe la interfaz, las reglas de negocio y los scripts incluidos en el proyecto. La referencia de resultados, entorno y límites de las pruebas es [Validación vigente](VALIDACION.md). Los informes y manuales de versiones anteriores son antecedentes históricos, no instrucciones de esta versión.
 
@@ -161,7 +161,7 @@ cat VERSION
 bash ./configurar.sh
 ```
 
-Comprueba que `VERSION` indique `1.8.3`. El asistente crea o valida `.env`. Revisa con un editor privado la cuenta inicial, base de datos, puertos, dirección de la web y carpeta de respaldos. Una instalación nueva queda con correo desactivado; configura el medio de envío por separado cuando estés preparado.
+Comprueba que `VERSION` indique `1.8.4`. El asistente crea o valida `.env`. Revisa con un editor privado la cuenta inicial, base de datos, puertos, dirección de la web y carpeta de respaldos. Una instalación nueva queda con correo desactivado; configura el medio de envío por separado cuando estés preparado.
 
 Para elegir la contraseña PostgreSQL **antes de inicializar una base nueva**:
 
@@ -184,10 +184,10 @@ Los servicios habituales son `db`, `backend`, `frontend` y `backup`. `smtp` se a
 
 La continuidad en el mismo motor Docker depende de conservar los volúmenes y `COMPOSE_PROJECT_NAME`. `.env` no contiene los datos de la base. Una ruta relativa de respaldos cambia de destino al mover la carpeta: revisa `BACKUP_DIRECTORY` antes del arranque.
 
-1. Conserva el paquete y la configuración anteriores. Comprueba el alcance y las pruebas de 1.8.3.
+1. Conserva el paquete y la configuración anteriores. Comprueba el alcance y las pruebas de 1.8.4.
 2. Con la instalación anterior operativa, crea una copia con nombre nuevo y conserva el `.dump` y su `.sha256` fuera del directorio de código.
 3. Ensaya la restauración y la actualización sobre una copia aislada, sin enviar correos a destinatarios reales.
-4. Descomprime el paquete 1.8.3 con la ampliación de licencias en otra carpeta y copia allí el `.env` privado. Mantén nombre de proyecto, credenciales, puertos y volúmenes. Revisa rutas de respaldos y cualquier configuración local.
+4. Descomprime el paquete 1.8.4 en otra carpeta y copia allí el `.env` privado. Mantén nombre de proyecto, credenciales, puertos y volúmenes. Revisa rutas de respaldos y cualquier configuración local.
 5. Compila con `bash ./compilar.sh --docker`.
 6. En una ventana sin escrituras, detén la instalación anterior con `bash ./detener.sh`. Si existen procesos nativos, detenlos también.
 7. Inicia desde la carpeta nueva con `bash ./iniciar.sh`. Revisa logs del backend y comprueba acceso, institución, saldo, caso, pago y evidencia conocidos.
@@ -282,7 +282,7 @@ npm --version
 bash ./compilar.sh
 ```
 
-La salida esperada se encuentra en `backend/target/siabuc-helpdesk-1.8.3.jar` y `frontend/dist/helpdesk/browser/`. `mvn package` no ejecuta automáticamente las pruebas de integración del perfil `postgres-it`.
+La salida esperada se encuentra en `backend/target/siabuc-helpdesk-1.8.4.jar` y `frontend/dist/helpdesk/browser/`. `mvn package` no ejecuta automáticamente las pruebas de integración del perfil `postgres-it`.
 
 Para iniciar el entorno de desarrollo:
 
@@ -744,7 +744,7 @@ ADMIN/TECH abre **Soluciones vinculadas al caso**, busca una publicación y puls
 
 El vínculo muestra la publicación vigente, no una copia congelada del contenido. Si el artículo se despublica, se oculta al cliente; al volver a publicarlo, el vínculo refleja la versión actual.
 
-**Limitación de interfaz que continúa en 1.8.3:** el menú global muestra Base de conocimientos a TECH, pero el componente completo permite entrada sólo a ADMIN/USER y puede mostrar «No tienes acceso». El técnico sí dispone del componente de soluciones dentro de los casos y de las operaciones publicadas autorizadas. No eleves a un técnico a ADMIN para sortear este defecto de interfaz.
+**Limitación de interfaz que continúa en 1.8.4:** el menú global muestra Base de conocimientos a TECH, pero el componente completo permite entrada sólo a ADMIN/USER y puede mostrar «No tienes acceso». El técnico sí dispone del componente de soluciones dentro de los casos y de las operaciones publicadas autorizadas. No eleves a un técnico a ADMIN para sortear este defecto de interfaz.
 
 Base documental: [Base de conocimientos](BASE-CONOCIMIENTOS.md), [Rol técnico](ROL-TECNICO.md), [Manual breve](MANUAL-USUARIO.md).
 
@@ -1127,7 +1127,7 @@ No publiques ni adjuntes estos archivos a un repositorio. Usa `bash ./respaldar.
 
 El calendario se crea **desactivado** en instalaciones nuevas y al aplicar por primera vez su migración V16. Una actualización posterior conserva el estado que ya guardaste; una restauración recupera el estado incluido en la copia. El worker `backup` puede estar en ejecución sin generar copias programadas cuando el calendario está desactivado.
 
-En `.env`, revisa `BACKUP_DIRECTORY`, `BACKUP_UID` y `BACKUP_GID`. Usa una carpeta privada, no pública ni la raíz del proyecto. Una ruta relativa se interpreta desde la instalación. Inicia mediante los scripts para que preparen el destino cuando corresponde. Comprueba que la identidad del worker pueda escribir en la carpeta y que el disco esté montado; la existencia del directorio no demuestra permiso de escritura. No presupongas que iniciar corrige automáticamente todos los permisos de una carpeta existente.
+En `.env`, revisa `BACKUP_DIRECTORY`, `BACKUP_UID` y `BACKUP_GID`. Usa una carpeta privada, no pública ni la raíz del proyecto. Una ruta relativa se interpreta desde la instalación. Inicia mediante los scripts para que preparen el destino cuando corresponde. Esta revisión comprueba escritura desde Docker antes de iniciar servicios. En Linux corrige el acceso denegado ajustando sólo la carpeta al UID/GID configurado y repite la prueba; no modifica los archivos contenidos. Los errores de montaje, espacio o ACL que persistan detienen el arranque. Consulta [la actualización de permisos](VERSION-1.8.4.md).
 
 ADMIN abre **Respaldos**, comprueba destino y disponibilidad del servicio y configura hora, zona, retención y mínimo de copias. Los valores iniciales son 03:00, `America/Mexico_City`, 30 días y siete copias. Confirma el destino y guarda: guardar no activa por sí solo la programación.
 
@@ -1223,7 +1223,7 @@ Base documental para las reglas del ejercicio: [Manual breve](MANUAL-USUARIO.md)
 | Falla la cookie al probar por HTTP | Configuración `COOKIE_SECURE` y protocolo usado. | Desactivar seguridad en una publicación real en vez de preparar HTTPS. |
 | Puerto ocupado | Otras instalaciones o servicios, y valores del `.env`. | Borrar la base o reutilizar al azar el proyecto de otra instalación. |
 | Falla la descarga de dependencias | Conectividad a registros de imágenes, Maven y npm. | Cambiar dependencias o desactivar verificaciones de integridad sin revisión. |
-| TS2345 con `GUIDES` | Que todo el código sea de la misma versión 1.8.3 y no una mezcla de componentes viejos. | Añadir `any`, quitar comprobaciones de plantillas o ampliar categorías técnicas indebidamente. |
+| TS2345 con `GUIDES` | Que todo el código sea de la misma versión 1.8.4 y no una mezcla de componentes viejos. | Añadir `any`, quitar comprobaciones de plantillas o ampliar categorías técnicas indebidamente. |
 | Docker busca un JAR 1.7/1.8.0 | Coherencia de POM, Dockerfile y scripts de la copia utilizada. | Aplicar parches parciales sobre una carpeta de versión desconocida. |
 
 En una compilación paralela, una etapa marcada **CANCELED** puede haber sido interrumpida después del fallo de otra. Identifica primero el bloque **ERROR** y su causa; no atribuyas un fallo independiente a cada cancelación.
@@ -1360,17 +1360,17 @@ Base documental: [Operación](OPERACION.md), [Arquitectura](ARQUITECTURA.md), [C
 
 ### 27.1 Versión y alcance de esta edición
 
-Este manual corresponde a la base `VERSION=1.8.3` con la ampliación de licencias, migraciones V1-V27, flujo de cinco estados y Docker sin red SMTP dedicada. Se construyó a partir del manual 1.8.3, conservando los procedimientos de los módulos que siguen vigentes e integrando las reglas de licencias. La [PR #19](https://github.com/rodolfo99/helpdesk-siabuc/pull/19) identifica los cambios y sus comprobaciones. Los informes anteriores de validación conservan su alcance histórico; no prueban esta ampliación.
+Este manual corresponde a la base `VERSION=1.8.4` con la ampliación de licencias, migraciones V1-V27, flujo de cinco estados y Docker sin red SMTP dedicada. Se construyó a partir del manual 1.8.3, conservando los procedimientos de los módulos que siguen vigentes e integrando las reglas de licencias. La [PR #19](https://github.com/rodolfo99/helpdesk-siabuc/pull/19) identifica los cambios y sus comprobaciones. Los informes anteriores de validación conservan su alcance histórico; no prueban esta ampliación.
 
 La fecha del documento no implica que una revisión concreta ya esté fusionada o desplegada. La identificación de commits, ejecuciones y resultados está en [VALIDACION.md](VALIDACION.md) y en la PR de la entrega. El manifiesto del ZIP identifica sus archivos; una huella de otro paquete no se utiliza para certificar éste.
 
-El [manual 1.8.1](MANUAL-EXTENDIDO-1.8.1.md), los informes históricos y las notas de versión conservan contexto de sus fechas. Sus dos estados y advertencias de pruebas anteriores no son la especificación de 1.8.3.
+El [manual 1.8.1](MANUAL-EXTENDIDO-1.8.1.md), los informes históricos y las notas de versión conservan contexto de sus fechas. Sus dos estados y advertencias de pruebas anteriores no son la especificación de 1.8.4.
 
 ### 27.2 Documentación complementaria
 
 | Tema | Guías del proyecto |
 |---|---|
-| Inicio y alcance | [Manual breve](MANUAL-USUARIO.md), [Versión 1.8.3](VERSION-1.8.3.md), [Validación](VALIDACION.md) |
+| Inicio y alcance | [Manual breve](MANUAL-USUARIO.md), [Versión 1.8.4](VERSION-1.8.4.md), [Validación](VALIDACION.md) |
 | Instalación | [Operación](OPERACION.md), [Windows](WINDOWS.md), [Arquitectura](ARQUITECTURA.md) |
 | Roles y atención | [Técnico](ROL-TECNICO.md), [SLA](CLASIFICACION-SLA.md), [Cronómetro y agenda](CRONOMETRO-AGENDA.md) |
 | Bandejas y trabajo repetitivo | [Avisos internos](AVISOS-INTERNOS.md), [Vistas y alertas](VISTAS-ALERTAS.md), [Plantillas](PLANTILLAS-RESPUESTA.md) |

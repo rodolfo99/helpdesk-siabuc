@@ -1,6 +1,6 @@
 # Licencias y horas predeterminadas de soporte
 
-Ampliación sobre la base 1.8.3 mediante la migración V27. Los manuales y resultados publicados de 1.8.3 conservan su alcance histórico; esta guía describe las funciones nuevas de la rama.
+Funciones incluidas en 1.8.4, incorporadas sobre la base 1.8.3 mediante V27. La revisión 1.8.4 no añade migraciones. Los manuales y resultados publicados de versiones anteriores conservan su alcance histórico.
 
 ## Configurar las horas incluidas
 

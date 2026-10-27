@@ -1,4 +1,4 @@
-name: SIABUC 1.8.3 verify
+name: SIABUC 1.8.4 verify
 on:
   pull_request:
   workflow_dispatch:
@@ -44,6 +44,10 @@ jobs:
           python3 -m unittest discover -s tests/ops
           python3 -m unittest discover -s tests/smtp
           python3 -m py_compile scripts/manage.py
+      - name: Backup startup permissions (real Docker, isolated project)
+        run: |
+          sudo python3 -m unittest tests.ops.test_backup_permissions -v
+          sudo python3 tests/ops/backup_permissions_smoke.py
       - name: Docker Compose with direct Gmail
         run: |
           export SMTP_HOST=smtp.gmail.com
@@ -113,16 +117,16 @@ jobs:
         run: |
           python3 - <<'PY'
           import json,pathlib
-          assert pathlib.Path('VERSION').read_text().strip() == '1.8.3'
-          assert json.loads(pathlib.Path('frontend/package.json').read_text())['version']=='1.8.3'
-          assert json.loads(pathlib.Path('frontend/package-lock.json').read_text())['version']=='1.8.3'
-          assert '1.8.3' in pathlib.Path('backend/pom.xml').read_text()
-          assert 'siabuc-helpdesk-1.8.3.jar' in pathlib.Path('backend/Dockerfile').read_text()
+          assert pathlib.Path('VERSION').read_text().strip() == '1.8.4'
+          assert json.loads(pathlib.Path('frontend/package.json').read_text())['version']=='1.8.4'
+          assert json.loads(pathlib.Path('frontend/package-lock.json').read_text())['version']=='1.8.4'
+          assert '1.8.4' in pathlib.Path('backend/pom.xml').read_text()
+          assert 'siabuc-helpdesk-1.8.4.jar' in pathlib.Path('backend/Dockerfile').read_text()
           assert not pathlib.Path('.env').exists()
           PY
-          python3 scripts/release-1.8.3.py --package --output release-output
+          python3 scripts/release-1.8.4.py --package --output release-output
       - uses: actions/upload-artifact@v4
         with:
-          name: SIABUC-Helpdesk-1.8.3-source
+          name: SIABUC-Helpdesk-1.8.4-source
           path: release-output/*
           retention-days: 14
