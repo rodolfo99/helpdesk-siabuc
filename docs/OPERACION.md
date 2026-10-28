@@ -1,6 +1,6 @@
 # Instalación, compilación y operación · 1.8.4
 
-En Linux se usan los scripts Bash `.sh`. En Windows se usan los `.bat` desde CMD o PowerShell con Docker Desktop y contenedores Linux; consulte [WINDOWS.md](WINDOWS.md). El desarrollo nativo se ejecuta en Linux o dentro de WSL2. Utilice JDK 17, Maven 3.9 y Node.js 24 con su npm; los scripts comprueban Java 17 o posterior y Node 24 o posterior, mientras que las imágenes Docker fijan Java 17 y Node 24. El despliegue Docker sólo requiere Python 3.10+, el motor Docker y Docker Compose con soporte para `up --wait` en el anfitrión.
+En Linux se usan los scripts Bash `.sh`. En Windows se usan los `.bat` desde CMD o PowerShell con Docker Desktop y contenedores Linux; consulte [WINDOWS.md](WINDOWS.md). El desarrollo nativo se ejecuta en Linux o dentro de WSL2. Utilice JDK 17, Maven 3.9 y Node.js 24.22.1 (ver `.nvmrc`) con su npm; los scripts comprueban Java 17 o posterior y Node 24 o posterior, mientras que las imágenes Docker fijan Java 17 y Node 24.22.1. El despliegue Docker sólo requiere Python 3.10+, el motor Docker y Docker Compose con soporte para `up --wait` en el anfitrión.
 
 ## Instalación y primer arranque
 
@@ -31,7 +31,7 @@ Configure el Postfix integrado con `./configurar.sh --smtp-interno` según [SMTP
 ./compilar.sh --docker
 ```
 
-El Dockerfile del servidor utiliza Maven con JDK 17 y ejecuta `mvn package`; empaqueta un JAR que luego corre en una imagen de JRE 17 con usuario sin privilegios. El Dockerfile del cliente utiliza Node 24, `npm ci` y `npm run build`; copia el resultado a Nginx. PostgreSQL utiliza su imagen oficial 17 Alpine. `smtp/Dockerfile` construye el SMTP Postfix desde Debian 13, con configuración propia, sin buzones ni servicio web.
+El Dockerfile del servidor utiliza Maven con JDK 17 y ejecuta `mvn package`; empaqueta un JAR que luego corre en una imagen de JRE 17 con usuario sin privilegios. El Dockerfile del cliente utiliza Node 24, `npm ci` y `npm run build`; copia el resultado a Nginx. PostgreSQL utiliza `db/Dockerfile`, derivado de la imagen oficial 17 Alpine, con `gosu` recompilado con Go corregido y el mismo arranque/volumen. `smtp/Dockerfile` construye el SMTP Postfix desde Alpine 3.24, con configuración propia, sin buzones ni servicio web.
 
 La primera descarga requiere conexión a Maven Central, npm y al registro de imágenes. La compilación no requiere que haya una base de datos en ejecución. Las pruebas de integración PostgreSQL se ejecutan explícitamente por separado.
 

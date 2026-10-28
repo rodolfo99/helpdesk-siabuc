@@ -2,7 +2,8 @@ name: ${COMPOSE_PROJECT_NAME:-siabuc-helpdesk}
 
 services:
   db:
-    image: postgres:17-alpine
+    build:
+      context: ./db
     environment:
       POSTGRES_DB: ${DB_NAME:?Configure DB_NAME}
       POSTGRES_USER: ${DB_USER:?Configure DB_USER}

@@ -1,10 +1,10 @@
-# Documentación de SIABUC Helpdesk 1.8.4
+# Documentación de SIABUC Helpdesk 1.8.5
 
-**Manual integrado de 1.8.4:** [Manual extendido con licencias](MANUAL-EXTENDIDO-LICENCIAS.md).
+**Manual integrado de 1.8.5:** [Manual extendido con licencias](MANUAL-EXTENDIDO-LICENCIAS.md).
 
-**Licencias incluidas en 1.8.4:** consulte [Licencias y horas predeterminadas](LICENCIAS-HORAS.md). Las pólizas pueden vincularse a una licencia y sus pagos acreditan esa bolsa; los saldos anteriores permanecen sin licencia.
+**Licencias incluidas en 1.8.5:** consulte [Licencias y horas predeterminadas](LICENCIAS-HORAS.md). Las pólizas pueden vincularse a una licencia y sus pagos acreditan esa bolsa; los saldos anteriores permanecen sin licencia.
 
-El [manual integrado 1.8.4](MANUAL-EXTENDIDO-LICENCIAS.md) es la guía principal de uso,
+El [manual integrado 1.8.5](MANUAL-EXTENDIDO-LICENCIAS.md) es la guía principal de uso,
 instalación y operación. Estas guías describen el código de la versión indicada
 en `VERSION`; los resultados de pruebas se asocian a una revisión concreta en
 [Validación](VALIDACION.md). La existencia de un procedimiento no acredita que
@@ -15,8 +15,9 @@ se haya ejecutado en el servidor de destino.
 | Necesidad | Documento vigente |
 | --- | --- |
 | Instalación limpia en Ubuntu con Docker Compose | [Instalación desde cero](INSTALACION-DESDE-CERO.md) |
-| Recorrido completo por rol | [Manual integrado 1.8.4](MANUAL-EXTENDIDO-LICENCIAS.md) |
-| Actualización y permisos de respaldos en el arranque | [Versión 1.8.4](VERSION-1.8.4.md) |
+| Recorrido completo por rol | [Manual integrado 1.8.5](MANUAL-EXTENDIDO-LICENCIAS.md) |
+| Actualización de seguridad y verificaciones automáticas | [Versión 1.8.5](VERSION-1.8.5.md) |
+| Permisos de respaldos en el arranque | [Versión 1.8.4](VERSION-1.8.4.md) |
 | Uso cotidiano y primeros pasos | [Manual de usuario](MANUAL-USUARIO.md) |
 | Cinco estados, migración V26 y eliminación de la red SMTP dedicada | [Cambios y actualización 1.8.3](VERSION-1.8.3.md) |
 | Instalación, compilación y operación Linux/Docker | [Operación](OPERACION.md) |
@@ -76,7 +77,7 @@ sus propios módulos y no se sustituyen por los estados de soporte.
 ## Archivo histórico
 
 Los documentos siguientes conservan las funciones, comandos y resultados de
-su propia versión. Para operar 1.8.4 use las guías anteriores; las instrucciones
+su propia versión. Para operar 1.8.5 use las guías anteriores; las instrucciones
 históricas pueden citar otros JAR, roles, redes o estados.
 
 - [Migración 1.0 a 1.1](MIGRACION-1.1.md).

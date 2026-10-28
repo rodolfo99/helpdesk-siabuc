@@ -92,11 +92,21 @@ Al actualizar con `./iniciar.sh`, Compose recrea los servicios afectados. Una re
 
 ## Cola y diagnóstico
 
-### Reinicio por `mailq.1.gz` ausente
+### Actualización de la imagen SMTP en 1.8.5
+
+Desde 1.8.5 Postfix utiliza Alpine 3.24, mapas LMDB y los mecanismos de cliente
+Cyrus SASL. Se conservan las variables SMTP, STARTTLS/SSL, restricciones de red
+y el volumen `smtp_queue`. `postfix set-permissions` adapta los propietarios
+de la cola antes del arranque. Ensaye la actualización con una copia de los
+datos y conserve el volumen; no elimine mensajes pendientes. La PR incorpora
+una prueba aislada que conserva un mensaje sintético entre las imágenes
+Debian anterior y Alpine nueva. Esta prueba no acredita entrega externa.
+
+### Reinicio por `mailq.1.gz` ausente (imágenes Debian anteriores)
 
 Si el registro muestra `chown: cannot access '/usr/share/man/man1/mailq.1.gz'` seguido de `No se pudo preparar Postfix`, el fallo ocurre en `postfix set-permissions`, antes de iniciar el servicio SMTP. La imagen Debian slim excluye manuales al instalar paquetes y puede dejar sin destino los enlaces de manual creados para `mailq` y `newaliases`.
 
-La corrección conserva `/usr/share/man/*` mediante una regla de `dpkg` antes de instalar Postfix. La construcción comprueba que `sendmail.1.gz` exista y que los enlaces `mailq.1.gz` y `newaliases.1.gz` resuelvan. Se mantiene el ajuste estricto de permisos; no se omite su código de error ni se crean manuales vacíos.
+En las versiones 1.8.3–1.8.4, la corrección conserva `/usr/share/man/*` mediante una regla de `dpkg` antes de instalar Postfix. La construcción comprueba que `sendmail.1.gz` exista y que los enlaces `mailq.1.gz` y `newaliases.1.gz` resuelvan. Se mantiene el ajuste estricto de permisos; no se omite su código de error ni se crean manuales vacíos.
 
 Esta corrección ya forma parte de 1.8.3. Conserve `.env` y los volúmenes, y actualice el conjunto completo de archivos de la versión. Si su instalación utiliza Postfix, desde la raíz del proyecto reconstruya y compruebe el servicio:
 

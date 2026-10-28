@@ -1,6 +1,6 @@
 {
   "name": "siabuc-helpdesk-client",
-  "version": "1.8.4",
+  "version": "1.8.5",
   "private": true,
   "scripts": {
     "start": "ng serve --proxy-config proxy.conf.cjs",
@@ -17,9 +17,14 @@
     "tslib": "2.8.1"
   },
   "devDependencies": {
-    "@angular/build": "21.2.25",
-    "@angular/cli": "21.2.25",
+    "@angular/build": "21.2.28",
+    "@angular/cli": "21.2.28",
     "typescript": "~5.9.3"
   },
-  "type": "module"
+  "type": "module",
+  "overrides": {
+    "@angular/build": {
+      "undici": "7.30.1"
+    }
+  }
 }

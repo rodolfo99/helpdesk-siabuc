@@ -39,6 +39,13 @@ def settings(rendered: str) -> dict[str, str]:
 
 
 class SmtpConfigurationTests(unittest.TestCase):
+    def test_map_selection_prefers_lmdb_with_legacy_hash_fallback(self) -> None:
+        self.assertEqual(smtp.choose_map_type("hash\nlmdb\nregexp"), "lmdb")
+        self.assertEqual(smtp.choose_map_type("lmdb"), "lmdb")
+        self.assertEqual(smtp.choose_map_type("hash"), "hash")
+        with self.assertRaises(smtp.ConfigurationError):
+            smtp.choose_map_type("regexp")
+
     def test_default_direct_mode_has_no_upstream_credentials(self) -> None:
         config = smtp.parse_configuration({})
         rendered = settings(smtp.render_main_cf(config))

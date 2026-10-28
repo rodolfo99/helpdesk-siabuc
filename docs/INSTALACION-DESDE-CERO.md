@@ -1,8 +1,8 @@
-# Instalación de SIABUC Helpdesk 1.8.4 desde cero en Ubuntu
+# Instalación de SIABUC Helpdesk 1.8.5 desde cero en Ubuntu
 
-Guía para una **instalación nueva** de SIABUC Helpdesk con Docker Compose en **Ubuntu 24.04 o 26.04 LTS**. Se basa en los scripts y el `docker-compose.yml` de la rama `main` de la versión 1.8.4; no describe una migración de datos.
+Guía para una **instalación nueva** de SIABUC Helpdesk con Docker Compose en **Ubuntu 24.04 o 26.04 LTS**. Se basa en los scripts y el `docker-compose.yml` de la versión 1.8.5 (disponible en su rama/PR hasta que se integre en `main`); no describe una migración de datos.
 
-> **¿Ya tienes una instalación con información?** No sigas estos pasos como si fuera nueva: realiza un respaldo y consulta [actualización a 1.8.4](VERSION-1.8.4.md) y [respaldo y restauración](RESPALDO-RESTAURACION.md). Reutilizar `COMPOSE_PROJECT_NAME` puede conectar con volúmenes existentes; cambiarlo crea un proyecto independiente, pero no migra datos.
+> **¿Ya tienes una instalación con información?** No sigas estos pasos como si fuera nueva: realiza un respaldo y consulta [actualización a 1.8.5](VERSION-1.8.5.md) y [respaldo y restauración](RESPALDO-RESTAURACION.md). Reutilizar `COMPOSE_PROJECT_NAME` puede conectar con volúmenes existentes; cambiarlo crea un proyecto independiente, pero no migra datos.
 
 ## 1. Requisitos y comprobaciones previas
 
@@ -67,7 +67,7 @@ cd helpdesk-siabuc
 head -n 1 README.md
 ~~~
 
-La primera línea para esta entrega debe indicar `SIABUC Helpdesk 1.8.4`. Para una versión posterior, revisa los cambios de esa versión antes de seguir esta guía. No es necesario usar una rama de una PR antigua: la revisión 1.8.4 de permisos de respaldos ya está integrada en `main`.
+La primera línea para esta entrega debe indicar `SIABUC Helpdesk 1.8.5`. Para una versión posterior, revisa los cambios de esa versión antes de seguir esta guía. No es necesario usar una rama de una PR antigua: la revisión 1.8.4 de permisos de respaldos ya está integrada en `main`.
 
 Si la carpeta `helpdesk-siabuc` ya existe, no sobrescribas su contenido; identifica primero si contiene una instalación con datos o configuración.
 
@@ -237,4 +237,4 @@ sudo docker compose ps
 curl http://127.0.0.1:4200/api/health
 ~~~
 
-**Alcance de esta guía:** comandos revisados contra los scripts y la configuración de la versión 1.8.4; **no** representan una ejecución certificada en el equipo de quien la lea. Antes del uso institucional, valida red, permisos, HTTPS, credenciales, notificaciones, respaldos y una restauración aislada. Para Windows consulta [Windows](WINDOWS.md); para desarrollo nativo y diagnóstico avanzado, [Operación](OPERACION.md).
+**Alcance de esta guía:** comandos revisados contra los scripts y la configuración de la versión 1.8.5; **no** representan una ejecución certificada en el equipo de quien la lea. Antes del uso institucional, valida red, permisos, HTTPS, credenciales, notificaciones, respaldos y una restauración aislada. Para Windows consulta [Windows](WINDOWS.md); para desarrollo nativo y diagnóstico avanzado, [Operación](OPERACION.md).

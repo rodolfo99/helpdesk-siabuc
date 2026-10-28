@@ -1,5 +1,15 @@
 # Validación de SIABUC Helpdesk
 
+## Verificación de seguridad 1.8.5
+
+La revisión `01eee3a` aprobó las cinco imágenes sin alertas altas/críticas,
+ambas auditorías npm con cero hallazgos, 242 pruebas Java, las regresiones
+existentes y el ensayo aislado de datos/cola. Consulte
+[cambios, ejecuciones y límites de 1.8.5](VERSION-1.8.5.md). Las auditorías npm,
+los escaneos de imágenes y las regresiones tienen resultados independientes,
+asociados al SHA de cada ejecución. No constituyen una certificación de la
+instalación productiva.
+
 ## Verificación de 1.8.4
 
 El workflow [SIABUC 1.8.4 verify](https://github.com/rodolfo99/helpdesk-siabuc/actions/workflows/verify-release-184.yml)

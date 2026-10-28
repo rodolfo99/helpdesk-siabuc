@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 
@@ -100,7 +99,7 @@ class BankReconciliationIntegrationIT extends ApiIntegrationSupport {
     private long payment(long institution,String amount,String reference)throws Exception{Map<String,Object> input=new LinkedHashMap<>(PaymentIntegrationIT.paymentPayload(institution,10,0));input.put("amount",new BigDecimal(amount));input.put("reference",reference);return success(admin.post("/payments",input)).path("id").asLong();}
     private JsonNode imported(Client client,String account,String csv)throws Exception{JsonNode preview=success(upload(client,"/preview",account,csv,null,true));return success(upload(client,"/imports",account,csv,preview.path("hash").asText(),true));}
     private MvcResult upload(Client client,String suffix,String account,String csv,String hash,boolean csrf)throws Exception{
-        client.refreshCsrf();MockHttpServletRequestBuilder builder=multipart("/api/reconciliation"+suffix).file(new MockMultipartFile("file","movimientos.csv","text/csv",csv.getBytes(StandardCharsets.UTF_8))).param("account",account).session(client.session).cookie(client.cookies.values().toArray(jakarta.servlet.http.Cookie[]::new));
+        client.refreshCsrf();var builder=multipart("/api/reconciliation"+suffix).file(new MockMultipartFile("file","movimientos.csv","text/csv",csv.getBytes(StandardCharsets.UTF_8))).param("account",account).session(client.session).cookie(client.cookies.values().toArray(jakarta.servlet.http.Cookie[]::new));
         if(hash!=null)builder.param("expectedHash",hash);if(csrf)builder.header("X-XSRF-TOKEN",client.csrf);return client.perform(builder);
     }
 }

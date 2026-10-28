@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 
@@ -124,7 +123,7 @@ class PaymentAttachmentIntegrationIT extends ApiIntegrationSupport {
         return login(name,PASSWORD);
     }
     private MvcResult upload(Client client,long payment,String filename,String contentType,byte[] bytes,UUID requestId,boolean csrf)throws Exception{
-        client.refreshCsrf();MockHttpServletRequestBuilder builder=multipart("/api/payments/"+payment+"/attachments")
+        client.refreshCsrf();var builder=multipart("/api/payments/"+payment+"/attachments")
             .file(new MockMultipartFile("file",filename,contentType,bytes)).param("requestId",requestId.toString())
             .session(client.session).cookie(client.cookies.values().toArray(jakarta.servlet.http.Cookie[]::new));
         if(csrf)builder.header("X-XSRF-TOKEN",client.csrf);return client.perform(builder);

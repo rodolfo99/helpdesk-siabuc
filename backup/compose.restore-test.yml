@@ -2,7 +2,8 @@
 name: siabuc-restore-test
 services:
   db:
-    image: postgres:17-alpine
+    build:
+      context: ../db
     environment:
       POSTGRES_DB: siabuc_restore_test
       POSTGRES_USER: restorecheck

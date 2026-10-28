@@ -591,7 +591,7 @@ def build_native() -> None:
     run(["mvn", "-B", "-ntp", "package"], cwd=ROOT / "backend")
     run(["npm", "ci"], cwd=ROOT / "frontend")
     run(["npm", "run", "build"], cwd=ROOT / "frontend")
-    print("Compilación terminada: backend/target/siabuc-helpdesk-1.8.4.jar y frontend/dist/helpdesk/browser/.")
+    print("Compilación terminada: backend/target/siabuc-helpdesk-1.8.5.jar y frontend/dist/helpdesk/browser/.")
 
 
 def wait_http(url: str, process: subprocess.Popen, log_path: Path, timeout: int = 180) -> None:
@@ -650,7 +650,7 @@ def development(values: dict[str, str]) -> None:
     previous_sigterm = signal.signal(signal.SIGTERM, interrupted)
     try:
         commands = [
-            (["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.8.4.jar")],
+            (["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.8.5.jar")],
              ROOT / "backend", RUNTIME / "backend.log", f"http://127.0.0.1:{values['SERVER_PORT']}/api/health"),
             (["npm", "start", "--", "--host", "127.0.0.1", "--port", values["FRONTEND_PORT"]],
              ROOT / "frontend", RUNTIME / "frontend.log", f"http://127.0.0.1:{values['FRONTEND_PORT']}/"),
