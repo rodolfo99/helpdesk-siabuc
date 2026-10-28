@@ -2,7 +2,7 @@
 
 ## Verificación de seguridad 1.8.5
 
-La revisión `01eee3a` aprobó las cinco imágenes sin alertas altas/críticas,
+La revisión final de la PR #21, `2c4ca8e`, aprobó sus 11 controles: las cinco imágenes sin alertas altas/críticas,
 ambas auditorías npm con cero hallazgos, 242 pruebas Java, las regresiones
 existentes y el ensayo aislado de datos/cola. Consulte
 [cambios, ejecuciones y límites de 1.8.5](VERSION-1.8.5.md). Las auditorías npm,
@@ -10,10 +10,11 @@ los escaneos de imágenes y las regresiones tienen resultados independientes,
 asociados al SHA de cada ejecución. No constituyen una certificación de la
 instalación productiva.
 
-## Verificación de 1.8.4
+La [PR #21](https://github.com/rodolfo99/helpdesk-siabuc/pull/21) se integró el 28 de octubre de 2026 en `f295b75795ed40f0c01c8463533bfeb1389fc207`. El [workflow de seguridad posterior](https://github.com/rodolfo99/helpdesk-siabuc/actions/runs/40757745097) aprobó sobre ese commit. Las pruebas Java, Python, frontend y navegador enlazadas en las notas se ejecutaron en la PR; no se presentan como una validación del equipo del usuario.
 
-El workflow [SIABUC 1.8.4 verify](https://github.com/rodolfo99/helpdesk-siabuc/actions/workflows/verify-release-184.yml)
-comprueba la revisión indicada en cada ejecución: suites de backend y frontend,
+## Evidencia histórica: 1.8.4
+
+El workflow conservado en [`verify-release-184.yml`](https://github.com/rodolfo99/helpdesk-siabuc/actions/workflows/verify-release-184.yml) se llamó **SIABUC 1.8.4 verify** en esa entrega; en 1.8.5 su nombre visible es **SIABUC 1.8.5 verify**. Comprueba la revisión indicada en cada ejecución: suites de backend y frontend,
 Compose/SMTP, empaquetado y la regresión de permisos con Docker real en un proyecto
 exclusivo de prueba. Consulte el SHA y el resultado del workflow antes de atribuir
 sus resultados a un paquete. La prueba de permisos no es una restauración.
@@ -36,7 +37,7 @@ Consulte [resultados, enlaces a CI y límites de 1.8.3](VALIDACION-1.8.3.md).
 
 La ejecución inicial de 1.8.1 registró 223 de 225 pruebas Java correctas y dos
 fallos. [El informe original](VALIDACION-1.8.1.md) conserva ese resultado y su
-revisión; no describe el estado de 1.8.3. Los registros siguientes corresponden
+revisión; no describe el estado de 1.8.5. Los registros siguientes corresponden
 exclusivamente a las versiones y entornos indicados. Sus apartados «pendiente»
 son límites de aquellas ejecuciones, no el estado de validación más reciente.
 
@@ -171,7 +172,7 @@ Validación ejecutada para esta corrección:
 - **Sintaxis:** las tres instrucciones `RUN` del Dockerfile pasan `sh -n`; se comprobó que la excepción precede a la instalación y se revisaron los cambios y comandos de recuperación.
 - **Pendiente:** construir y arrancar la imagen corregida con Docker, comprobar SMTP saludable y completar el inicio de Spring/Angular. Docker no está disponible en el entorno de preparación. No se enviaron mensajes externos ni se repitieron las pruebas históricas del servidor, cliente o respaldos.
 
-El procedimiento de actualización conserva `.env`, PostgreSQL y la cola SMTP y está en [diagnóstico SMTP](SMTP-INTERNO.md#reinicio-por-mailq1gz-ausente).
+El procedimiento de actualización conserva `.env`, PostgreSQL y la cola SMTP y está en [diagnóstico SMTP](SMTP-INTERNO.md#reinicio-por-mailq1gz-ausente-imágenes-debian-anteriores).
 
 ## Comprobaciones anteriores de la versión 1.2.0
 

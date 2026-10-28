@@ -1,4 +1,4 @@
-# Correo y notificaciones · 1.8.3
+# Correo y notificaciones · 1.8.5
 
 El sistema conserva notificaciones y las envía mediante el SMTP seleccionado. Desde 1.8.2, las instalaciones nuevas tienen `MAIL_ENABLED=false` y Gmail directo preseleccionado, sin secretos ni remitente. `./configurar.sh --gmail-directo` configura la cuenta autorizada sin probar autenticación ni enviar mensajes. Si una instalación anterior conserva `SMTP_HOST=smtp`, los scripts mantienen Postfix opcional; en 1.8.3 comparte la red `default` del proyecto. Ninguna configuración por sí sola acredita entrega externa.
 

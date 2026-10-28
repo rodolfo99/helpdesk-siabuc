@@ -1,4 +1,4 @@
-# Base de conocimientos y soluciones de casos — 1.8.3
+# Base de conocimientos y soluciones de casos — 1.8.5
 
 Disponible desde la versión 1.6. Reúne procedimientos de SIABUC en texto plano, con búsqueda por título, resumen o contenido y filtros por categoría y versión. Las categorías originales (Instalación, Catalogación, Préstamos, Reportes, Importación / exportación y Otro) se conservan. La versión 1.8 agrega Guías y primeros pasos, Preguntas frecuentes, Solicitudes de soporte, Pólizas y licencias, Cursos y capacitación y Contacto y horarios, sin publicar automáticamente contenidos no aprobados. La versión es texto descriptivo; por ejemplo, `SIABUC 9.1` o `SIABUC 8 y 9`. Dejarla vacía indica una solución general.
 
@@ -14,7 +14,7 @@ Disponible desde la versión 1.6. Reúne procedimientos de SIABUC en texto plano
 
 Las publicaciones son comunes a todas las instituciones; no incluir datos de clientes, contraseñas ni secretos. La API comprueba los permisos aunque se invoque directamente sin la interfaz. Un ID de artículo en borrador o archivado devuelve 404 al cliente y al técnico. Los enlaces a esos artículos se excluyen por completo de su respuesta: no aparecen títulos, IDs ni metadatos de vínculo. El historial editorial es exclusivo de Administración.
 
-**Límite de la interfaz 1.8.3 para TECH:** el menú lateral muestra Base de conocimientos, pero su pantalla global conserva una comprobación de acceso sólo para ADMIN y USER y presenta «No tienes acceso a la base de conocimientos» al técnico. El acceso a publicaciones por API sí está autorizado para TECH. El técnico puede buscar, consultar y vincular artículos publicados desde **Soluciones vinculadas al caso**, cuya interfaz admite ese rol. Esta diferencia de pantalla no impide la atención ni autoriza edición editorial.
+**Límite de la interfaz 1.8.5 para TECH:** el menú lateral muestra Base de conocimientos, pero su pantalla global conserva una comprobación de acceso sólo para ADMIN y USER y presenta «No tienes acceso a la base de conocimientos» al técnico. El acceso a publicaciones por API sí está autorizado para TECH. El técnico puede buscar, consultar y vincular artículos publicados desde **Soluciones vinculadas al caso**, cuya interfaz admite ese rol. Esta diferencia de pantalla no impide la atención ni autoriza edición editorial.
 
 ## Flujo editorial
 
@@ -55,7 +55,7 @@ La lista devuelve `{items,total,page,pageSize}`. El tamaño predeterminado es 20
 
 El cuerpo de alta/edición contiene `title`, `category`, `siabucVersion`, `summary`, `body`, `changeNote` y, al editar, `expectedRevision`. Los estados son `DRAFT`, `PUBLISHED` y `ARCHIVED`. La migración `V14__knowledge_base.sql` agrega artículos, historial editorial, vínculos y eventos de vínculos; no transforma ni elimina registros existentes. Estas tablas se incluyen en el respaldo PostgreSQL normal y en su restauración. No hay archivos adicionales que copiar para este módulo.
 
-Consulte el [manual detallado 1.8.3](MANUAL-EXTENDIDO-1.8.3.md) para la consulta desde el portal institucional y el uso de soluciones durante la atención.
+Consulte el [manual detallado 1.8.5](MANUAL-EXTENDIDO-LICENCIAS.md) para la consulta desde el portal institucional y el uso de soluciones durante la atención.
 
 ## Pruebas
 

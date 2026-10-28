@@ -1,4 +1,4 @@
-# Arquitectura y reglas de integridad · 1.8.3
+# Arquitectura y reglas de integridad · 1.8.5
 
 ## Componentes
 
@@ -13,11 +13,25 @@
 
 En desarrollo, el servidor Angular ocupa el lugar de Nginx y su proxy toma `SERVER_PORT` del entorno. En Docker, los puertos internos son estables; sólo se configuran sus publicaciones en el anfitrión.
 
+Versiones y fuentes de construcción de 1.8.5:
+
+| Componente | Configuración del repositorio |
+| --- | --- |
+| Backend | Spring Boot 4.0.9, Spring 7.0.10, Tomcat 11.0.27 y Java 17; `backend/pom.xml` y `backend/Dockerfile` |
+| Contrato JSON | Jackson 2 mediante el módulo transitorio `spring-boot-jackson2`, con propiedades `spring.jackson2` y mapper preferido `jackson2` |
+| Cliente | Angular 21.2.25, build/CLI 21.2.28 y Node 24.22.1; lockfile y `.nvmrc` |
+| Web final | Nginx 1.30.6; Node/npm permanecen en la etapa constructora |
+| Base | PostgreSQL 17 derivado en `db/Dockerfile`, con gosu 1.20 compilado con Go 1.27.3; entrypoint, UID y volumen conservados |
+| Backup | Derivado de PostgreSQL 17; worker Python y clientes de respaldo, sin el binario gosu que no utiliza |
+| Postfix opcional | Alpine 3.24.3, mapas LMDB y Cyrus SASL; cola persistente conservada |
+
+Las versiones e imágenes comprobadas y los límites de cada escaneo están en [Seguridad 1.8.5](VERSION-1.8.5.md). Las imágenes finales incorporan la actualización de paquetes Alpine; un cambio de fuentes requiere reconstrucción para llegar al contenedor.
+
 ## Modelo lógico
 
 Una **institución** contiene contacto, estado, responsable predeterminado y dos presupuestos. Un **usuario** tiene correo y pertenece a una institución cuando su rol es `USER`; `ADMIN`, `TECH` y `BILLING` no tienen institución. Cada **caso** pertenece a una institución y contiene título, descripción, canal inicial, estado, responsable asignado, autor y fechas. Cada **entrada** pertenece a un caso y describe una atención o comentario. Un **pago** contiene importe, referencia, institución, acreditación y trazabilidad de anulación. Una **notificación** conserva evento, destinatario individual, contenido y estado de entrega. Un **evento de auditoría** identifica actor, acción, entidad, detalle y fecha.
 
-El esquema concreto y sus restricciones se encuentran en `backend/src/main/resources/db/migration/`: V1 original, V2 de cobranza/contactos/asignaciones, V3 de notificaciones y V4 de control persistente del envío; V5–V10 incorporan los módulos de 1.4/1.5 y V11–V16 los de 1.6. V17–V24 corresponden a 1.7, V25 amplía las categorías de conocimiento y V26 incorpora el flujo de casos de 1.8.3. No cambie migraciones ya aplicadas; añada la siguiente migración versionada. Las guías anteriores conservan el contexto de cada incorporación.
+El esquema concreto y sus restricciones se encuentran en `backend/src/main/resources/db/migration/`: V1 original, V2 de cobranza/contactos/asignaciones, V3 de notificaciones y V4 de control persistente del envío; V5–V10 incorporan los módulos de 1.4/1.5 y V11–V16 los de 1.6. V17–V24 corresponden a 1.7, V25 amplía las categorías de conocimiento y V26 incorpora el flujo de casos de 1.8.3 y V27 añade licencias y saldos por licencia. 1.8.4 y 1.8.5 no añaden migraciones sobre V27. No cambie migraciones ya aplicadas; añada la siguiente migración versionada. Las guías anteriores conservan el contexto de cada incorporación.
 
 ## Minutos e independencia de canales
 
@@ -27,6 +41,8 @@ Se emplean enteros. La interfaz calcula `minutos = horas × 60 + minutos_adicion
 correo_disponible = correo_asignado - correo_utilizado
 remoto_disponible = remoto_asignado - remoto_utilizado
 ```
+
+En V27, el total institucional agrega el saldo sin licencia y las bolsas de todas sus licencias. El saldo utilizable de un caso se calcula en su bolsa: una licencia concreta o el saldo sin asignar; no puede utilizar el reservado para otras licencias. Consulte [Licencias y horas](LICENCIAS-HORAS.md).
 
 Una atención descuenta únicamente el canal registrado en esa entrada. El canal inicial del caso determina la validación al abrir/reabrir, pero no restringe la atención posterior a un único medio. Las notas sin consumo usan `minutes=0` y `channel=null`.
 
@@ -70,7 +86,7 @@ Las publicaciones de puertos de la configuración inicial usan localhost; el wor
 
 Documentación primaria revisada durante la preparación de esta entrega:
 
-- [Requisitos de Spring Boot 3.5](https://docs.spring.io/spring-boot/3.5/system-requirements.html).
+- [Requisitos de Spring Boot 4.0](https://docs.spring.io/spring-boot/4.0/system-requirements.html).
 - [Compatibilidad de versiones Angular, Node.js y TypeScript](https://angular.dev/reference/versions).
 - [Bloqueos explícitos y bloqueos de filas en PostgreSQL 17](https://www.postgresql.org/docs/17/explicit-locking.html).
 

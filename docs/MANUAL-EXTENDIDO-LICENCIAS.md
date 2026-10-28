@@ -78,7 +78,7 @@ Consulta [VALIDACION.md](VALIDACION.md) para conocer qué pruebas se ejecutaron,
 
 Los recorridos de capacitación de este manual son instrucciones y resultados esperados, no resultados de una ejecución productiva. Antes de actualizar una instalación con datos, conserva un respaldo y ensaya la recuperación en un destino separado. No ejecutes pruebas automatizadas del proyecto contra tu base de trabajo.
 
-La [guía de versión 1.8.3](VERSION-1.8.3.md) reúne las reglas de transición y la compatibilidad; este manual las desarrolla con los recorridos cotidianos.
+La [guía de versión 1.8.5](VERSION-1.8.5.md) reúne la actualización de seguridad, compatibilidad y evidencia de la revisión integrada en `main`. Las [notas de 1.8.3](VERSION-1.8.3.md) conservan el origen del flujo de estados de V26.
 
 ## 2. Roles, permisos y navegación
 
@@ -188,7 +188,7 @@ La continuidad en el mismo motor Docker depende de conservar los volúmenes y `C
 2. Con la instalación anterior operativa, crea una copia con nombre nuevo y conserva el `.dump` y su `.sha256` fuera del directorio de código.
 3. Ensaya la restauración y la actualización sobre una copia aislada, sin enviar correos a destinatarios reales.
 4. Descomprime el paquete 1.8.5 en otra carpeta y copia allí el `.env` privado. Mantén nombre de proyecto, credenciales, puertos y volúmenes. Revisa rutas de respaldos y cualquier configuración local.
-5. Compila con `bash ./compilar.sh --docker`.
+5. Compila con `bash ./compilar.sh --docker` y `docker compose build --pull db` para preparar también la imagen PostgreSQL corregida.
 6. En una ventana sin escrituras, detén la instalación anterior con `bash ./detener.sh`. Si existen procesos nativos, detenlos también.
 7. Inicia desde la carpeta nueva con `bash ./iniciar.sh`. Revisa logs del backend y comprueba acceso, institución, saldo, caso, pago y evidencia conocidos.
 8. Revisa las vistas guardadas, los plazos, la cola de correo y el destino de respaldos antes de reanudar la atención habitual.
@@ -1360,9 +1360,9 @@ Base documental: [Operación](OPERACION.md), [Arquitectura](ARQUITECTURA.md), [C
 
 ### 27.1 Versión y alcance de esta edición
 
-Este manual corresponde a la base `VERSION=1.8.5` con la ampliación de licencias, migraciones V1-V27, flujo de cinco estados y Docker sin red SMTP dedicada. Se construyó a partir del manual 1.8.3, conservando los procedimientos de los módulos que siguen vigentes e integrando las reglas de licencias. La [PR #19](https://github.com/rodolfo99/helpdesk-siabuc/pull/19) identifica los cambios y sus comprobaciones. Los informes anteriores de validación conservan su alcance histórico; no prueban esta ampliación.
+Este manual corresponde a la base `VERSION=1.8.5` con la ampliación de licencias, migraciones V1-V27, flujo de cinco estados y Docker sin red SMTP dedicada. Se construyó a partir del manual 1.8.3, conservando los procedimientos de los módulos que siguen vigentes e integrando las reglas de licencias. La [PR #19](https://github.com/rodolfo99/helpdesk-siabuc/pull/19) identifica la ampliación de licencias y la [PR #21](https://github.com/rodolfo99/helpdesk-siabuc/pull/21), integrada en `main`, identifica la actualización de seguridad 1.8.5 y sus comprobaciones. Los informes anteriores de validación conservan su alcance histórico; no prueban esta ampliación.
 
-La fecha del documento no implica que una revisión concreta ya esté fusionada o desplegada. La identificación de commits, ejecuciones y resultados está en [VALIDACION.md](VALIDACION.md) y en la PR de la entrega. El manifiesto del ZIP identifica sus archivos; una huella de otro paquete no se utiliza para certificar éste.
+La integración de 1.8.5 en `main` está verificada; no demuestra que esté desplegada en una instalación concreta. La identificación de commits, ejecuciones y resultados está en [VALIDACION.md](VALIDACION.md) y en la PR de la entrega. El manifiesto del ZIP identifica sus archivos; una huella de otro paquete no se utiliza para certificar éste.
 
 El [manual 1.8.1](MANUAL-EXTENDIDO-1.8.1.md), los informes históricos y las notas de versión conservan contexto de sus fechas. Sus dos estados y advertencias de pruebas anteriores no son la especificación de 1.8.5.
 

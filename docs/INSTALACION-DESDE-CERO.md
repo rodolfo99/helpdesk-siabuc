@@ -1,6 +1,6 @@
 # Instalación de SIABUC Helpdesk 1.8.5 desde cero en Ubuntu
 
-Guía para una **instalación nueva** de SIABUC Helpdesk con Docker Compose en **Ubuntu 24.04 o 26.04 LTS**. Se basa en los scripts y el `docker-compose.yml` de la versión 1.8.5 (disponible en su rama/PR hasta que se integre en `main`); no describe una migración de datos.
+Guía para una **instalación nueva** de SIABUC Helpdesk con Docker Compose en **Ubuntu 24.04 o 26.04 LTS**. Se basa en los scripts y el `docker-compose.yml` de la versión 1.8.5 (integrada en `main` mediante la [PR #21](https://github.com/rodolfo99/helpdesk-siabuc/pull/21)); no describe una migración de datos.
 
 > **¿Ya tienes una instalación con información?** No sigas estos pasos como si fuera nueva: realiza un respaldo y consulta [actualización a 1.8.5](VERSION-1.8.5.md) y [respaldo y restauración](RESPALDO-RESTAURACION.md). Reutilizar `COMPOSE_PROJECT_NAME` puede conectar con volúmenes existentes; cambiarlo crea un proyecto independiente, pero no migra datos.
 
@@ -220,7 +220,7 @@ sudo bash compilar.sh --docker
 | No responde el navegador | Revisa `sudo docker compose ps` y `logs backend`/`logs frontend`; verifica `WEB_BIND_HOST` y el puerto. |
 | No inicia `backup` | Usa `sudo bash iniciar.sh` para ejecutar la verificación/reparación 1.8.4. Revisa el diagnóstico, la ruta `BACKUP_DIRECTORY`, espacio, permisos y ACL del montaje. |
 | Credenciales iniciales desconocidas | Revisa `ADMIN_USERNAME` y `ADMIN_PASSWORD` en tu `.env` local, sin compartirlo. Si ya existe una cuenta, cambiar `.env` no cambia su clave. |
-| Quiero conservar datos de otra versión | **No** repitas la instalación sobre un proyecto existente: lee [Actualización a 1.8.4](VERSION-1.8.4.md). |
+| Quiero conservar datos de otra versión | **No** repitas la instalación sobre un proyecto existente: lee [Actualización a 1.8.5](VERSION-1.8.5.md). |
 
 ## Comandos mínimos para un equipo que ya tiene Docker
 

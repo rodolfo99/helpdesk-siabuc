@@ -1,6 +1,6 @@
-# Catálogo de paquetes y tarifas — versión 1.8.3
+# Catálogo de paquetes y tarifas — versión 1.8.5
 
-Guía vigente de SIABUC Helpdesk 1.8.3. Consulte el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md) para el recorrido completo por rol.
+Guía vigente de SIABUC Helpdesk 1.8.5. Consulte el [manual detallado](MANUAL-EXTENDIDO-LICENCIAS.md) para el recorrido completo por rol.
 
 Administración y Cobranza pueden preparar paquetes de soporte, consultar sus revisiones y usarlos como punto de partida para cotizaciones. Técnico y Cliente no tienen acceso al catálogo financiero ni a sus APIs.
 

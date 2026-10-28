@@ -1,8 +1,8 @@
 # SIABUC Helpdesk 1.8.1 — resultados de validación
 
-> **Documento histórico — validación de 1.8.1 del 14 de octubre de 2026.** Se conservan el alcance, los procedimientos y los resultados de esa entrega. Las referencias a la versión «actual», a la «última» evidencia y a funciones o fallos pendientes corresponden a ese momento; no describen el estado de 1.8.3.
+> **Documento histórico — validación de 1.8.1 del 14 de octubre de 2026.** Se conservan el alcance, los procedimientos y los resultados de esa entrega. Las referencias a la versión «actual», a la «última» evidencia y a funciones o fallos pendientes corresponden a ese momento; no describen el estado de 1.8.5.
 >
-> Para uso e instalación vigentes, consulte el [manual detallado 1.8.3](MANUAL-EXTENDIDO-1.8.3.md), el [índice de documentación](README.md) y las [notas de 1.8.3](VERSION-1.8.3.md).
+> Para uso e instalación vigentes, consulte el [manual detallado 1.8.5](MANUAL-EXTENDIDO-LICENCIAS.md), el [índice de documentación](README.md) y las [notas de 1.8.5](VERSION-1.8.5.md).
 
 Fecha: 14 de octubre de 2026. Fuentes preparadas por GitHub Actions desde el commit 2c2a39ca7a0ac60795111a7aa6be9d10b644c42c.
 

@@ -1,6 +1,6 @@
-# Recibos administrativos de pago — versión 1.8.3
+# Recibos administrativos de pago — versión 1.8.5
 
-Guía vigente de SIABUC Helpdesk 1.8.3. Consulte el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md) para el recorrido completo por rol.
+Guía vigente de SIABUC Helpdesk 1.8.5. Consulte el [manual detallado](MANUAL-EXTENDIDO-LICENCIAS.md) para el recorrido completo por rol.
 
 El sistema genera un **recibo administrativo PDF** para cada pago o movimiento de horas registrado. Incluye un folio estable, la institución, referencia, importe y moneda originales, método, fecha, póliza asociada y minutos de correo y escritorio remoto. La versión de Administración y Cobranza incluye también responsable del registro y descripción del pago. **No es comprobante fiscal, CFDI ni factura.**
 

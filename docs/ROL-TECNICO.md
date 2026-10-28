@@ -1,4 +1,4 @@
-# Rol de técnico de soporte — versión 1.8.3
+# Rol de técnico de soporte — versión 1.8.5
 
 El rol `TECH` separa la atención operativa de la administración del sistema y la cobranza. Una cuenta técnica pertenece al equipo de soporte; no tiene institución cliente asignada. Administración crea y desactiva estas cuentas en **Usuarios**. Las cuentas existentes conservan su rol: para dar otro ámbito a una persona se crea una cuenta distinta.
 
@@ -47,7 +47,7 @@ Los avisos de un caso toman el nombre y correo del responsable asignado, aunque 
 - `V17__technical_role.sql` amplía las restricciones de la tabla de usuarios para aceptar TECH sin institución. No transforma cuentas, cambia saldos ni otorga permisos a usuarios anteriores.
 - No se modifica el valor por defecto de los respaldos automáticos: siguen **desactivados**.
 
-Consulte el [manual detallado 1.8.3](MANUAL-EXTENDIDO-1.8.3.md) y las [transiciones de estado](VERSION-1.8.3.md#transiciones) para los recorridos del equipo de soporte.
+Consulte el [manual detallado 1.8.5](MANUAL-EXTENDIDO-LICENCIAS.md) y las [transiciones de estado](VERSION-1.8.3.md#transiciones) para los recorridos del equipo de soporte.
 
 ## Verificación incluida
 

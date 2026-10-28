@@ -1,8 +1,8 @@
 # SIABUC Helpdesk 1.7.0: equipo técnico y control financiero
 
-> **Documento histórico — 1.7.0.** Se conservan el alcance, los procedimientos y los resultados de esa entrega. Las referencias a la versión «actual», a la «última» evidencia y a funciones o fallos pendientes corresponden a ese momento; no describen el estado de 1.8.3.
+> **Documento histórico — 1.7.0.** Se conservan el alcance, los procedimientos y los resultados de esa entrega. Las referencias a la versión «actual», a la «última» evidencia y a funciones o fallos pendientes corresponden a ese momento; no describen el estado de 1.8.5.
 >
-> Para uso e instalación vigentes, consulte el [manual detallado 1.8.3](MANUAL-EXTENDIDO-1.8.3.md), el [índice de documentación](README.md) y las [notas de 1.8.3](VERSION-1.8.3.md).
+> Para uso e instalación vigentes, consulte el [manual detallado 1.8.5](MANUAL-EXTENDIDO-LICENCIAS.md), el [índice de documentación](README.md) y las [notas de 1.8.5](VERSION-1.8.5.md).
 
 La versión 1.7 incorpora las ocho mejoras solicitadas y conserva soporte, cobranza, portal, SMTP y herramientas de operación de las versiones anteriores. Los estados del caso siguen siendo **Abierto/Cerrado**. Los respaldos automáticos permanecen **desactivados por defecto**; una instalación que ya los activó expresamente conserva su decisión.
 

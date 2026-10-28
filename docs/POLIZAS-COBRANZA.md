@@ -1,8 +1,8 @@
-# Pólizas, cobranza y acreditación de horas — versión 1.8.3
+# Pólizas, cobranza y acreditación de horas — versión 1.8.5
 
-**Ampliación posterior a 1.8.3:** consulte [Licencias y horas predeterminadas](LICENCIAS-HORAS.md). Las pólizas pueden vincularse a una licencia y sus pagos acreditan esa bolsa; los saldos anteriores permanecen sin licencia.
+**Licencias incluidas en 1.8.5:** consulte [Licencias y horas predeterminadas](LICENCIAS-HORAS.md). Las pólizas pueden vincularse a una licencia y sus pagos acreditan esa bolsa; los saldos anteriores permanecen sin licencia.
 
-Guía vigente de SIABUC Helpdesk 1.8.3. Consulte el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md) para el recorrido completo por rol.
+Guía vigente de SIABUC Helpdesk 1.8.5. Consulte el [manual detallado](MANUAL-EXTENDIDO-LICENCIAS.md) para el recorrido completo por rol.
 
 El módulo, incorporado en SIABUC Helpdesk 1.5.0, relaciona las pólizas de una institución, sus pagos y los minutos de soporte efectivamente acreditados.
 

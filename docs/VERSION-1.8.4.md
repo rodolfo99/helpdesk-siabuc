@@ -1,5 +1,8 @@
 # SIABUC Helpdesk 1.8.4: permisos de respaldos durante el arranque
 
+> **Documento histórico.** Conserva los procedimientos y resultados de la versión indicada en el título.
+> Para uso, instalación y validación vigentes, consulte el [manual integrado 1.8.5](MANUAL-EXTENDIDO-LICENCIAS.md), las [notas 1.8.5](VERSION-1.8.5.md) y el [índice](README.md).
+
 Esta revisión conserva las licencias y V27 e incorpora una corrección de operación.
 No añade migraciones de base de datos ni cambia el proveedor de correo.
 

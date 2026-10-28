@@ -1,5 +1,8 @@
 # Manual extendido de uso de SIABUC Helpdesk 1.8.3
 
+> **Documento histórico.** Conserva los procedimientos y resultados de la versión indicada en el título.
+> Para uso, instalación y validación vigentes, consulte el [manual integrado 1.8.5](MANUAL-EXTENDIDO-LICENCIAS.md), las [notas 1.8.5](VERSION-1.8.5.md) y el [índice](README.md).
+
 **Cliente institucional · Soporte técnico · Cobranza · Administración · Operación**
 Edición documental: 15 de octubre de 2026.
 Versión de aplicación: **1.8.3**, con migraciones de base **V1–V26**.

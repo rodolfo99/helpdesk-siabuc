@@ -1,6 +1,6 @@
-# Solicitudes de pago pendientes — versión 1.8.3
+# Solicitudes de pago pendientes — versión 1.8.5
 
-Guía vigente de SIABUC Helpdesk 1.8.3. Consulte el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md) para el recorrido completo por rol.
+Guía vigente de SIABUC Helpdesk 1.8.5. Consulte el [manual detallado](MANUAL-EXTENDIDO-LICENCIAS.md) para el recorrido completo por rol.
 
 Las solicitudes permiten revisar la evidencia **antes de registrar un pago o acreditar minutos**. El registro directo de pagos sigue disponible para Administración (`ADMIN`) y Cobranza (`BILLING`) cuando la validación ya se hizo fuera de la plataforma. El rol Técnico (`TECH`) no tiene acceso a solicitudes ni decisiones financieras.
 

@@ -1,4 +1,4 @@
-# Desactivar el envío de correos · 1.8.3
+# Desactivar el envío de correos · 1.8.5
 
 ## Desde la aplicación
 
@@ -41,7 +41,7 @@ Si usa Postfix y ya aceptó el mensaje, éste pertenece a su propia cola y puede
 
 ## Actualización y restauración
 
-Conserve `.env`, los volúmenes y un respaldo, actualice el conjunto completo de fuentes 1.8.3 y ejecute `iniciar.bat` en Windows o `./iniciar.sh` en Linux. Flyway aplica las migraciones pendientes hasta V26 y conserva la pausa que ya exista. Una configuración nueva mantiene `MAIL_ENABLED=false`; la [guía de correo](CORREO.md) explica la activación del proveedor.
+Conserve `.env`, los volúmenes y un respaldo, actualice el conjunto completo de fuentes 1.8.5 y ejecute `iniciar.bat` en Windows o `./iniciar.sh` en Linux. Flyway aplica las migraciones pendientes hasta V27 (sin migraciones nuevas desde 1.8.4) y conserva la pausa que ya exista. Una configuración nueva mantiene `MAIL_ENABLED=false`; la [guía de correo](CORREO.md) explica la activación del proveedor.
 
 Como antecedente, V4 introdujo esta función en 1.3.1: comienza sin pausa administrativa, respetando `MAIL_ENABLED`. Si necesita evitar entregas durante una actualización, establezca `MAIL_ENABLED=false` antes del arranque y después pause el envío en la interfaz para suprimir los avisos previos. La pausa, su frontera de avisos y los estados `SUPPRESSED` se incluyen en el respaldo PostgreSQL.
 

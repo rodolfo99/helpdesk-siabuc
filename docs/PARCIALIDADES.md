@@ -1,6 +1,6 @@
-# Calendario de parcialidades — versión 1.8.3
+# Calendario de parcialidades — versión 1.8.5
 
-Guía vigente de SIABUC Helpdesk 1.8.3. Consulte el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md) para el recorrido completo por rol.
+Guía vigente de SIABUC Helpdesk 1.8.5. Consulte el [manual detallado](MANUAL-EXTENDIDO-LICENCIAS.md) para el recorrido completo por rol.
 
 El calendario de Cobranza permite registrar **cuándo se comprometió el cliente a pagar y cuánto**, y relacionar esos compromisos con pagos ya registrados. Está disponible para `ADMIN` y `BILLING`; no expone información a Técnico ni Cliente.
 

@@ -1,4 +1,4 @@
-# Instalación y operación en Windows · 1.8.3
+# Instalación y operación en Windows · 1.8.5
 
 ## Alcance
 
@@ -104,6 +104,8 @@ Se verifican mediante pruebas automatizadas la conservación de datos binarios d
 - Docker Desktop Windows: https://docs.docker.com/desktop/setup/install/windows-install/
 - Integración WSL2: https://docs.docker.com/desktop/features/wsl/
 
-## Actualizar a 1.8.3
+## Actualizar a 1.8.5
 
-Conserve `.env`, los volúmenes y un respaldo reciente, actualice el conjunto completo de archivos y ejecute `.\iniciar.bat`. Flyway aplica las migraciones pendientes hasta V26. Los casos conservan sus datos y saldos, con los cinco estados descritos en [VERSION-1.8.3.md](VERSION-1.8.3.md). No copie archivos sueltos de versiones distintas ni use el ZIP como reemplazo de una copia de la base.
+Conserve `.env`, `COMPOSE_PROJECT_NAME`, los volúmenes y un respaldo reciente. Descomprima el conjunto completo 1.8.5 en otra carpeta, copie la configuración privada y revise `BACKUP_DIRECTORY` si es relativo. Compile con `.\compilar.bat` y `docker compose build --pull db` antes de detener la instalación anterior. Después de ensayar con una copia aislada, detenga la anterior con `.\detener.bat` e inicie desde la carpeta nueva con `.\iniciar.bat`.
+
+Flyway aplica las migraciones faltantes hasta **V27**; de 1.8.4 a 1.8.5 no hay migraciones nuevas. Los casos y pólizas anteriores conservan sus datos sin licencia asignada. Siga [Actualización 1.8.5](VERSION-1.8.5.md) y [Licencias y saldos](LICENCIAS-HORAS.md); no ejecute un backend anterior a V27 sobre esa base. El ZIP no reemplaza un respaldo de los datos.

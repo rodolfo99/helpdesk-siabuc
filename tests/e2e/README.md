@@ -1,13 +1,15 @@
 # Pruebas del sistema en navegador
 
-## Flujo de casos 1.8.3 validado en CI
+## Regresiones de 1.8.5 validadas en CI
 
-`case-workflow-v183.ui.mjs` ejecuta cuatro escenarios sobre Angular compilado
-con API simulada: cinco etiquetas y filtros/vistas, cambio de estado con motivo
-y reapertura, respuesta del cliente en espera sin controles administrativos, y
-pantalla móvil de 390 px. No requiere una cuenta real ni crea datos en PostgreSQL.
+El workflow [SIABUC 1.8.5 verify](https://github.com/rodolfo99/helpdesk-siabuc/actions/workflows/verify-release-184.yml) compila Angular y ejecuta dos suites con **API simulada**:
 
-Desde la raíz del proyecto:
+- `case-workflow-v183.ui.mjs`: cuatro escenarios de estados, filtros/vistas, motivo y reapertura, respuesta del cliente en espera y pantalla móvil de 390 px.
+- `licenses.ui.mjs`: seis escenarios de configuración y revisión de dotaciones, alta/consulta de licencias, ampliaciones, selección de licencia en casos y permisos de navegación.
+
+Los nombres de los archivos conservan su origen histórico. No requieren una cuenta real ni crean datos en PostgreSQL. La [ejecución final de la PR #21](https://github.com/rodolfo99/helpdesk-siabuc/actions/runs/40712986386), head `2c4ca8e8819d29507e8935d031a7d09acbbc02c4`, aprobó **4 + 6 escenarios**. Consulte [Validación](../../docs/VALIDACION.md) para las pruebas Java con PostgreSQL y los ensayos reales de imágenes; la simulación del navegador no acredita esas capas.
+
+Desde la raíz del proyecto, con Node 24.22.1 (`.nvmrc`):
 
 ```bash
 cd frontend
@@ -18,12 +20,11 @@ cd ../tests/e2e
 npm ci
 npx playwright install chromium
 node case-workflow-v183.ui.mjs
+node licenses.ui.mjs
 ```
 
-Admite `E2E_PLAYWRIGHT_PATH`, `E2E_CHROMIUM_PATH` y `E2E_CHROMIUM_ARGS`.
-El [registro 1.8.3](../../docs/VALIDACION-1.8.3.md) identifica el SHA, ejecución
-y resultado. Estas cuatro pruebas visuales no sustituyen los permisos,
-transacciones y migraciones que comprueba Java con PostgreSQL 17.
+Admiten `E2E_PLAYWRIGHT_PATH`, `E2E_CHROMIUM_PATH` y `E2E_CHROMIUM_ARGS`.
+El [registro 1.8.3](../../docs/VALIDACION-1.8.3.md) conserva su evidencia original por separado; no es el resultado de esta revisión.
 
 ## Herramientas de regresión de versiones anteriores
 

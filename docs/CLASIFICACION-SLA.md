@@ -1,6 +1,6 @@
 # Clasificación, ficha técnica y plazos de atención
 
-Guía vigente para **SIABUC Helpdesk 1.8.3**. La clasificación y los plazos acompañan los cinco estados del caso: **Recibido**, **En atención**, **Requiere respuesta del cliente**, **Resuelto** y **Cerrado**. Categoría, prioridad y cumplimiento de plazos son datos independientes del estado. Consulte el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md) para el recorrido completo.
+Guía vigente para **SIABUC Helpdesk 1.8.5**. La clasificación y los plazos acompañan los cinco estados del caso: **Recibido**, **En atención**, **Requiere respuesta del cliente**, **Resuelto** y **Cerrado**. Categoría, prioridad y cumplimiento de plazos son datos independientes del estado. Consulte el [manual detallado](MANUAL-EXTENDIDO-LICENCIAS.md) para el recorrido completo.
 
 ## Clasificar una solicitud
 

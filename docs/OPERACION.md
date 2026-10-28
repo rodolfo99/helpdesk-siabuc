@@ -1,4 +1,4 @@
-# Instalación, compilación y operación · 1.8.4
+# Instalación, compilación y operación · 1.8.5
 
 En Linux se usan los scripts Bash `.sh`. En Windows se usan los `.bat` desde CMD o PowerShell con Docker Desktop y contenedores Linux; consulte [WINDOWS.md](WINDOWS.md). El desarrollo nativo se ejecuta en Linux o dentro de WSL2. Utilice JDK 17, Maven 3.9 y Node.js 24.22.1 (ver `.nvmrc`) con su npm; los scripts comprueban Java 17 o posterior y Node 24 o posterior, mientras que las imágenes Docker fijan Java 17 y Node 24.22.1. El despliegue Docker sólo requiere Python 3.10+, el motor Docker y Docker Compose con soporte para `up --wait` en el anfitrión.
 
@@ -15,7 +15,7 @@ Para elegir la contraseña PostgreSQL antes del primer arranque, ejecute `./conf
 
 La cuenta administrativa se inicializa cuando no existe un administrador activo. Durante la operación normal siempre debe conservar al menos uno. No existe un usuario invitado ni una contraseña fija para la instalación. Las contraseñas de demostraciones o pruebas automatizadas no se usan en este flujo.
 
-Para actualizar a 1.8.4, conserve `.env`, el nombre del proyecto y los volúmenes, y cree primero un respaldo. Flyway aplica las migraciones pendientes hasta V27; V1–V27 se conservan sin cambios respecto de la ampliación de licencias. V26 añade los cinco estados de casos sin eliminar datos ni cambiar saldos. Consulte [VERSION-1.8.4.md](VERSION-1.8.4.md) y [Licencias](LICENCIAS-HORAS.md) para compatibilidad y retroceso. La [migración a 1.1](MIGRACION-1.1.md) se conserva como referencia histórica de V2/V3, no como lista completa de la versión actual.
+Para actualizar a 1.8.5, conserve `.env`, el nombre del proyecto y los volúmenes, y cree primero un respaldo. Flyway aplica las migraciones pendientes hasta V27; V1–V27 se conservan sin cambios respecto de la ampliación de licencias. V26 añade los cinco estados de casos sin eliminar datos ni cambiar saldos. Consulte [VERSION-1.8.5.md](VERSION-1.8.5.md) y [Licencias](LICENCIAS-HORAS.md) para compatibilidad y retroceso. La [migración a 1.1](MIGRACION-1.1.md) se conserva como referencia histórica de V2/V3, no como lista completa de la versión actual.
 
 Una configuración nueva preselecciona Gmail directo con `MAIL_ENABLED=false`, sin usuario, contraseña ni remitente. Un `.env` anterior conserva su proveedor y activación; si no incluía correo, sigue desactivado. `./configurar.sh --gmail-directo` configura Gmail sin Postfix; no prueba autenticación ni envía mensajes. Al reactivar se respetará también la pausa administrativa guardada en PostgreSQL.
 
@@ -31,9 +31,11 @@ Configure el Postfix integrado con `./configurar.sh --smtp-interno` según [SMTP
 ./compilar.sh --docker
 ```
 
-El Dockerfile del servidor utiliza Maven con JDK 17 y ejecuta `mvn package`; empaqueta un JAR que luego corre en una imagen de JRE 17 con usuario sin privilegios. El Dockerfile del cliente utiliza Node 24, `npm ci` y `npm run build`; copia el resultado a Nginx. PostgreSQL utiliza `db/Dockerfile`, derivado de la imagen oficial 17 Alpine, con `gosu` recompilado con Go corregido y el mismo arranque/volumen. `smtp/Dockerfile` construye el SMTP Postfix desde Alpine 3.24, con configuración propia, sin buzones ni servicio web.
+El Dockerfile del servidor utiliza Maven con JDK 17 y ejecuta `mvn package`; empaqueta un JAR que luego corre en una imagen de JRE 17 con usuario sin privilegios. El Dockerfile del cliente utiliza Node 24.22.1, `npm ci` y `npm run build`; copia el resultado a Nginx. PostgreSQL utiliza `db/Dockerfile`, derivado de la imagen oficial 17 Alpine, con `gosu` recompilado con Go corregido y el mismo arranque/volumen. `smtp/Dockerfile` construye el SMTP Postfix desde Alpine 3.24, con configuración propia, sin buzones ni servicio web.
 
 La primera descarga requiere conexión a Maven Central, npm y al registro de imágenes. La compilación no requiere que haya una base de datos en ejecución. Las pruebas de integración PostgreSQL se ejecutan explícitamente por separado.
+
+El comando anterior compila `backend`, `frontend` y `backup`, además de `smtp` si está seleccionado. Para preparar también la nueva imagen derivada de PostgreSQL antes de detener una instalación anterior, ejecute `docker compose build --pull db`. `iniciar.sh` construye los servicios que va a arrancar.
 
 ### Nativa
 
@@ -57,7 +59,7 @@ npm run build
 npm test
 ```
 
-Artefactos: `backend/target/siabuc-helpdesk-1.8.4.jar` y `frontend/dist/helpdesk/browser/`. `npm ci` utiliza el archivo `package-lock.json` entregado. No sustituya `npm ci` por actualizaciones de dependencias durante una instalación reproducible.
+Artefactos: `backend/target/siabuc-helpdesk-1.8.5.jar` y `frontend/dist/helpdesk/browser/`. `npm ci` utiliza el archivo `package-lock.json` entregado. No sustituya `npm ci` por actualizaciones de dependencias durante una instalación reproducible.
 
 `mvn package` compila también las clases de prueba y ejecuta pruebas unitarias si existen. Los archivos `*IT.java` se ejecutan únicamente con el perfil `postgres-it`. Una compilación satisfactoria no significa por sí sola que se ejecutaron esas pruebas de integración.
 
@@ -112,7 +114,7 @@ from scripts.manage import ROOT, config
 env = os.environ.copy()
 env.update(config())
 env.update(DB_HOST="127.0.0.1", SERVER_ADDRESS="127.0.0.1")
-subprocess.run(["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.8.4.jar")], env=env, check=True)
+subprocess.run(["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.8.5.jar")], env=env, check=True)
 PY
 ```
 

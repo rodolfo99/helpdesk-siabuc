@@ -1,6 +1,6 @@
-# Estados de cuenta institucionales — versión 1.8.3
+# Estados de cuenta institucionales — versión 1.8.5
 
-Guía vigente de SIABUC Helpdesk 1.8.3. Consulte el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md) para el recorrido completo por rol.
+Guía vigente de SIABUC Helpdesk 1.8.5. Consulte el [manual detallado](MANUAL-EXTENDIDO-LICENCIAS.md) para el recorrido completo por rol.
 
 El estado de cuenta reúne pólizas, pagos, importes pendientes y movimientos de minutos de **una institución**. Administración y Cobranza pueden generarlo; los usuarios clientes sólo pueden hacerlo y consultarlo para su propia institución cuando Administración habilita su portal financiero. El rol Técnico no tiene acceso financiero.
 
