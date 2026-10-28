@@ -33,7 +33,7 @@ jobs:
       - name: Audit production and development dependencies
         working-directory: ${{ matrix.directory }}
         run: npm audit --audit-level=high --json > npm-audit.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: npm-audit-${{ matrix.name }}
@@ -105,7 +105,7 @@ jobs:
           ignore-unfixed: false
           exit-code: '1'
           timeout: 10m0s
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: image-security-${{ matrix.service }}

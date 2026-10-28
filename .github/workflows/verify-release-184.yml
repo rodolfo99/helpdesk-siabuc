@@ -125,7 +125,7 @@ jobs:
           assert not pathlib.Path('.env').exists()
           PY
           python3 scripts/release-1.8.5.py --package --output release-output
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: SIABUC-Helpdesk-1.8.5-source
           path: release-output/*
