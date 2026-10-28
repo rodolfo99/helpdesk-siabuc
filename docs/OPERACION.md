@@ -1,6 +1,6 @@
 # Instalación, compilación y operación · 1.8.4
 
-En Linux se usan los scripts Bash `.sh`. En Windows se usan los `.bat` desde CMD o PowerShell con Docker Desktop y contenedores Linux; consulte [WINDOWS.md](WINDOWS.md). El desarrollo nativo se ejecuta en Linux o dentro de WSL2. Utilice JDK 17, Maven 3.9 y Node.js 24 con su npm; los scripts comprueban Java 17 o posterior y Node 24 o posterior, mientras que las imágenes Docker fijan Java 17 y Node 24. El despliegue Docker sólo requiere Python 3.10+, el motor Docker y Docker Compose con soporte para `up --wait` en el anfitrión.
+En Linux se usan los scripts Bash `.sh`. En Windows se usan los `.bat` desde CMD o PowerShell con Docker Desktop y contenedores Linux; consulte [WINDOWS.md](WINDOWS.md). El desarrollo nativo se ejecuta en Linux o dentro de WSL2. Utilice JDK 17, Maven 3.9 y Node.js 24.22.1 (ver `.nvmrc`) con su npm; los scripts comprueban Java 17 o posterior y Node 24 o posterior, mientras que las imágenes Docker fijan Java 17 y Node 24.22.1. El despliegue Docker sólo requiere Python 3.10+, el motor Docker y Docker Compose con soporte para `up --wait` en el anfitrión.
 
 ## Instalación y primer arranque
 

@@ -1,0 +1,89 @@
+{
+  "date": "2026-10-28",
+  "head_sha": "01eee3a6a24598fe55499699e021c6a2bdda0a5a",
+  "tested_merge_sha": "ddc4351e72d5d78175ff50d4bcc3e99690cba547",
+  "workflow_url": "https://github.com/rodolfo99/helpdesk-siabuc/actions/runs/40711589084",
+  "scanner": "Trivy 0.76.1",
+  "severity": [
+    "HIGH",
+    "CRITICAL"
+  ],
+  "ignore_unfixed": false,
+  "cve_exclusions": [],
+  "images": [
+    {
+      "service": "frontend",
+      "image_id": "sha256:d0e79275d7d82fc162c7d83d879a272a989d820a488f8ed01e4cb2e3c223834f",
+      "os": {
+        "Family": "alpine",
+        "Name": "3.24.3"
+      },
+      "scanned_at": "2026-10-28T15:01:24.904834568Z",
+      "high_critical_findings": 0
+    },
+    {
+      "service": "backend",
+      "image_id": "sha256:fe24f41a877bd1b5136e7f03716f6ff90a6fe0d0a07dbd81dff77a693cdc3c4b",
+      "os": {
+        "Family": "alpine",
+        "Name": "3.24.3"
+      },
+      "scanned_at": "2026-10-28T15:02:05.437246186Z",
+      "high_critical_findings": 0
+    },
+    {
+      "service": "db",
+      "image_id": "sha256:7327a93d87f9a48530b99a37aa4850655931c9bf73c31d5db6edc4a945b45d5d",
+      "os": {
+        "Family": "alpine",
+        "Name": "3.24.3"
+      },
+      "scanned_at": "2026-10-28T15:01:14.632697047Z",
+      "high_critical_findings": 0
+    },
+    {
+      "service": "backup",
+      "image_id": "sha256:fb00a24555829ab37c2c1b97787e7529ff8b15b75ef9c80dfae7778428354c76",
+      "os": {
+        "Family": "alpine",
+        "Name": "3.24.3"
+      },
+      "scanned_at": "2026-10-28T15:01:03.584847198Z",
+      "high_critical_findings": 0
+    },
+    {
+      "service": "smtp",
+      "image_id": "sha256:17257d97da7095662209d97a37c061baa9a6e00cc892651c0f9543686e1aec5c",
+      "os": {
+        "Family": "alpine",
+        "Name": "3.24.3"
+      },
+      "scanned_at": "2026-10-28T15:01:07.428898339Z",
+      "high_critical_findings": 0
+    }
+  ],
+  "npm": [
+    {
+      "name": "frontend",
+      "findings": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      }
+    },
+    {
+      "name": "browser-tests",
+      "findings": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      }
+    }
+  ]
+}

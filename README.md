@@ -1,6 +1,6 @@
 # SIABUC Helpdesk 1.8.5
 
-**Actualización de seguridad:** Node.js 24.22.1, Nginx 1.30.6, herramientas Angular 21 corregidas, auditorías npm e imágenes en CI y Dependabot. [Cambios, política de auditoría y validación](docs/VERSION-1.8.5.md).
+**Actualización de seguridad:** Node.js 24.22.1, Nginx 1.30.6, herramientas Angular 21 corregidas, backend Spring actualizado, bases PostgreSQL/SMTP corregidas, auditorías npm e imágenes en CI y Dependabot. [Cambios, política de auditoría y validación](docs/VERSION-1.8.5.md).
 
 **Revisión de arranque — permisos de respaldos:** `iniciar.sh` verifica escritura con la identidad del contenedor. En Linux, si recibe acceso denegado, ajusta el propietario de la carpeta configurada a `BACKUP_UID:BACKUP_GID`, asegura acceso del propietario y vuelve a comprobar. Conserva los archivos existentes y el estado del calendario. [Actualización y alcance](docs/VERSION-1.8.4.md).
 

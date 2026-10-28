@@ -89,13 +89,16 @@ Ejecutada con Node 24.22.1 y npm 11.9.0 sobre los archivos de esta propuesta:
 | `npm test` del frontend | 10 aprobadas |
 | `npm run build` | Correcto; bundle inicial 818.67 kB |
 | `python3 -m unittest discover -s tests/ops` | 70 descubiertas: 69 aprobadas, 1 omitida por restricciones de cambio de UID |
-| `python3 -m unittest discover -s tests/smtp` | 13 aprobadas |
+| `python3 -m unittest discover -s tests/smtp` | 14 aprobadas, incluida la preferencia LMDB con fallback hash |
 
 No hay Docker ni PostgreSQL nativo en el entorno local. Maven 3.9.9 se preparó
-para compilar el backend; la integración y las imágenes se verifican en CI. La descarga de
+para compilar el backend y los auxiliares de pruebas; el intento local de
+ejecutar Surefire quedó bloqueado por la conexión al repositorio Maven.
+No se cuenta ese intento como una prueba aprobada. Las pruebas Java,
+la integración y las imágenes se verificaron en CI. La descarga de
 Chromium para Playwright devolvió un ZIP inválido, por lo que no se atribuye
-una ejecución local de las pruebas de navegador. Estas comprobaciones quedan
-a cargo de los jobs de GitHub Actions y deben evaluarse por su **SHA y estado**.
+una ejecución local de las pruebas de navegador. Estas comprobaciones se ejecutaron
+en los jobs de GitHub Actions indicados abajo y deben evaluarse por su **SHA y estado**.
 Un job omitido, pendiente o fallido no equivale a una validación aprobada.
 
 No se probaron Windows nativo, restauración de una base real, entrega externa
@@ -110,7 +113,7 @@ del head `5c082d4c7629735db55de37cd6ca70a236b59965` construyó las imágenes y
 detectó alertas que una auditoría npm no ve:
 
 - Frontend: Brotli y curl tenían parches disponibles; se añadió la actualización
-  de paquetes Alpine y se repite el escaneo en el nuevo head.
+  de paquetes Alpine y el nuevo escaneo ya no registra esos hallazgos.
 - PostgreSQL y backup: el binario `usr/local/bin/gosu` heredado de
   `postgres:17-alpine` estaba compilado con Go 1.24.6. El informe registró una
   alerta crítica y 25 altas para su biblioteca estándar en cada imagen.
@@ -124,12 +127,42 @@ detectó alertas que una auditoría npm no ve:
   y Spring MVC. Las correcciones públicas de Spring MVC requieren Spring 7;
   por eso se amplió el cambio a Boot 4.0.9, conservando el contrato JSON.
 
-Estos hallazgos motivaron las correcciones anteriores, solicitadas expresamente
-para incluir también las alertas inicialmente documentadas. Se repiten todos
-los controles sobre la nueva revisión. Los resultados del primer head no
-se atribuyen a esta ampliación: las regresiones iniciales pasaron, pero su
-escaneo falló. La [PR #21](https://github.com/rodolfo99/helpdesk-siabuc/pull/21)
-permanece en borrador hasta comprobar el head actualizado.
+Estos hallazgos motivaron las correcciones anteriores. No se silencian avisos
+ni se reducen los umbrales del control. Se conservan los primeros resultados
+fallidos para distinguir la detección inicial de su corrección.
+
+## Evidencia CI de las correcciones
+
+El [escaneo y ensayo de imágenes](https://github.com/rodolfo99/helpdesk-siabuc/actions/runs/40711589084)
+aprobó sobre el head `01eee3a6a24598fe55499699e021c6a2bdda0a5a`, probado como
+merge `ddc4351e72d5d78175ff50d4bcc3e99690cba547` con la base indicada al inicio.
+El [resumen de inventario y auditorías](security/1.8.5-scan-summary.json) conserva
+identificadores de las imágenes, fecha, versiones del scanner y recuentos.
+Los informes JSON completos están en los artefactos de esa ejecución (14 días).
+
+| Comprobación | Resultado observado |
+| --- | --- |
+| Trivy: frontend, backend, db, backup y smtp | 0 HIGH/CRITICAL en cada imagen; sin ignorar avisos sin parche |
+| npm audit: frontend y tests/e2e | 0 vulnerabilidades de cualquier severidad |
+| Node constructor / Nginx final | 24.22.1 / 1.30.6; HTTP, SPA y cabeceras correctos |
+| PostgreSQL 17, cambio de imagen sobre volumen desechable | Registros conservados; gosu ejecuta como UID 70 |
+| pg_dump / pg_restore desde la imagen backup | Respaldo y restauración de registros sintéticos aprobados |
+| Backend final | Usuario 10001, raíz de sólo lectura, salud HTTP y 27 migraciones aprobadas |
+| Cola SMTP Debian → Alpine | Mensaje sintético conservado; salud y `postfix check` aprobados |
+| LMDB y SASL | Mapa real consultable, permisos 0600 y mecanismo Cyrus presente |
+| Java/PostgreSQL 17 | 10 unitarias y 232 de integración aprobadas; 0 fallos/errores/omitidas |
+| Frontend | 10 pruebas aprobadas y compilación correcta |
+| Python | 70 de operaciones (1 omisión de UID en ejecución sin sudo) y 14 SMTP; pruebas UID y Docker aprobadas aparte con sudo |
+| Navegador con API simulada | 4 escenarios de flujo de casos y 6 de licencias aprobados |
+| Compose y paquete | Red/puertos verificados; ZIP con manifiesto y CRC generado |
+
+La regresión Java/PostgreSQL de esta revisión se consulta en
+[Verify backend regressions](https://github.com/rodolfo99/helpdesk-siabuc/actions/runs/40711589160).
+La verificación conjunta de frontend, Python, Compose, navegador y paquete
+está en [SIABUC 1.8.5 verify](https://github.com/rodolfo99/helpdesk-siabuc/actions/runs/40711589066).
+La [PR #21](https://github.com/rodolfo99/helpdesk-siabuc/pull/21) muestra los
+controles del head vigente; una actualización documental posterior puede
+tener otro SHA y no cambia la revisión a la que se atribuyen estos resultados.
 
 ## Actualizar y empaquetar
 

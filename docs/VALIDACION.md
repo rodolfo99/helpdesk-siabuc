@@ -2,7 +2,10 @@
 
 ## Verificación de seguridad 1.8.5
 
-Consulte [cambios y evidencia de 1.8.5](VERSION-1.8.5.md). Las auditorías npm,
+La revisión `01eee3a` aprobó las cinco imágenes sin alertas altas/críticas,
+ambas auditorías npm con cero hallazgos, 242 pruebas Java, las regresiones
+existentes y el ensayo aislado de datos/cola. Consulte
+[cambios, ejecuciones y límites de 1.8.5](VERSION-1.8.5.md). Las auditorías npm,
 los escaneos de imágenes y las regresiones tienen resultados independientes,
 asociados al SHA de cada ejecución. No constituyen una certificación de la
 instalación productiva.

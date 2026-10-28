@@ -1,7 +1,7 @@
 # Manual extendido de SIABUC Helpdesk 1.8.5 con licencias
 
 **Cliente institucional · Soporte técnico · Cobranza · Administración · Operación**
-Edición documental: 26 de octubre de 2026. Licencias, horas de soporte y preparación de permisos de respaldos.
+Edición documental: 28 de octubre de 2026. Licencias, horas de soporte, permisos de respaldos y actualización de seguridad.
 Versión de aplicación: **1.8.5**, con licencias y migraciones **V1-V27**. Incluye la ampliación integrada mediante la [PR #19](https://github.com/rodolfo99/helpdesk-siabuc/pull/19) y la [preparación de permisos durante el arranque de 1.8.4](VERSION-1.8.4.md) y la [actualización de seguridad 1.8.5](VERSION-1.8.5.md). Los resultados de CI no acreditan despliegue en producción.
 
 Este manual integra el manual 1.8.3 y la ampliación de licencias. Para configurar las horas incluidas, empieza en el apartado 5.5; para adquirir horas mediante una póliza, consulta el capítulo 15. Describe la interfaz, las reglas de negocio y los scripts incluidos en el proyecto. La referencia de resultados, entorno y límites de las pruebas es [Validación vigente](VALIDACION.md). Los informes y manuales de versiones anteriores son antecedentes históricos, no instrucciones de esta versión.
