@@ -21,7 +21,7 @@ jobs:
           - directory: tests/e2e
             name: browser-tests
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: actions/setup-node@v4
@@ -55,7 +55,7 @@ jobs:
       DB_PASSWORD: DisposableSecurityDatabase185
       ADMIN_PASSWORD: DisposableSecurityAdmin185
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Build the final runtime image
@@ -119,7 +119,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Prepare the exact 1.8.4 SMTP build context

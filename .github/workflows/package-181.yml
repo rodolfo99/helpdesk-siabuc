@@ -28,7 +28,7 @@ jobs:
       DB_PASSWORD: OnlyDisposableDatabase181
       MAIL_ENABLED: 'false'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: actions/setup-node@v4

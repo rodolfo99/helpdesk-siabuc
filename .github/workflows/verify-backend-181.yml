@@ -30,7 +30,7 @@ jobs:
       DB_PASSWORD: DisposableBackend181
       MAIL_ENABLED: 'false'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: actions/setup-java@v4
