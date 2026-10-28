@@ -19,7 +19,7 @@
   "devDependencies": {
     "@angular/build": "21.2.28",
     "@angular/cli": "21.2.28",
-    "typescript": "~5.9.3"
+    "typescript": "~7.0.2"
   },
   "type": "module",
   "overrides": {
