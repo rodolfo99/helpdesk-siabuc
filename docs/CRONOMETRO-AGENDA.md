@@ -1,6 +1,6 @@
 # Cronómetro de atención y agenda remota
 
-Guía vigente para **SIABUC Helpdesk 1.8.3**; consulte también el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md). Cronómetro y agenda son funciones independientes: reservar una sesión no descuenta minutos y finalizar un cronómetro tampoco. El cargo requiere confirmar expresamente una atención.
+Guía vigente para **SIABUC Helpdesk 1.8.5**; consulte también el [manual detallado](MANUAL-EXTENDIDO-LICENCIAS.md). Cronómetro y agenda son funciones independientes: reservar una sesión no descuenta minutos y finalizar un cronómetro tampoco. El cargo requiere confirmar expresamente una atención.
 
 ## Medir y confirmar una atención
 

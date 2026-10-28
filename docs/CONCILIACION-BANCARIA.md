@@ -1,6 +1,6 @@
-# Conciliación bancaria por CSV — versión 1.8.3
+# Conciliación bancaria por CSV — versión 1.8.5
 
-Guía vigente de SIABUC Helpdesk 1.8.3. Consulte el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md) para el recorrido completo por rol.
+Guía vigente de SIABUC Helpdesk 1.8.5. Consulte el [manual detallado](MANUAL-EXTENDIDO-LICENCIAS.md) para el recorrido completo por rol.
 
 Disponible para **Administración (ADMIN)** y **Cobranza (BILLING)**. Los clientes y técnicos no pueden consultar ni modificar este módulo. La conciliación documenta una relación entre un ingreso bancario y un pago que ya existe en Helpdesk. **No conecta con el banco, no registra un pago, no cobra, no acredita minutos y no envía correos.**
 

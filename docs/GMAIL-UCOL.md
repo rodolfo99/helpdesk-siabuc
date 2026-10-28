@@ -1,4 +1,4 @@
-# Gmail institucional UCOL · modos disponibles en 1.8.3
+# Gmail institucional UCOL · modos disponibles en 1.8.5
 
 Para conectar Spring directamente con Gmail use `./configurar.sh --gmail-directo` o `configurar.bat --gmail-directo`. Esta opción, disponible desde 1.8.2, guarda la cuenta autorizada y su contraseña de aplicación en `.env`, activa STARTTLS en `smtp.gmail.com:587` y establece esa cuenta como remitente. No comprueba autenticación ni envía una prueba; reinicie para aplicar y consulte [CORREO.md](CORREO.md). No requiere Postfix.
 

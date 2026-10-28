@@ -71,7 +71,7 @@ sus propios módulos y no se sustituyen por los estados de soporte.
 | Pausa persistente y reanudación sólo de eventos nuevos | [Desactivar correo](DESACTIVAR-CORREO.md) |
 | Copias, recuperación y retroceso de versión | [Respaldo y restauración](RESPALDO-RESTAURACION.md) |
 | Calendario, retención y diagnóstico del worker | [Respaldos automáticos](RESPALDOS-AUTOMATICOS.md) |
-| Evidencia por revisión y sus límites | [Validación 1.8.3](VALIDACION-1.8.3.md) · [Historial](VALIDACION.md) |
+| Evidencia por revisión y sus límites | [Validación vigente](VALIDACION.md) · [Seguridad y CI de 1.8.5](VERSION-1.8.5.md#evidencia-ci-de-las-correcciones) |
 | Pruebas con API real y con API simulada | [Pruebas de navegador](../tests/e2e/README.md) |
 
 ## Archivo histórico
@@ -86,6 +86,8 @@ históricas pueden citar otros JAR, roles, redes o estados.
 - [Alcance 1.8](VERSION-1.8.md) y [corrección de compilación 1.8](CORRECCION-COMPILACION-1.8.md).
 - [Versión 1.8.1](VERSION-1.8.1.md), [manual 1.8.1](MANUAL-EXTENDIDO-1.8.1.md) y [validación original 1.8.1](VALIDACION-1.8.1.md).
 - [Introducción de Gmail directo en 1.8.2](VERSION-1.8.2.md).
+- [Cambios 1.8.3](VERSION-1.8.3.md), [manual 1.8.3](MANUAL-EXTENDIDO-1.8.3.md) y [validación 1.8.3](VALIDACION-1.8.3.md).
+- [Permisos de respaldos 1.8.4](VERSION-1.8.4.md).
 
 Los resultados históricos no se sustituyen por los de una ejecución posterior.
 Las propuestas institucionales aún no implementadas se distinguen de las

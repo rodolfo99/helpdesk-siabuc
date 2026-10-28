@@ -1,4 +1,4 @@
-# Reportes de casos y consumo — 1.8.3
+# Reportes de casos y consumo — 1.8.5
 
 Disponible desde la versión 1.4.0 en **Reportes**, para cuentas con rol **ADMIN**. El módulo permite consultar y descargar casos y atenciones por institución, administrativo, canal y periodo. Las cuentas de Técnico, Cliente y Cobranza no pueden acceder a estos reportes ni a sus archivos. Cobranza conserva su acceso al historial de pagos.
 
@@ -6,7 +6,7 @@ Disponible desde la versión 1.4.0 en **Reportes**, para cuentas con rol **ADMIN
 
 1. Inicia sesión como Administrador y abre **Reportes**.
 2. Selecciona una institución o **Todas las instituciones**. Las instituciones inactivas permanecen disponibles para consultar su historial.
-3. Selecciona un administrativo o **Todos los administrativos**. En 1.8.3 el selector de la interfaz ofrece cuentas `ADMIN`, también inactivas. El resultado sin filtro sí incluye casos y consumos de técnicos; para filtrar exclusivamente una cuenta `TECH`, la API admite su identificador en `administratorId`.
+3. Selecciona un administrativo o **Todos los administrativos**. En 1.8.5 el selector de la interfaz ofrece cuentas `ADMIN`, también inactivas. El resultado sin filtro sí incluye casos y consumos de técnicos; para filtrar exclusivamente una cuenta `TECH`, la API admite su identificador en `administratorId`.
 4. Selecciona correo, escritorio remoto o ambos canales.
 5. Indica **Desde** y **Hasta**, incluyendo ambos días, y pulsa **Consultar reporte**.
 
@@ -120,6 +120,6 @@ Los archivos usan encabezado `Content-Disposition: attachment`, tipos MIME corre
 
 La exportación utiliza [Apache POI 5.5.1](https://poi.apache.org/download.cgi) y [Apache PDFBox 3.0.7](https://pdfbox.apache.org/). Sus dependencias se resuelven al compilar el servidor con Maven. No requiere instalar Excel, LibreOffice ni un visor PDF en el servidor.
 
-El [manual detallado 1.8.3](MANUAL-EXTENDIDO-1.8.3.md) incluye ejemplos para interpretar estos resultados junto con los saldos institucionales.
+El [manual detallado 1.8.5](MANUAL-EXTENDIDO-LICENCIAS.md) incluye ejemplos para interpretar estos resultados junto con los saldos institucionales.
 
 `ReportIntegrationIT` cubre permisos en los tres formatos, límites de fecha en Ciudad de México, consumo de casos anteriores, diferencias entre autor y responsable, exclusión de minutos anulados, rechazo de resultados excesivos, lectura del libro real con POI y lectura del PDF multipágina con PDFBox. La evidencia de ejecución del conjunto de pruebas se documenta en la validación de la versión.

@@ -1,4 +1,4 @@
-# Vistas guardadas y alertas de vencimiento — 1.8.3
+# Vistas guardadas y alertas de vencimiento — 1.8.5
 
 Las vistas permiten repetir una consulta de casos sin reconstruir los filtros. Los avisos SLA recuerdan los objetivos de primera respuesta y resolución. Ninguna de estas funciones consume horas contratadas.
 
@@ -79,6 +79,6 @@ Para actualizar añada `expectedRevision` con la revisión devuelta por el servi
 
 Configuración de avisos: `{"enabled":true,"leadMinutes":60}`. La revisión manual recibe `{}` y devuelve `{"created":0}` si no hay avisos nuevos. Las escrituras requieren sesión y CSRF. La migración `V18__saved_views_sla_alerts.sql` crea las vistas, configuración y registro de deduplicación; los avisos se guardan en la campana existente. No cambia migraciones anteriores.
 
-El [manual detallado 1.8.3](MANUAL-EXTENDIDO-1.8.3.md) reúne estas funciones con el flujo completo de soporte.
+El [manual detallado 1.8.5](MANUAL-EXTENDIDO-LICENCIAS.md) reúne estas funciones con el flujo completo de soporte.
 
 Las pruebas `SavedViewIntegrationIT` y `SlaAlertIntegrationIT` verifican aislamiento, validación, revisiones, roles, desactivación, anticipación, deduplicación y saldos intactos. Consulte [VALIDACION.md](VALIDACION.md) para los resultados efectivamente ejecutados.

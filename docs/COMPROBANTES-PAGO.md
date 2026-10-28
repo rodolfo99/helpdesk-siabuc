@@ -1,6 +1,6 @@
-# Comprobantes de pago — versión 1.8.3
+# Comprobantes de pago — versión 1.8.5
 
-Guía vigente de SIABUC Helpdesk 1.8.3. Consulte el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md) para el recorrido completo por rol.
+Guía vigente de SIABUC Helpdesk 1.8.5. Consulte el [manual detallado](MANUAL-EXTENDIDO-LICENCIAS.md) para el recorrido completo por rol.
 
 Desde la versión 1.5.0, **Administración y Cobranza** pueden adjuntar evidencia a un pago ya registrado: fichas de depósito, transferencias, recibos o capturas. El archivo es opcional; adjuntarlo **no registra otro cobro, no acredita minutos y no cambia el importe del pago**.
 

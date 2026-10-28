@@ -1,6 +1,6 @@
-# Reportes de cobranza — versión 1.8.3
+# Reportes de cobranza — versión 1.8.5
 
-Guía vigente de SIABUC Helpdesk 1.8.3. Consulte el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md) para el recorrido completo por rol.
+Guía vigente de SIABUC Helpdesk 1.8.5. Consulte el [manual detallado](MANUAL-EXTENDIDO-LICENCIAS.md) para el recorrido completo por rol.
 
 Desde la versión 1.5.0, **Reportes de cobranza** está disponible para los usuarios de **Cobranza (BILLING)** y los **Administrativos (ADMIN)**. Permite consultar el historial de pagos, totalizar por institución y obtener totales generales, siempre separando las monedas. También muestra la situación actual de las pólizas institucionales.
 

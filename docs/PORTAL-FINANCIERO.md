@@ -1,6 +1,6 @@
-# Portal financiero por institución — versión 1.8.3
+# Portal financiero por institución — versión 1.8.5
 
-Guía vigente de SIABUC Helpdesk 1.8.3. Consulte el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md) para el recorrido completo por rol.
+Guía vigente de SIABUC Helpdesk 1.8.5. Consulte el [manual detallado](MANUAL-EXTENDIDO-LICENCIAS.md) para el recorrido completo por rol.
 
 Por defecto está **deshabilitado** para todas las instituciones, incluidas las existentes al actualizar. No se publica información financiera por el hecho de tener una cuenta de soporte.
 

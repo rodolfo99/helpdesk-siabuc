@@ -1,14 +1,14 @@
-# Manual de uso — SIABUC Helpdesk 1.8.3
+# Manual de uso — SIABUC Helpdesk 1.8.5
 
-**Ampliación posterior a 1.8.3:** consulte [Licencias y horas predeterminadas](LICENCIAS-HORAS.md). Las pólizas pueden vincularse a una licencia y sus pagos acreditan esa bolsa; los saldos anteriores permanecen sin licencia.
+**Licencias incluidas en 1.8.5:** consulte [Licencias y horas predeterminadas](LICENCIAS-HORAS.md). Las pólizas pueden vincularse a una licencia y sus pagos acreditan esa bolsa; los saldos anteriores permanecen sin licencia.
 
-Esta guía resume la operación vigente. El [manual detallado de SIABUC Helpdesk 1.8.3](MANUAL-EXTENDIDO-1.8.3.md) desarrolla la instalación, los recorridos por rol, los casos de uso y la resolución de problemas. Las [notas 1.8.3](VERSION-1.8.3.md) explican la actualización y sus límites de validación.
+Esta guía resume la operación vigente. El [manual detallado de SIABUC Helpdesk 1.8.5](MANUAL-EXTENDIDO-LICENCIAS.md) desarrolla la instalación, los recorridos por rol, los casos de uso y la resolución de problemas. Las [notas 1.8.5](VERSION-1.8.5.md) explican la actualización y sus límites de validación.
 
 El soporte utiliza cinco estados: **Recibido**, **En atención**, **Requiere respuesta del cliente**, **Resuelto** y **Cerrado**. En el detalle se cambian mediante **Cambiar estado**, seleccionando el destino y escribiendo el motivo. **Pendientes de resolver** agrupa los primeros tres; Resuelto y Cerrado se muestran separados.
 
 Guías complementarias:
 
-- Atención: [clasificación, ficha técnica y SLA](CLASIFICACION-SLA.md), [adjuntos y recorridos del caso](MANUAL-EXTENDIDO-1.8.3.md), [cronómetro y agenda](CRONOMETRO-AGENDA.md), [rol Técnico](ROL-TECNICO.md), [vistas y alertas](VISTAS-ALERTAS.md), [plantillas](PLANTILLAS-RESPUESTA.md), [incidencias](INCIDENCIAS.md), [campana y saldo](AVISOS-INTERNOS.md) y [reportes Excel/PDF](REPORTES.md).
+- Atención: [clasificación, ficha técnica y SLA](CLASIFICACION-SLA.md), [adjuntos y recorridos del caso](MANUAL-EXTENDIDO-LICENCIAS.md), [cronómetro y agenda](CRONOMETRO-AGENDA.md), [rol Técnico](ROL-TECNICO.md), [vistas y alertas](VISTAS-ALERTAS.md), [plantillas](PLANTILLAS-RESPUESTA.md), [incidencias](INCIDENCIAS.md), [campana y saldo](AVISOS-INTERNOS.md) y [reportes Excel/PDF](REPORTES.md).
 - Cobranza: [pólizas y pagos](POLIZAS-COBRANZA.md), [comprobantes](COMPROBANTES-PAGO.md), [reportes financieros](REPORTES-COBRANZA.md), [cotizaciones y renovaciones](COTIZACIONES-RENOVACIONES.md), [validación de solicitudes](SOLICITUDES-PAGO.md), [portal institucional](PORTAL-FINANCIERO.md) y [recibos administrativos](RECIBOS-PAGO.md).
 - Conocimiento, calidad y operación: [soluciones publicadas](BASE-CONOCIMIENTOS.md), [encuestas](ENCUESTAS-SATISFACCION.md), [correo](CORREO.md) y [respaldos automáticos](RESPALDOS-AUTOMATICOS.md).
 

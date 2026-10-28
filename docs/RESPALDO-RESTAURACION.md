@@ -1,6 +1,6 @@
-# Respaldo y restauración de SIABUC Helpdesk · 1.8.3
+# Respaldo y restauración de SIABUC Helpdesk · 1.8.5
 
-En Windows utilice `respaldar.bat` y `restaurar.bat` con los mismos argumentos; consulte [WINDOWS.md](WINDOWS.md). Los scripts `respaldar.sh` y `restaurar.sh` operan sobre la base PostgreSQL del servicio Docker `db`, utilizando los valores de conexión de `.env`. La versión 1.8.3 usa PostgreSQL 17 y migraciones hasta V26.
+En Windows utilice `respaldar.bat` y `restaurar.bat` con los mismos argumentos; consulte [WINDOWS.md](WINDOWS.md). Los scripts `respaldar.sh` y `restaurar.sh` operan sobre la base PostgreSQL del servicio Docker `db`, utilizando los valores de conexión de `.env`. La versión 1.8.5 usa PostgreSQL 17 y migraciones hasta V27, sin migraciones nuevas respecto de 1.8.4.
 
 Desde 1.6 existe también un calendario de respaldos **desactivado por defecto**, administrable en **Respaldos**. El servicio `backup` puede permanecer iniciado sin producir copias programadas. Activarlo requiere configurar y confirmar el destino; desactivarlo conserva copias e historial y no impide respaldar manualmente. La programación, retención y prueba de restauración en un proyecto aislado se documentan en [RESPALDOS-AUTOMATICOS.md](RESPALDOS-AUTOMATICOS.md). Los comandos de esta guía siguen siendo respaldos **manuales**, fuera de la limpieza automática.
 
@@ -140,9 +140,9 @@ La cola PostgreSQL puede contener avisos pendientes que vuelvan a enviarse al in
 
 ## 6. Validación disponible
 
-Como evidencia histórica anterior a 1.6, la suite Python de aquella revisión obtuvo **37 pruebas satisfactorias**, incluidas 12 de respaldo/restauración. Comprobó argumentos, archivos, permisos, SHA-256, protección de copias existentes, fallos y parámetros transaccionales con una llamada a Compose simulada. También se comprobó la ayuda de los scripts y el rechazo de argumentos inválidos desde otro directorio. Estos resultados no son conteos de 1.8.3. Consulte la evidencia por versión en [VALIDACION.md](VALIDACION.md) y los procedimientos vigentes en [RESPALDOS-AUTOMATICOS.md](RESPALDOS-AUTOMATICOS.md).
+Como evidencia histórica anterior a 1.6, la suite Python de aquella revisión obtuvo **37 pruebas satisfactorias**, incluidas 12 de respaldo/restauración. Comprobó argumentos, archivos, permisos, SHA-256, protección de copias existentes, fallos y parámetros transaccionales con una llamada a Compose simulada. También se comprobó la ayuda de los scripts y el rechazo de argumentos inválidos desde otro directorio. Estos resultados no son conteos de 1.8.5. Consulte la evidencia por versión en [VALIDACION.md](VALIDACION.md) y los procedimientos vigentes en [RESPALDOS-AUTOMATICOS.md](RESPALDOS-AUTOMATICOS.md).
 
-**No se ejecutó una restauración real de PostgreSQL en Docker en el entorno de preparación.** Los detalles y resultados históricos están en [VALIDACION.md](VALIDACION.md). Para otras tareas de instalación y operación, consulte [OPERACION.md](OPERACION.md).
+En [CI de 1.8.5](VERSION-1.8.5.md#evidencia-ci-de-las-correcciones) se ejecutaron `pg_dump` y `pg_restore` reales con registros sintéticos, PostgreSQL 17 e imágenes finales en una red y volúmenes desechables. Ese ensayo no restaura una copia productiva ni valida automáticamente su archivo de respaldo; debe probarse por separado en el destino aislado. Los resultados de las suites simuladas anteriores se conservan en [VALIDACION.md](VALIDACION.md). Para otras tareas de instalación y operación, consulte [OPERACION.md](OPERACION.md).
 
 ## Pausa de correo desde 1.3.1
 
@@ -150,7 +150,7 @@ Los respaldos con V4 incluyen notification_settings y su pausa administrativa. R
 
 ## Retroceder a una versión anterior
 
-`pg_restore --clean` borra únicamente los objetos incluidos en el respaldo. Por ejemplo, una copia anterior a 1.5 no conoce las tablas V9/V10; una anterior a 1.6 tampoco conoce V11–V16. Sus relaciones pueden impedir restaurar esa copia sobre la base actual. Además, el código anterior a 1.8.3 no interpreta los nuevos estados de V26. El script no realiza una migración inversa ni vacía completamente el esquema: use una base nueva con el respaldo y código compatibles.
+`pg_restore --clean` borra únicamente los objetos incluidos en el respaldo. Por ejemplo, una copia anterior a 1.5 no conoce las tablas V9/V10; una anterior a 1.6 tampoco conoce V11–V16. Sus relaciones pueden impedir restaurar esa copia sobre la base actual. Además, el código anterior a V27 no respeta el saldo reservado para licencias y el anterior a 1.8.3 no interpreta los estados de V26. El script no realiza una migración inversa ni vacía completamente el esquema: use una base nueva con el respaldo y código compatibles.
 
 1. Detenga los servicios de la instalación actual y conserve su volumen, un respaldo reciente y su `.env`. Manténgalos disponibles para volver a la versión actual.
 2. Descomprima el código de la versión que desea recuperar en **otra carpeta**. Configure un `.env` propio con un `COMPOSE_PROJECT_NAME` nuevo y puertos libres para evitar reutilizar volúmenes o entrar en conflicto con la instalación conservada.

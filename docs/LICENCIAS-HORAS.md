@@ -1,6 +1,6 @@
 # Licencias y horas predeterminadas de soporte
 
-Funciones incluidas en 1.8.4, incorporadas sobre la base 1.8.3 mediante V27. La revisión 1.8.4 no añade migraciones. Los manuales y resultados publicados de versiones anteriores conservan su alcance histórico.
+Funciones incluidas en 1.8.5, incorporadas sobre la base 1.8.3 mediante V27. Las revisiones 1.8.4 y 1.8.5 no añaden migraciones sobre esa ampliación. Los manuales y resultados publicados de versiones anteriores conservan su alcance histórico.
 
 ## Configurar las horas incluidas
 

@@ -1,4 +1,4 @@
-# Campana, respuestas pendientes y avisos de saldo — 1.8.3
+# Campana, respuestas pendientes y avisos de saldo — 1.8.5
 
 Disponible desde SIABUC Helpdesk 1.4.0. Los avisos internos se guardan en PostgreSQL y aparecen en la campana de la plataforma. No requieren SMTP: continúan funcionando con el envío de correo pausado o con `MAIL_ENABLED=false`.
 
@@ -37,7 +37,7 @@ El caso tiene cinco estados de atención. La plataforma conserva además el indi
 
 **Tomar caso**, cambiar los datos del caso o escribir una nota interna no cuentan como una respuesta pública. Cada cuenta ADMIN o TECH ve pendientes de casos asignados a ella y de los que aún no tienen responsable. El cliente ve los pendientes de su institución. La lista de pendientes incluye únicamente Recibido, En atención y Requiere respuesta del cliente. La migración 1.8.3 conserva el indicador existente de cada caso; no reconstruye retrospectivamente quién debe responder. Los eventos posteriores actualizan ese indicador.
 
-Un comentario público de soporte puede dejar una respuesta pendiente del cliente sin cambiar por sí mismo el estado a Requiere respuesta del cliente; para formalizar esa espera use **Cambiar estado**. Del mismo modo, resolver o cerrar limpia el indicador pendiente, conservando los avisos ya emitidos como historia. Consulte el [manual detallado 1.8.3](MANUAL-EXTENDIDO-1.8.3.md).
+Un comentario público de soporte puede dejar una respuesta pendiente del cliente sin cambiar por sí mismo el estado a Requiere respuesta del cliente; para formalizar esa espera use **Cambiar estado**. Del mismo modo, resolver o cerrar limpia el indicador pendiente, conservando los avisos ya emitidos como historia. Consulte el [manual detallado 1.8.5](MANUAL-EXTENDIDO-LICENCIAS.md).
 
 ## Configurar avisos por saldo bajo
 

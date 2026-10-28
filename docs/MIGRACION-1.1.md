@@ -1,8 +1,8 @@
 # Actualizar de 1.0 a 1.1
 
-> **Documento histórico — migración de 1.0 a 1.1 y notas posteriores de 1.3.** Se conservan el alcance, los procedimientos y los resultados de esa entrega. Las referencias a la versión «actual», a la «última» evidencia y a funciones o fallos pendientes corresponden a ese momento; no describen el estado de 1.8.3.
+> **Documento histórico — migración de 1.0 a 1.1 y notas posteriores de 1.3.** Se conservan el alcance, los procedimientos y los resultados de esa entrega. Las referencias a la versión «actual», a la «última» evidencia y a funciones o fallos pendientes corresponden a ese momento; no describen el estado de 1.8.5.
 >
-> Para uso e instalación vigentes, consulte el [manual detallado 1.8.3](MANUAL-EXTENDIDO-1.8.3.md), el [índice de documentación](README.md) y las [notas de 1.8.3](VERSION-1.8.3.md).
+> Para uso e instalación vigentes, consulte el [manual detallado 1.8.5](MANUAL-EXTENDIDO-LICENCIAS.md), el [índice de documentación](README.md) y las [notas de 1.8.5](VERSION-1.8.5.md).
 
 La versión 1.1 añade cobranza, acreditación por pagos, asignación de responsables y notificaciones SMTP. Conserva instituciones, usuarios, casos, saldos, historiales y auditoría existentes. **No cambie ni elimine `V1__initial_schema.sql`**: Flyway aplica las nuevas migraciones V2 y V3 al iniciar el servidor actualizado.
 

@@ -1,6 +1,6 @@
-# Respaldos automáticos · 1.8.4
+# Respaldos automáticos · 1.8.5
 
-Desde 1.6.0, SIABUC Helpdesk incluye un servicio Docker llamado **`backup`** y una sección **Respaldos**, exclusiva de **ADMIN**. El calendario comienza **desactivado** en una instalación nueva o al aplicar V16 por primera vez. Una actualización posterior, incluida 1.8.3, conserva el estado guardado; un respaldo también lo recupera al restaurar. Iniciar Docker o abrir la página no cambia ese estado.
+Desde 1.6.0, SIABUC Helpdesk incluye un servicio Docker llamado **`backup`** y una sección **Respaldos**, exclusiva de **ADMIN**. El calendario comienza **desactivado** en una instalación nueva o al aplicar V16 por primera vez. Una actualización posterior, incluida 1.8.5, conserva el estado guardado; un respaldo también lo recupera al restaurar. Iniciar Docker o abrir la página no cambia ese estado.
 
 El administrativo puede activar y desactivar el calendario. **Desactivarlo conserva las copias y el historial**, cancela los programados todavía pendientes y mantiene disponible **Crear respaldo ahora**. Una copia que ya comenzó puede terminar; no se trunca su archivo. Al reactivar se espera el siguiente horario futuro, sin recuperar horarios perdidos durante la pausa.
 
@@ -115,7 +115,7 @@ Para un error de permisos, revisa el directorio y UID/GID. Para falta de espacio
 
 ## Prueba de restauración en una base aislada
 
-Una copia con hash correcto y un catálogo legible todavía necesita una prueba de restauración para demostrar que es recuperable. La siguiente prueba utiliza `backup/compose.restore-test.yml`: **otro proyecto**, **otro volumen**, **otra base**, sin puertos publicados, backend, SMTP o worker. No utiliza el volumen de producción. Se ejecuta manualmente; no fue ejecutada en Docker durante la validación de esta entrega.
+Una copia con hash correcto y un catálogo legible todavía necesita una prueba de restauración para demostrar que es recuperable. La siguiente prueba utiliza `backup/compose.restore-test.yml`: **otro proyecto**, **otro volumen**, **otra base**, sin puertos publicados, backend, SMTP o worker. No utiliza el volumen de producción. Este procedimiento con una copia de su instalación se ejecuta manualmente. En [CI de 1.8.5](VERSION-1.8.5.md#evidencia-ci-de-las-correcciones) se aprobó un ensayo diferente con registros sintéticos, cambio de imagen PostgreSQL y `pg_dump`/`pg_restore` reales; no acredita la recuperación de su copia ni su entorno.
 
 Trabaja desde el directorio del proyecto. Elige una copia finalizada y su checksum. Verifica el hash:
 
@@ -144,7 +144,7 @@ $env:RESTORE_TEST_PASSWORD = python -c "import secrets; print(secrets.token_hex(
 Los siguientes comandos son iguales en Linux y PowerShell; reemplaza únicamente la ruta de la copia en `cp`:
 
 ```text
-docker compose -p siabuc-restore-test -f backup/compose.restore-test.yml up -d --wait
+docker compose -p siabuc-restore-test -f backup/compose.restore-test.yml up -d --build --wait
 docker compose -p siabuc-restore-test -f backup/compose.restore-test.yml cp "/ruta/de/la/copia.dump" db:/tmp/rehearsal.dump
 docker compose -p siabuc-restore-test -f backup/compose.restore-test.yml exec -T db pg_restore -U restorecheck -d siabuc_restore_test --no-owner --no-privileges --single-transaction --exit-on-error /tmp/rehearsal.dump
 docker compose -p siabuc-restore-test -f backup/compose.restore-test.yml exec -T db psql -U restorecheck -d siabuc_restore_test -v ON_ERROR_STOP=1 -c "UPDATE backup_settings SET enabled=FALSE,destination_confirmed=FALSE; UPDATE notification_settings SET paused=TRUE; SELECT COUNT(*) AS instituciones FROM institutions; SELECT COUNT(*) AS casos FROM support_cases; SELECT COUNT(*) AS pagos FROM payments;"

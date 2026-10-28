@@ -1,4 +1,4 @@
-# Contrato de integración — SIABUC Helpdesk 1.8.3
+# Contrato de integración — SIABUC Helpdesk 1.8.5
 
 Base `/api`. Instantes ISO 8601 UTC; fechas civiles de pagos y pólizas `YYYY-MM-DD`, sin conversión de zona horaria. Identificadores numéricos. Unidad de soporte: minutos enteros (no flotantes). Roles `ADMIN`, `TECH`, `USER` y `BILLING`; canales `EMAIL` y `REMOTE`; estados `OPEN`, `IN_PROGRESS`, `WAITING_CLIENT`, `RESOLVED` y `CLOSED`. `OPEN` conserva el identificador del contrato anterior y se muestra como «Recibido».
 
@@ -132,7 +132,7 @@ Estados `PENDING`, `SENDING`, `SENT`, `FAILED`, `SKIPPED`, `SUPPRESSED`. SUPPRES
 Configuración, proveedores, puertos, TLS, pruebas locales y puesta en operación en [CORREO.md](CORREO.md). Actualización compatible del flujo de casos en [VERSION-1.8.3.md](VERSION-1.8.3.md).
 
 
-En 1.8.3, el backend puede enviar directamente al SMTP configurado, incluido Gmail mediante `--gmail-directo`. Postfix es opcional: el servicio Docker `smtp` se activa con el perfil `local-smtp` al usar `--smtp-interno`; comparte la red predeterminada de Compose y ya no requiere `smtp_net` ni una subred fija. `/notifications/config` describe el primer salto de Spring: el proveedor remoto en modo directo, o `smtp:25` con Postfix. La configuración del relay posterior de Postfix se administra fuera de la API. Consulte [CORREO.md](CORREO.md) y [SMTP-INTERNO.md](SMTP-INTERNO.md).
+En 1.8.5, el backend puede enviar directamente al SMTP configurado, incluido Gmail mediante `--gmail-directo`. Postfix es opcional: el servicio Docker `smtp` se activa con el perfil `local-smtp` al usar `--smtp-interno`; comparte la red predeterminada de Compose y ya no requiere `smtp_net` ni una subred fija. `/notifications/config` describe el primer salto de Spring: el proveedor remoto en modo directo, o `smtp:25` con Postfix. La configuración del relay posterior de Postfix se administra fuera de la API. Consulte [CORREO.md](CORREO.md) y [SMTP-INTERNO.md](SMTP-INTERNO.md).
 
 ## Control de envío
 
@@ -276,7 +276,7 @@ continúa basada en usuarios y sesiones; una póliza no es una credencial.
 
 ## Ampliación V27: configuración y saldos de licencias
 
-El contrato de 1.8.3 se amplía de forma opcional para conservar casos y pólizas anteriores. Unidad de tiempo: minutos enteros; cada canal admite de 0 a 1 000 000 000. La migración no modifica saldos históricos.
+El contrato vigente incluye la ampliación opcional V27 sobre 1.8.3 para conservar casos y pólizas anteriores. Unidad de tiempo: minutos enteros; cada canal admite de 0 a 1 000 000 000. La migración no modifica saldos históricos.
 
 | Método y ruta | Permiso | Entrada / resultado |
 | --- | --- | --- |

@@ -1,6 +1,6 @@
-# Cotizaciones, renovaciones y vencimientos — versión 1.8.3
+# Cotizaciones, renovaciones y vencimientos — versión 1.8.5
 
-Guía vigente de SIABUC Helpdesk 1.8.3. Consulte el [manual detallado](MANUAL-EXTENDIDO-1.8.3.md) para el recorrido completo por rol.
+Guía vigente de SIABUC Helpdesk 1.8.5. Consulte el [manual detallado](MANUAL-EXTENDIDO-LICENCIAS.md) para el recorrido completo por rol.
 
 Los módulos **Cotizaciones** y **Renovaciones** están disponibles para Administración (`ADMIN`) y Cobranza (`BILLING`). Permiten documentar una oferta, registrar la respuesta del cliente y convertir lo aceptado en una póliza. El rol Técnico (`TECH`) y los usuarios de instituciones (`USER`) no pueden acceder a estos módulos, aunque el cliente tenga habilitado el portal financiero.
 

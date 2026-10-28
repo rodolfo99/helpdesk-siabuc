@@ -1,4 +1,4 @@
-# Servidor SMTP interno · configuración vigente en 1.8.3
+# Servidor SMTP interno · configuración vigente en 1.8.5
 
 El servicio Docker `smtp` contiene **Postfix para enviar correo**. Spring entrega allí los avisos y Postfix los transmite al servidor del destinatario o a un relay autorizado. No proporciona buzones, IMAP, POP3 ni una bandeja web. El puerto SMTP no se publica hacia Internet.
 
@@ -157,6 +157,6 @@ La configuración de contenedores y los resultados de pruebas constan en [VALIDA
 
 ## Actualizar una instalación anterior
 
-Los `.env` existentes mantienen su SMTP y su estado de activación. Para adoptar el interno, preserve datos y configuración, actualice los archivos y ejecute `./configurar.sh --smtp-interno`, seguido de `./iniciar.sh`. Elegir proveedor de correo no requiere una migración de tablas; actualizar la aplicación a 1.8.3 sí aplica las migraciones de negocio pendientes hasta V26.
+Los `.env` existentes mantienen su SMTP y su estado de activación. Para adoptar el interno, preserve datos y configuración, actualice los archivos y ejecute `./configurar.sh --smtp-interno`, seguido de `./iniciar.sh`. Elegir proveedor de correo no requiere una migración de tablas; actualizar la aplicación a 1.8.5 aplica las migraciones de negocio faltantes hasta V27; desde 1.8.4 no se añaden migraciones.
 
 Para conectar Spring directamente a un proveedor externo, continúa disponible `./configurar.sh --correo`. En ese caso los avisos omiten Postfix, aunque su contenedor esté iniciado.

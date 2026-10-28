@@ -1,5 +1,8 @@
 # SIABUC Helpdesk 1.8.3 — evidencia de validación
 
+> **Documento histórico.** Conserva los procedimientos y resultados de la versión indicada en el título.
+> Para uso, instalación y validación vigentes, consulte el [manual integrado 1.8.5](MANUAL-EXTENDIDO-LICENCIAS.md), las [notas 1.8.5](VERSION-1.8.5.md) y el [índice](README.md).
+
 Fecha: 15 de octubre de 2026. Revisión funcional comprobada:
 `15e9b2c4e1e94d97632b2e90dc389bfc727d5c71`.
 Incluye los cinco estados de atención, migración V26 y Docker sin red SMTP dedicada.

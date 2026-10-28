@@ -1,5 +1,8 @@
 # SIABUC Helpdesk 1.8.3 — estados de atención y red Docker
 
+> **Documento histórico.** Conserva los procedimientos y resultados de la versión indicada en el título.
+> Para uso, instalación y validación vigentes, consulte el [manual integrado 1.8.5](MANUAL-EXTENDIDO-LICENCIAS.md), las [notas 1.8.5](VERSION-1.8.5.md) y el [índice](README.md).
+
 [Manual detallado](MANUAL-EXTENDIDO-1.8.3.md) · [Índice de guías](README.md) ·
 [Evidencia de validación](VALIDACION-1.8.3.md).
 

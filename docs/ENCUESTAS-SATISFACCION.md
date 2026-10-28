@@ -1,4 +1,4 @@
-# Encuestas de satisfacción — 1.8.3
+# Encuestas de satisfacción — 1.8.5
 
 Disponibles desde 1.6.0. En el flujo actual de cinco estados, **sólo Cerrado (`CLOSED`) habilita la encuesta; Resuelto (`RESOLVED`) todavía no la habilita**. Al consultar un caso Cerrado, un usuario cliente de su institución puede evaluar la atención con una puntuación de **1 a 5** y un comentario opcional de hasta **2,000 caracteres**. La encuesta es voluntaria y no consume ni acredita minutos.
 
@@ -45,7 +45,7 @@ El límite es de 5,000 respuestas por consulta. Si se supera, se solicita reduci
 
 **Exportar respuestas CSV** descarga las filas con los filtros del último resultado consultado. Si hay cambios en el servidor entre consulta y descarga, la exportación refleja los datos vigentes al descargar. El CSV incluye encabezados, UTF-8 con BOM, campos entre comillas y protección contra fórmulas de hoja de cálculo en textos introducidos por usuarios. No hay exportación PDF específica de satisfacción en esta versión.
 
-El [manual detallado 1.8.3](MANUAL-EXTENDIDO-1.8.3.md) explica la diferencia entre resolver, cerrar, reabrir y evaluar un caso.
+El [manual detallado 1.8.5](MANUAL-EXTENDIDO-LICENCIAS.md) explica la diferencia entre resolver, cerrar, reabrir y evaluar un caso.
 
 ## API y almacenamiento
 

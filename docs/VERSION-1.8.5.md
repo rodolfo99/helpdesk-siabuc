@@ -1,7 +1,7 @@
 # SIABUC Helpdesk 1.8.5 — actualización de seguridad
 
 Preparada el 28 de octubre de 2026 sobre `979cbb5dcd94ab999214c056e50abe473743662c`.
-La entrega se propone mediante una rama y PR; no implica despliegue productivo.
+Integrada en `main` el 28 de octubre de 2026 mediante la [PR #21](https://github.com/rodolfo99/helpdesk-siabuc/pull/21), commit `f295b75795ed40f0c01c8463533bfeb1389fc207`. Esta integración no despliega ni actualiza por sí sola una instalación productiva.
 
 ## Cambios
 
@@ -73,13 +73,12 @@ No publica puertos ni entrega correo fuera de esa red.
 
 Dependabot revisa semanalmente npm en ambos directorios, Maven, los cinco Dockerfile,
 los archivos Compose y GitHub Actions. Propone PRs para revisión; no fusiona
-automáticamente. Su configuración se activa al integrarse en la rama por
-defecto. Al actualizar Node, mantener coherentes `.nvmrc` y el Dockerfile; la
+automáticamente. Su configuración ya está activa en `main`. Al actualizar Node, mantener coherentes `.nvmrc` y el Dockerfile; la
 comprobación del constructor detecta divergencias.
 
 ## Evidencia local de preparación
 
-Ejecutada con Node 24.22.1 y npm 11.9.0 sobre los archivos de esta propuesta:
+Ejecutada con Node 24.22.1 y npm 11.9.0 durante la preparación de 1.8.5:
 
 | Comprobación | Resultado |
 | --- | --- |
@@ -91,7 +90,7 @@ Ejecutada con Node 24.22.1 y npm 11.9.0 sobre los archivos de esta propuesta:
 | `python3 -m unittest discover -s tests/ops` | 70 descubiertas: 69 aprobadas, 1 omitida por restricciones de cambio de UID |
 | `python3 -m unittest discover -s tests/smtp` | 14 aprobadas, incluida la preferencia LMDB con fallback hash |
 
-No hay Docker ni PostgreSQL nativo en el entorno local. Maven 3.9.9 se preparó
+No había Docker ni PostgreSQL nativo en el entorno local de preparación. Maven 3.9.9 se preparó
 para compilar el backend y los auxiliares de pruebas; el intento local de
 ejecutar Surefire quedó bloqueado por la conexión al repositorio Maven.
 No se cuenta ese intento como una prueba aprobada. Las pruebas Java,
@@ -101,12 +100,13 @@ una ejecución local de las pruebas de navegador. Estas comprobaciones se ejecut
 en los jobs de GitHub Actions indicados abajo y deben evaluarse por su **SHA y estado**.
 Un job omitido, pendiente o fallido no equivale a una validación aprobada.
 
-No se probaron Windows nativo, restauración de una base real, entrega externa
-de correo ni instalaciones productivas. La ausencia de hallazgos en una
+No se probaron Windows nativo, restauración de una copia productiva, entrega
+externa de correo ni instalaciones productivas. El ensayo PostgreSQL real
+con registros sintéticos sí se ejecutó en CI, como se detalla abajo. La ausencia de hallazgos en una
 auditoría es el resultado de esa consulta, no una garantía absoluta de seguridad.
 Los resultados históricos permanecen en [Validación](VALIDACION.md).
 
-## Hallazgos de las imágenes y estado de revisión
+## Detección inicial y correcciones
 
 El [primer escaneo CI](https://github.com/rodolfo99/helpdesk-siabuc/actions/runs/40585301717)
 del head `5c082d4c7629735db55de37cd6ca70a236b59965` construyó las imágenes y
@@ -132,6 +132,17 @@ ni se reducen los umbrales del control. Se conservan los primeros resultados
 fallidos para distinguir la detección inicial de su corrección.
 
 ## Evidencia CI de las correcciones
+
+La revisión final de la PR, `2c4ca8e8819d29507e8935d031a7d09acbbc02c4`, aprobó sus **11 controles** antes de la integración:
+
+- [Auditorías, cinco imágenes y ensayo de actualización](https://github.com/rodolfo99/helpdesk-siabuc/actions/runs/40712986853).
+- [Regresiones Java/PostgreSQL](https://github.com/rodolfo99/helpdesk-siabuc/actions/runs/40712986375).
+- [Verificación conjunta 1.8.5](https://github.com/rodolfo99/helpdesk-siabuc/actions/runs/40712986386).
+- [Puertos y redes Compose](https://github.com/rodolfo99/helpdesk-siabuc/actions/runs/40712986307).
+
+El [control de seguridad posterior a la integración](https://github.com/rodolfo99/helpdesk-siabuc/actions/runs/40757745097) también aprobó sobre `f295b75795ed40f0c01c8463533bfeb1389fc207`. Las regresiones completas anteriores corresponden a la PR; no se atribuye su ejecución al evento `push` de `main`.
+
+### Registro previo conservado
 
 El [escaneo y ensayo de imágenes](https://github.com/rodolfo99/helpdesk-siabuc/actions/runs/40711589084)
 aprobó sobre el head `01eee3a6a24598fe55499699e021c6a2bdda0a5a`, probado como
@@ -160,9 +171,7 @@ La regresión Java/PostgreSQL de esta revisión se consulta en
 [Verify backend regressions](https://github.com/rodolfo99/helpdesk-siabuc/actions/runs/40711589160).
 La verificación conjunta de frontend, Python, Compose, navegador y paquete
 está en [SIABUC 1.8.5 verify](https://github.com/rodolfo99/helpdesk-siabuc/actions/runs/40711589066).
-La [PR #21](https://github.com/rodolfo99/helpdesk-siabuc/pull/21) muestra los
-controles del head vigente; una actualización documental posterior puede
-tener otro SHA y no cambia la revisión a la que se atribuyen estos resultados.
+La [PR #21](https://github.com/rodolfo99/helpdesk-siabuc/pull/21) está fusionada. Los enlaces de este registro conservan el SHA comprobado; una actualización documental posterior no cambia la revisión a la que se atribuyen estos resultados.
 
 ## Actualizar y empaquetar
 

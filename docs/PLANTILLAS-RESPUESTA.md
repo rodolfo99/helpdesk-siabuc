@@ -1,4 +1,4 @@
-# Plantillas de respuesta — 1.8.3
+# Plantillas de respuesta — 1.8.5
 
 Las plantillas reúnen instrucciones frecuentes de instalación, diagnóstico y solución. El texto se copia a un borrador que el personal revisa y adapta antes de registrar la respuesta.
 
@@ -30,7 +30,7 @@ En un caso Resuelto o Cerrado, primero debe reabrir desde **Cambiar estado → E
 
 El contenido se muestra como texto literal. No hay ejecución HTML ni sustitución automática de variables: revise nombres, rutas y demás datos antes de publicar. Una plantilla archivada desaparece de la selección del técnico. Una copia que ya estuviera en un borrador sigue siendo texto editable; archivar no borra ese borrador ni una respuesta histórica.
 
-El [manual detallado 1.8.3](MANUAL-EXTENDIDO-1.8.3.md) reúne el procedimiento de respuesta, los estados y las reglas de cargo.
+El [manual detallado 1.8.5](MANUAL-EXTENDIDO-LICENCIAS.md) reúne el procedimiento de respuesta, los estados y las reglas de cargo.
 
 ## Permisos y API
 
