@@ -239,10 +239,10 @@ def write_sasl_map(config: SMTPConfiguration, directory: Path, map_type: str = "
 
 def choose_map_type(available: str) -> str:
     choices = set(available.split())
-    if "hash" in choices:
-        return "hash"
     if "lmdb" in choices:
         return "lmdb"
+    if "hash" in choices:
+        return "hash"
     raise ConfigurationError("Postfix requiere soporte de mapas hash o lmdb para el relay.")
 
 

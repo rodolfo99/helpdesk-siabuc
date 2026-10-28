@@ -51,7 +51,7 @@ def main() -> None:
         return container
 
     def sql(container: str, statement: str, database: str = "upgrade") -> str:
-        return run("docker", "exec", container, "psql", "-U", "siabuc", "-d", database,
+        return run("docker", "exec", "-e", "PGPASSWORD=" + password, container, "psql", "-h", "127.0.0.1", "-U", "siabuc", "-d", database,
                    "-v", "ON_ERROR_STOP=1", "-Atc", statement)
 
     def healthy_smtp(container: str) -> bool:
@@ -137,8 +137,9 @@ sys.path.insert(0, '/opt/siabuc-smtp')
 import entrypoint as e
 config=e.parse_configuration({'SMTP_RELAY_HOST':'relay.example.test',
     'SMTP_RELAY_USERNAME':'test-user','SMTP_RELAY_PASSWORD':'disposable-test-password'})
-kind=e.choose_map_type(subprocess.check_output(['postconf','-m'],text=True))
-assert kind == 'lmdb'
+available=subprocess.check_output(['postconf','-m'],text=True)
+kind=e.choose_map_type(available)
+assert kind == 'lmdb', available.split()
 e.write_sasl_map(config, Path('/etc/postfix'), kind)
 assert subprocess.check_output(['postmap','-q',config.relay_destination,
     'lmdb:/etc/postfix/sasl_passwd'],text=True).strip() == 'test-user:disposable-test-password'
