@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -235,7 +235,7 @@ abstract class ApiIntegrationSupport {
             return builder;
         }
 
-        protected MvcResult perform(MockHttpServletRequestBuilder builder) throws Exception {
+        protected MvcResult perform(org.springframework.test.web.servlet.RequestBuilder builder) throws Exception {
             MvcResult result = mvc.perform(builder).andReturn();
             session = (MockHttpSession) result.getRequest().getSession(false);
             for (Cookie cookie : result.getResponse().getCookies()) {

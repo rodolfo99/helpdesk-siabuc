@@ -31,7 +31,7 @@ Configure el Postfix integrado con `./configurar.sh --smtp-interno` según [SMTP
 ./compilar.sh --docker
 ```
 
-El Dockerfile del servidor utiliza Maven con JDK 17 y ejecuta `mvn package`; empaqueta un JAR que luego corre en una imagen de JRE 17 con usuario sin privilegios. El Dockerfile del cliente utiliza Node 24, `npm ci` y `npm run build`; copia el resultado a Nginx. PostgreSQL utiliza su imagen oficial 17 Alpine. `smtp/Dockerfile` construye el SMTP Postfix desde Debian 13, con configuración propia, sin buzones ni servicio web.
+El Dockerfile del servidor utiliza Maven con JDK 17 y ejecuta `mvn package`; empaqueta un JAR que luego corre en una imagen de JRE 17 con usuario sin privilegios. El Dockerfile del cliente utiliza Node 24, `npm ci` y `npm run build`; copia el resultado a Nginx. PostgreSQL utiliza `db/Dockerfile`, derivado de la imagen oficial 17 Alpine, con `gosu` recompilado con Go corregido y el mismo arranque/volumen. `smtp/Dockerfile` construye el SMTP Postfix desde Alpine 3.24, con configuración propia, sin buzones ni servicio web.
 
 La primera descarga requiere conexión a Maven Central, npm y al registro de imágenes. La compilación no requiere que haya una base de datos en ejecución. Las pruebas de integración PostgreSQL se ejecutan explícitamente por separado.
 

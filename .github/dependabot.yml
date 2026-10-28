@@ -11,11 +11,17 @@ updates:
       angular:
         patterns: ['@angular/*', '@angular-devkit/*', '@schematics/*']
         update-types: [minor, patch]
+  - package-ecosystem: maven
+    directory: /backend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
   - package-ecosystem: docker
     directories:
       - /frontend
       - /backend
       - /backup
+      - /db
       - /smtp
     schedule:
       interval: weekly

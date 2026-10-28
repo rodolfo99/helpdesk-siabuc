@@ -103,7 +103,7 @@ def render_main_cf(config: SMTPConfiguration, map_type: str = "hash") -> str:
         "compatibility_level": "3.6",
         "queue_directory": "/var/spool/postfix",
         "command_directory": "/usr/sbin",
-        "daemon_directory": "/usr/lib/postfix/sbin",
+        "daemon_directory": "/usr/libexec/postfix",
         "data_directory": "/var/lib/postfix",
         "mail_owner": "postfix",
         "setgid_group": "postdrop",
@@ -251,8 +251,7 @@ def main() -> None:
         configuration = parse_configuration(os.environ)
         directory = Path("/etc/postfix")
         directory.mkdir(parents=True, exist_ok=True)
-        # Debian's "No configuration" install can leave main.cf absent; postconf
-        # still requires that file even when only listing supported map types.
+        # Write a complete configuration before asking Postfix for map types.
         _write_atomic(directory / "main.cf", render_main_cf(configuration), 0o644)
         _write_atomic(directory / "master.cf", render_master_cf(), 0o644)
         available = subprocess.run(["postconf", "-m"], check=True, capture_output=True, text=True).stdout
@@ -261,6 +260,8 @@ def main() -> None:
         write_sasl_map(configuration, directory, map_type)
         Path("/var/spool/postfix").mkdir(parents=True, exist_ok=True)
         Path("/var/lib/postfix").mkdir(parents=True, exist_ok=True)
+        # Postfix recursively repairs queue ownership when reusing a volume
+        # created by an earlier image with different numeric account IDs.
         subprocess.run(["postfix", "set-permissions"], check=True)
         subprocess.run(["postfix", "check"], check=True)
         # Do not propagate the relay credential environment into daemon processes.

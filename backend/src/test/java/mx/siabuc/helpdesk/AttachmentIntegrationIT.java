@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 
@@ -151,7 +150,7 @@ class AttachmentIntegrationIT extends ApiIntegrationSupport {
 
     private MvcResult upload(Client client,long caseId,Long entryId,String name,String type,byte[] data,UUID requestId) throws Exception {
         client.refreshCsrf();
-        MockHttpServletRequestBuilder builder=multipart("/api/cases/"+caseId+"/attachments")
+        var builder=multipart("/api/cases/"+caseId+"/attachments")
             .file(new MockMultipartFile("file",name,type,data)).param("requestId",requestId.toString())
             .session(client.session).cookie(client.cookies.values().toArray(jakarta.servlet.http.Cookie[]::new))
             .header("X-XSRF-TOKEN",client.csrf);

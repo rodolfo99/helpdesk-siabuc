@@ -58,15 +58,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Build or pull the final runtime image
+      - name: Build the final runtime image
         run: |
-          if [ "$SERVICE" = db ]; then
-            source_image=$(docker compose config --format json | python3 -c 'import json,sys; print(json.load(sys.stdin)["services"]["db"]["image"])')
-            docker pull "$source_image"
-            docker tag "$source_image" "$IMAGE"
-          else
-            docker build --pull --tag "$IMAGE" "$SERVICE"
-          fi
+          docker build --pull --tag "$IMAGE" "$SERVICE"
           docker image inspect "$IMAGE" > image-inspect.json
       - name: Check the patched Node builder and final Nginx image
         if: matrix.service == 'frontend'
@@ -76,8 +70,10 @@ jobs:
           docker run --rm --entrypoint sh "$IMAGE" -ec '
             nginx -v 2>&1 | grep -Fx "nginx version: nginx/1.30.6"
             nginx -t
-            ! command -v node
-            ! command -v npm
+            if command -v node || command -v npm; then
+              echo "Unexpected build tools in the runtime image" >&2
+              exit 1
+            fi
             test -s /usr/share/nginx/html/index.html
           '
           container=$(docker run -d -p 127.0.0.1::80 "$IMAGE")
@@ -95,11 +91,12 @@ jobs:
             test "$(id -u)" = 10001
             test -s /app/app.jar
             java -version
-            ! command -v mvn
+            if command -v mvn; then exit 1; fi
           '
       - name: Scan OS and application packages (fail on HIGH or CRITICAL)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
+          version: v0.76.1
           image-ref: ${{ env.IMAGE }}
           scanners: vuln
           format: json
@@ -118,3 +115,19 @@ jobs:
             nginx-headers.txt
           if-no-files-found: error
           retention-days: 14
+  runtime-upgrade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Prepare the exact 1.8.4 SMTP build context
+        run: |
+          git fetch --depth 1 origin 979cbb5dcd94ab999214c056e50abe473743662c
+          mkdir -p "$RUNNER_TEMP/legacy-smtp"
+          for file in Dockerfile entrypoint.py healthcheck.py; do
+            git show "979cbb5dcd94ab999214c056e50abe473743662c:smtp/$file" > "$RUNNER_TEMP/legacy-smtp/$file"
+          done
+      - name: Upgrade disposable data and SMTP queue; start final backend; dump and restore
+        run: python3 tests/security/runtime_smoke.py --legacy-smtp "$RUNNER_TEMP/legacy-smtp"
