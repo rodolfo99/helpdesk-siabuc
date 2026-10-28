@@ -8,7 +8,7 @@
     "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
-    "@angular/common": "21.2.25",
+    "@angular/common": "22.2.3",
     "@angular/compiler": "21.2.25",
     "@angular/core": "21.2.25",
     "@angular/forms": "21.2.25",
