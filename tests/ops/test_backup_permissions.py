@@ -23,8 +23,10 @@ class BackupPermissionTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         self.values = {**manage.DEFAULTS, "BACKUP_UID": "1000", "BACKUP_GID": "1000"}
-        self.enterContext(mock.patch.object(manage, "ROOT", self.root))
-        self.enterContext(contextlib.redirect_stdout(io.StringIO()))
+        contexts = contextlib.ExitStack()
+        self.addCleanup(contexts.close)
+        contexts.enter_context(mock.patch.object(manage, "ROOT", self.root))
+        contexts.enter_context(contextlib.redirect_stdout(io.StringIO()))
 
     def failure(self, code):
         return subprocess.CalledProcessError(code, "docker")

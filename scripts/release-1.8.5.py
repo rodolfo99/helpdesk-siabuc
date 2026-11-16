@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 VERSION = '1.8.5'
 
 
-def package(output: Path) -> Path:
+def package(output: Path, windows: bool = False) -> Path:
     if (ROOT / 'VERSION').read_text().strip() != VERSION:
         raise RuntimeError('Los fuentes no corresponden a 1.8.5.')
     for name in ('frontend/package.json', 'frontend/package-lock.json'):
@@ -32,15 +32,23 @@ def package(output: Path) -> Path:
             continue
         if rel.suffix.lower() in {'.zip', '.dump', '.pyc', '.pem', '.key', '.p12', '.pfx', '.log'}:
             continue
+        if windows and rel.suffix.lower() == '.sh':
+            continue
         files.append((name, path.read_bytes()))
     required = {'VERSION', 'docs/VERSION-1.8.5.md', 'frontend/src/app/case-status.ts',
                 'backend/src/main/resources/db/migration/V27__license_support_balances.sql',
                 'scripts/manage.py', 'tests/ops/backup_permissions_smoke.py'}
+    required.update({'LEEME-WINDOWS.md', 'docs/WINDOWS.md', 'configurar-gmail.py'})
+    launchers = ('configurar', 'configurar-gmail', 'compilar', 'iniciar',
+                 'iniciar-dev', 'detener', 'respaldar', 'restaurar')
+    required.update(name + '.bat' for name in launchers)
+    if not windows:
+        required.update(name + '.sh' for name in launchers)
     if not required.issubset(name for name, _ in files):
         raise RuntimeError('Faltan fuentes 1.8.5 versionados en Git.')
     manifest = '\n'.join(hashlib.sha256(data).hexdigest() + '  ' + name for name, data in files) + '\n'
     output.mkdir(parents=True, exist_ok=True)
-    target = output / ('SIABUC-Helpdesk-' + VERSION + '.zip')
+    target = output / ('SIABUC-Helpdesk-' + VERSION + ('-Windows' if windows else '') + '.zip')
     with zipfile.ZipFile(target, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
         for name, data in files + [('MANIFEST-SHA256.txt', manifest.encode())]:
             entry = zipfile.ZipInfo('siabuc-helpdesk/' + name, (2026, 10, 27, 0, 0, 0))
@@ -64,5 +72,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--package', action='store_true', required=True)
     parser.add_argument('--output', type=Path, default=ROOT / 'release-output')
+    parser.add_argument('--windows', action='store_true',
+                        help='Crear la distribución Windows con lanzadores .bat y sin archivos .sh.')
     args = parser.parse_args()
-    package(args.output)
+    package(args.output, windows=args.windows)

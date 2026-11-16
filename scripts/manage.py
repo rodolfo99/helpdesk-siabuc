@@ -81,6 +81,11 @@ ALLOWED_KEYS = set(DEFAULTS) | {"DB_PASSWORD", "ADMIN_PASSWORD"} | LEGACY_IGNORE
 ENV_VALUE_PATTERN = r"[A-Za-z0-9_./:@%+=,!\-]+"
 
 
+def launcher(name: str) -> str:
+    """Show commands for the operating system running this manager."""
+    return f".\\{name}.bat" if IS_WINDOWS else f"./{name}.sh"
+
+
 def env_value(value: str) -> str:
     """Literal dotenv syntax; never interpolate or evaluate shell expressions."""
     if any(ord(char) < 32 or ord(char) == 127 for char in value) or "'" in value or value.endswith("\\"):
@@ -138,7 +143,7 @@ def validate_mail(values: dict[str, str]) -> None:
         env_value(values[key])
     if values["MAIL_ENABLED"] == "true":
         if not values["SMTP_HOST"] or not values["MAIL_FROM"]:
-            fail("Para activar correo configure SMTP_HOST y MAIL_FROM mediante ./configurar.sh --correo.")
+            fail(f"Para activar correo configure SMTP_HOST y MAIL_FROM mediante {launcher('configurar')} --correo.")
         if values["SMTP_AUTH"] == "true" and (not values["SMTP_USERNAME"] or not values["SMTP_PASSWORD"]):
             fail("SMTP_AUTH=true requiere SMTP_USERNAME y SMTP_PASSWORD cuando se activa correo.")
 
@@ -207,7 +212,7 @@ def config(create: bool = False, prompt_db_password: bool = False, prompt_mail: 
            prompt_smtp: bool = False) -> dict[str, str]:
     if not ENV_FILE.exists():
         if not create:
-            fail("No existe .env. Ejecute ./configurar.sh o ./iniciar.sh primero.")
+            fail(f"No existe .env. Ejecute {launcher('configurar')} o {launcher('iniciar')} primero.")
         values = dict(FRESH_DEFAULTS)
         values["DB_PASSWORD"] = secrets.token_hex(24)
         values["ADMIN_PASSWORD"] = secrets.token_urlsafe(24)
@@ -312,7 +317,7 @@ def save_config_values(updates: dict[str, str], original: str | None = None) -> 
 
 def set_mail_configuration(values: dict[str, str]) -> dict[str, str]:
     if not sys.stdin.isatty():
-        fail("Use ./configurar.sh --correo desde una terminal interactiva.")
+        fail(f"Use {launcher('configurar')} --correo desde una terminal interactiva.")
     original = ENV_FILE.read_text(encoding="utf-8")
     updated = dict(values)
     print("Configuración SMTP. No se envía ningún mensaje al guardar. Enter conserva el valor; '-' vacía un campo.")
@@ -349,7 +354,7 @@ def set_mail_configuration(values: dict[str, str]) -> dict[str, str]:
     validate_mail(updated)
     mail_keys = [key for key in DEFAULTS if key.startswith("SMTP_") or key.startswith("MAIL_") or key == "ADMIN_EMAIL"]
     save_config_values({key: updated[key] for key in mail_keys}, original)
-    print("Configuración de correo guardada en .env (600). Reinicie con ./iniciar.sh para aplicarla.")
+    print(f"Configuración de correo guardada en .env (600 en Linux; revise ACL en Windows). Reinicie con {launcher('iniciar')} para aplicarla.")
     print("No se ha enviado correo. Si activa MAIL_ENABLED, la cola pendiente se procesará al reiniciar.")
     return updated
 
@@ -358,7 +363,7 @@ def set_mail_configuration(values: dict[str, str]) -> dict[str, str]:
 def set_direct_gmail_configuration(values: dict[str, str]) -> dict[str, str]:
     """Gmail directo: cambiar claves de Spring conservando el relay heredado."""
     if not sys.stdin.isatty():
-        fail("Use ./configurar.sh --gmail-directo desde una terminal interactiva.")
+        fail(f"Use {launcher('configurar')} --gmail-directo desde una terminal interactiva.")
     original = ENV_FILE.read_text(encoding="utf-8")
     default_address = values["SMTP_USERNAME"] if values["SMTP_HOST"] == "smtp.gmail.com" else ""
     username = input(f"Cuenta Google Workspace/Gmail [{default_address}]: ").strip() or default_address
@@ -389,7 +394,7 @@ def set_direct_gmail_configuration(values: dict[str, str]) -> dict[str, str]:
 def set_database_password(values: dict[str, str]) -> dict[str, str]:
     """Configure the local secret; never imply that an existing DB role was altered."""
     if not sys.stdin.isatty():
-        fail("Use ./configurar.sh --password-bd desde una terminal interactiva, o edite DB_PASSWORD en .env.")
+        fail(f"Use {launcher('configurar')} --password-bd desde una terminal interactiva, o edite DB_PASSWORD en .env.")
     print("Configurar DB_PASSWORD en .env. La contraseña no se mostrará al escribirla.")
     print("Si PostgreSQL ya tiene datos, cambie también la contraseña del usuario con \\password; consulte docs/OPERACION.md.")
     password = getpass.getpass("Contraseña de PostgreSQL: ")
@@ -431,7 +436,7 @@ def set_database_password(values: dict[str, str]) -> dict[str, str]:
 
 def set_internal_smtp_configuration(values: dict[str, str]) -> dict[str, str]:
     if not sys.stdin.isatty():
-        fail("Use ./configurar.sh --smtp-interno desde una terminal interactiva.")
+        fail(f"Use {launcher('configurar')} --smtp-interno desde una terminal interactiva.")
     original = ENV_FILE.read_text(encoding="utf-8")
     updated = dict(values)
     print("Configurar Postfix SMTP interno (sin bandeja web). No se envían mensajes al guardar.")
@@ -480,7 +485,7 @@ def set_internal_smtp_configuration(values: dict[str, str]) -> dict[str, str]:
     keys.extend(["SMTP_HOSTNAME", "SMTP_LOCAL_IP", "SMTP_INTERNAL_PORT", "MAIL_ENABLED", "SMTP_HOST",
                  "SMTP_PORT", "SMTP_AUTH", "SMTP_SECURITY", "SMTP_USERNAME", "SMTP_PASSWORD", "MAIL_FROM"])
     save_config_values({key: updated[key] for key in keys}, original)
-    print("SMTP interno configurado en .env (600). Reinicie con ./iniciar.sh para aplicarlo.")
+    print(f"SMTP interno configurado en .env (600 en Linux; revise ACL en Windows). Reinicie con {launcher('iniciar')} para aplicarlo.")
     print("No se enviaron mensajes ni se modificaron cuentas existentes. Registre sus correos reales desde Usuarios.")
     smtp_information(updated)
     return updated
@@ -858,14 +863,14 @@ def main() -> None:
     sub.add_parser("dev")
     save = sub.add_parser("backup", description="Crear un respaldo PostgreSQL. Sin archivo, genera un nombre con fecha en backups/.",
                           formatter_class=argparse.RawDescriptionHelpFormatter,
-                          epilog='Ejemplos:\n  ./respaldar.sh\n  ./respaldar.sh --nombre-respaldo "copias/siabuc lunes.dump"')
+                          epilog=f'Ejemplos:\n  {launcher("respaldar")}\n  {launcher("respaldar")} --nombre-respaldo "copias/siabuc lunes.dump"')
     save.add_argument("archivo", nargs="?", type=backup_filename, metavar="ARCHIVO",
                       help="Nombre o ruta literal del respaldo; alternativa a --nombre-respaldo.")
     save.add_argument("--nombre-respaldo", type=backup_filename, metavar="ARCHIVO",
                       help="Nombre o ruta del archivo, relativo al directorio actual si no es absoluto; no se añade extensión.")
     recover = sub.add_parser("restore", description="Restaurar un respaldo PostgreSQL. Indique ARCHIVO o --nombre-respaldo, nunca ambos.",
                              formatter_class=argparse.RawDescriptionHelpFormatter,
-                             epilog='Ejemplo:\n  ./restaurar.sh --nombre-respaldo "copias/siabuc lunes.dump" --confirmar-reemplazo')
+                             epilog=f'Ejemplo:\n  {launcher("restaurar")} --nombre-respaldo "copias/siabuc lunes.dump" --confirmar-reemplazo')
     recover.add_argument("archivo", nargs="?", type=backup_filename, metavar="ARCHIVO",
                          help="Nombre o ruta del respaldo existente; alternativa a --nombre-respaldo.")
     recover.add_argument("--nombre-respaldo", type=backup_filename, metavar="ARCHIVO",
