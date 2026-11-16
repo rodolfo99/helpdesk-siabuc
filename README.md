@@ -1,5 +1,7 @@
 # SIABUC Helpdesk 1.8.5
 
+**Paquete conjunto Linux y Windows:** `SIABUC-Helpdesk-1.8.5.zip` incluye el proyecto completo con **ocho scripts `.sh` y ocho `.bat` en la misma carpeta**. En Linux inicie con `./iniciar.sh`; en Windows, con `.\iniciar.bat`. [Inicio rápido para Windows](LEEME-WINDOWS.md).
+
 **Actualización de seguridad:** Node.js 24.22.1, Nginx 1.30.6, herramientas Angular 21 corregidas, backend Spring actualizado, bases PostgreSQL/SMTP corregidas, auditorías npm e imágenes en CI y Dependabot. [Cambios, política de auditoría y validación](docs/VERSION-1.8.5.md).
 
 **Revisión de arranque — permisos de respaldos:** `iniciar.sh` verifica escritura con la identidad del contenedor. En Linux, si recibe acceso denegado, ajusta el propietario de la carpeta configurada a `BACKUP_UID:BACKUP_GID`, asegura acceso del propietario y vuelve a comprobar. Conserva los archivos existentes y el estado del calendario. [Actualización y alcance](docs/VERSION-1.8.4.md).
@@ -178,7 +180,7 @@ Si omite `configurar.sh`, `iniciar.sh` genera `.env` automáticamente. Nunca pub
 
 ### Comandos equivalentes en Linux y Windows
 
-En PowerShell use el prefijo `.\`; en CMD puede omitirlo. El desarrollo con Spring/Angular fuera de Docker se mantiene en Linux/WSL2 mediante `iniciar-dev.sh`.
+En PowerShell use el prefijo `.\`; en CMD puede omitirlo. El desarrollo con Spring/Angular fuera de Docker se mantiene en Linux/WSL2 mediante `iniciar-dev.sh`. En Windows, `iniciar-dev.bat` es una entrada de compatibilidad al arranque Docker de `iniciar.bat`, sin recarga automática.
 
 | Operación | Linux / Bash | Windows / PowerShell |
 | --- | --- | --- |
@@ -187,12 +189,29 @@ En PowerShell use el prefijo `.\`; en CMD puede omitirlo. El desarrollo con Spri
 | Configurar Gmail directo | `./configurar.sh --gmail-directo` | `.\configurar.bat --gmail-directo` |
 | Configurar Postfix interno | `./configurar.sh --smtp-interno` | `.\configurar.bat --smtp-interno` |
 | Compilar e iniciar todo | `./iniciar.sh` | `.\iniciar.bat` |
+| Entrada de desarrollo/compatibilidad | `./iniciar-dev.sh` (nativo) | `.\iniciar-dev.bat` (Docker, sin recarga) |
 | Compilar imágenes | `./compilar.sh --docker` | `.\compilar.bat --docker` |
 | Detener conservando datos | `./detener.sh` | `.\detener.bat` |
 | Respaldar con nombre elegido | `./respaldar.sh --nombre-respaldo backups/mi-respaldo.dump` | `.\respaldar.bat --nombre-respaldo backups/mi-respaldo.dump` |
 | Restaurar una copia compatible | `./restaurar.sh --nombre-respaldo backups/mi-respaldo.dump --confirmar-reemplazo` | `.\restaurar.bat --nombre-respaldo backups/mi-respaldo.dump --confirmar-reemplazo` |
 
 Restaurar reemplaza los datos actuales y deja la aplicación detenida. Para recuperar una versión anterior utilice una base nueva y vacía según la [guía de retroceso](docs/RESPALDO-RESTAURACION.md#retroceder-a-una-versión-anterior). La disponibilidad de scripts Windows no equivale a una ejecución nativa validada; consulte [Windows](docs/WINDOWS.md) y [Validación](docs/VALIDACION.md).
+
+### Generar y descargar el paquete conjunto
+
+Desde un checkout Git del repositorio, ejecute uno de estos comandos según su sistema:
+
+```bash
+python3 scripts/release-1.8.5.py --package --output release-output
+```
+
+```powershell
+py -3 scripts/release-1.8.5.py --package --output release-output
+```
+
+Se generan `SIABUC-Helpdesk-1.8.5.zip` y su suma SHA-256. El ZIP contiene los dos juegos de lanzadores, las fuentes y la documentación, con un manifiesto de integridad. El empaquetador exige los ocho pares `.sh`/`.bat` y omite la configuración privada, los respaldos y las dependencias instaladas.
+
+El workflow [Linux and Windows launchers](https://github.com/rodolfo99/helpdesk-siabuc/actions/workflows/verify-launchers.yml) comprueba los lanzadores y publica este ZIP como artefacto **SIABUC-Helpdesk-1.8.5-Linux-Windows** en cada ejecución satisfactoria sobre `main` o una PR. La opción `--windows` sigue disponible para generar un ZIP separado solo con `.bat`; el paquete predeterminado incluye ambos sistemas.
 
 ## Gmail directo y Postfix opcional
 

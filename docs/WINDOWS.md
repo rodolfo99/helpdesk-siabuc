@@ -4,7 +4,9 @@
 
 Los `.bat` permiten operar desde CMD o PowerShell con Python en Windows. Docker Desktop ejecuta PostgreSQL, Spring, Angular/nginx, Postfix opcional y el worker de respaldos como contenedores **Linux**. No se requiere Git Bash ni instalar Java, Maven o Node en el anfitrión. No basta con renombrar `.sh` a `.bat`: el proyecto conserva su lógica común en Python y usa lanzadores específicos por sistema.
 
-El desarrollo nativo (`iniciar-dev.sh`, Java/Angular fuera de Docker) se mantiene para Linux/WSL2. No se proporciona un lanzador de desarrollo nativo de Windows; `compilar.bat` compila dentro de Docker. Los comandos Docker siguen usando la misma configuración y volúmenes del proyecto.
+El desarrollo nativo (`iniciar-dev.sh`, Java/Angular fuera de Docker) se mantiene para Linux/WSL2 en la distribución multiplataforma. En Windows, `iniciar-dev.bat` muestra un aviso y ejecuta el mismo arranque Docker que `iniciar.bat`, sin recarga automática; `compilar.bat` compila dentro de Docker. Los comandos Docker siguen usando la misma configuración y volúmenes del proyecto.
+
+El paquete conjunto `SIABUC-Helpdesk-1.8.5.zip` contiene los fuentes completos y los ocho pares `.sh`/`.bat`; use los `.bat` en Windows. La distribución opcional `SIABUC-Helpdesk-1.8.5-Windows.zip` conserva los fuentes completos, los ocho lanzadores `.bat` y [LEEME-WINDOWS.md](../LEEME-WINDOWS.md), sin archivos `.sh`. Para operar desde Windows siga los comandos de esta guía.
 
 ## Instalación en orden
 
@@ -44,6 +46,7 @@ Use las terminales para conservar los mensajes de error; no dependa del doble cl
 | Configurar otro SMTP directo | `.\configurar.bat --correo` |
 | Configurar Postfix opcional | `.\configurar.bat --smtp-interno` |
 | Iniciar todo y compilar cambios | `.\iniciar.bat` |
+| Entrada de compatibilidad de desarrollo (Docker, sin recarga) | `.\iniciar-dev.bat` |
 | Iniciar sólo PostgreSQL | `.\iniciar.bat --solo-bd` |
 | Compilar imágenes | `.\compilar.bat` |
 | Detener conservando volúmenes | `.\detener.bat` |
@@ -99,7 +102,7 @@ Si el backend aparece unhealthy, conserve el registro: no elimine volúmenes ni 
 
 ## Validación y fuentes
 
-Se verifican mediante pruebas automatizadas la conservación de datos binarios de respaldo, las rutas con espacios, la selección del motor Linux y el bloqueo temprano de desarrollo nativo Windows. Las ramas Windows se simulan en las pruebas de Python ejecutadas en Linux. No se ha ejecutado CMD, Docker Desktop ni el sistema completo en una máquina Windows durante este cambio; la validación real queda pendiente.
+Las pruebas de Python comprueban la conservación de datos binarios de respaldo, las rutas con espacios, la selección del motor Linux y el bloqueo temprano de desarrollo nativo Windows. Sus ramas Windows se simulan en Linux. El workflow [Linux and Windows launchers](https://github.com/rodolfo99/helpdesk-siabuc/actions/workflows/verify-launchers.yml) ejecuta los ocho `.bat --help` en Windows y comprueba el paso de argumentos con espacios y el código de salida usando un gestor de prueba. Estas comprobaciones no inician Docker Desktop ni acreditan el sistema completo en Windows; ese arranque real sigue pendiente.
 
 - Docker Desktop Windows: https://docs.docker.com/desktop/setup/install/windows-install/
 - Integración WSL2: https://docs.docker.com/desktop/features/wsl/
@@ -109,3 +112,19 @@ Se verifican mediante pruebas automatizadas la conservación de datos binarios d
 Conserve `.env`, `COMPOSE_PROJECT_NAME`, los volúmenes y un respaldo reciente. Descomprima el conjunto completo 1.8.5 en otra carpeta, copie la configuración privada y revise `BACKUP_DIRECTORY` si es relativo. Compile con `.\compilar.bat` y `docker compose build --pull db` antes de detener la instalación anterior. Después de ensayar con una copia aislada, detenga la anterior con `.\detener.bat` e inicie desde la carpeta nueva con `.\iniciar.bat`.
 
 Flyway aplica las migraciones faltantes hasta **V27**; de 1.8.4 a 1.8.5 no hay migraciones nuevas. Los casos y pólizas anteriores conservan sus datos sin licencia asignada. Siga [Actualización 1.8.5](VERSION-1.8.5.md) y [Licencias y saldos](LICENCIAS-HORAS.md); no ejecute un backend anterior a V27 sobre esa base. El ZIP no reemplaza un respaldo de los datos.
+
+## Generar el ZIP Windows desde los fuentes
+
+Para el paquete conjunto con `.sh` y `.bat`, omita `--windows`. Desde un checkout Git con los cambios guardados en una rama, ejecute:
+
+```powershell
+py -3 scripts/release-1.8.5.py --package --output release-output
+```
+
+Para la edición opcional solo con lanzadores Windows:
+
+```powershell
+py -3 scripts/release-1.8.5.py --package --windows --output release-output
+```
+
+Se genera el ZIP Windows y su suma SHA-256; el manifiesto interno verifica los archivos incluidos. El empaquetador omite `.env`, respaldos, datos de ejecución, dependencias instaladas y archivos `.sh`. Sin `--windows` conserva la distribución multiplataforma.

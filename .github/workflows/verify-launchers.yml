@@ -1,0 +1,97 @@
+name: Linux and Windows launchers
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  linux-package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Operational Python checks and Linux launchers
+        run: |
+          python3 -m unittest discover -s tests/ops
+          python3 -m py_compile scripts/manage.py scripts/release-1.8.5.py
+          for script in ./*.sh; do
+            bash "$script" --help
+          done
+          test ! -e .env
+      - name: Package both systems and check launcher integrity
+        run: |
+          python3 scripts/release-1.8.5.py --package --output release-output
+          python3 - <<'PY'
+          import hashlib, stat, zipfile
+          from pathlib import Path
+          with zipfile.ZipFile('release-output/SIABUC-Helpdesk-1.8.5.zip') as archive:
+              names = set(archive.namelist())
+              shell = {Path(name).stem for name in names if name.endswith('.sh')}
+              batch = {Path(name).stem for name in names if name.endswith('.bat')}
+              assert shell == batch and len(shell) == 8
+              for name in names:
+                  if name.endswith('.sh'):
+                      assert archive.getinfo(name).external_attr >> 16 & stat.S_IXUSR
+                  if name.endswith('.bat'):
+                      data = archive.read(name)
+                      assert data.startswith(b'@echo off\r\n')
+                      assert b'\n' not in data.replace(b'\r\n', b'')
+              for line in archive.read('siabuc-helpdesk/MANIFEST-SHA256.txt').decode().splitlines():
+                  checksum, name = line.split('  ', 1)
+                  assert hashlib.sha256(archive.read('siabuc-helpdesk/' + name)).hexdigest() == checksum
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SIABUC-Helpdesk-1.8.5-Linux-Windows
+          path: release-output/*
+          if-no-files-found: error
+          retention-days: 14
+  windows-launchers:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Run native BAT help from a path with spaces
+        shell: pwsh
+        run: |
+          $testRoot = Join-Path $env:RUNNER_TEMP 'SIABUC con espacios'
+          New-Item -ItemType Directory -Path $testRoot | Out-Null
+          Copy-Item *.bat $testRoot
+          Copy-Item scripts $testRoot -Recurse
+          Copy-Item configurar-gmail.py $testRoot
+          Set-Location $env:RUNNER_TEMP
+          foreach ($script in @('configurar.bat', 'configurar-gmail.bat', 'compilar.bat', 'iniciar.bat', 'iniciar-dev.bat', 'detener.bat', 'respaldar.bat', 'restaurar.bat')) {
+            & (Join-Path $testRoot $script) --help
+            if ($LASTEXITCODE -ne 0) { throw "Fallo en $script" }
+          }
+          if (Test-Path (Join-Path $testRoot '.env')) { throw 'La ayuda creo .env' }
+      - name: Preserve arguments and return code through native CMD
+        shell: pwsh
+        run: |
+          $testRoot = Join-Path $env:RUNNER_TEMP 'SIABUC con espacios'
+          $env:SIABUC_ARGUMENT_TRACE = Join-Path $env:RUNNER_TEMP 'launcher-arguments.json'
+          $probe = @'
+          import json, os, sys
+          from pathlib import Path
+          Path(os.environ['SIABUC_ARGUMENT_TRACE']).write_text(json.dumps(sys.argv[1:]), encoding='utf-8')
+          sys.exit(23)
+          '@
+          Set-Content -Path (Join-Path $testRoot 'scripts/manage.py') -Value $probe -Encoding utf8
+          $backup = 'C:\Copias SIABUC\lunes.dump'
+          & (Join-Path $testRoot 'respaldar.bat') --nombre-respaldo $backup
+          if ($LASTEXITCODE -ne 23) { throw 'No se conservo el codigo de salida' }
+          $arguments = @(Get-Content $env:SIABUC_ARGUMENT_TRACE -Raw | ConvertFrom-Json)
+          if ($arguments.Count -ne 3 -or $arguments[0] -cne 'backup' -or $arguments[1] -cne '--nombre-respaldo' -or $arguments[2] -cne $backup) { throw 'No se conservaron los argumentos con espacios' }
+          exit 0
