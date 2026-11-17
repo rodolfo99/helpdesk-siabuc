@@ -1,9 +1,6 @@
 package mx.siabuc.helpdesk;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -12,6 +9,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/** Client password recovery is strictly administrative, never public/self-service. */
 class ClientAccessIntegrationIT extends ApiIntegrationSupport {
     @Autowired JdbcTemplate db;
 
@@ -21,12 +19,12 @@ class ClientAccessIntegrationIT extends ApiIntegrationSupport {
         JsonNode created=createUser(username,institutionId);
         long userId=created.path("id").asLong();
         ClientLoginService.Settings settings=setting();
-        JsonNode changed=success(admin.put("/auth/client-login-settings",
+        success(admin.put("/auth/client-login-settings",
             Map.of("maxAttempts",3,"lockMinutes",15,"revision",settings.revision())));
         try {
             for(int i=0;i<3;i++){
                 Client attacker=new Client();
-                assertStatus(attacker.authenticate(username,"contraseña-incorrecta","client"),401);
+                assertStatus(attacker.authenticate(username,"contrasena-incorrecta","client"),401);
             }
             long activeLocks=db.queryForObject("""
                 SELECT COUNT(*) FROM app_users WHERE id=? AND login_locked_until>NOW()
@@ -35,7 +33,6 @@ class ClientAccessIntegrationIT extends ApiIntegrationSupport {
             Client blocked=new Client();
             assertStatus(blocked.authenticate(username,PASSWORD,"client"),401);
 
-            // The customer's lockout policy does not affect the staff sign-in.
             Client staff=new Client();
             assertStatus(staff.authenticate("testadmin","PruebaSegura123!","staff"),200);
 
@@ -45,7 +42,7 @@ class ClientAccessIntegrationIT extends ApiIntegrationSupport {
             assertThat(db.queryForObject("""
                 SELECT failed_login_attempts FROM app_users WHERE id=?
                 """,Integer.class,userId)).isZero();
-        }finally{
+        } finally {
             ClientLoginService.Settings current=setting();
             success(admin.put("/auth/client-login-settings",
                 Map.of("maxAttempts",settings.maxAttempts(),"lockMinutes",settings.lockMinutes(),
@@ -68,41 +65,36 @@ class ClientAccessIntegrationIT extends ApiIntegrationSupport {
             Map.of("maxAttempts",5,"lockMinutes",15,"revision",settings.revision()+500)),409);
     }
 
-    @Test void recoveryCodeIsSingleUseAndChangesLocalPasswordWithoutPolicyOrLicense() throws Exception {
+    @Test void noPublicPasswordRecoveryEndpointsAreAvailable() throws Exception {
+        Client guest=new Client();
+        assertStatus(guest.post("/auth/recovery/request",
+            Map.of("username","cualquiera","email","persona@example.test")),403);
+        assertStatus(guest.post("/auth/recovery/reset",
+            Map.of("username","cualquiera","code","codigo","newPassword","NuevaClaveSegura123!")),403);
+    }
+
+    @Test void onlyAdminCanResetPasswordUsingUserForm() throws Exception {
         long institutionId=institution(80,80);
-        String username=unique("recuperar");
+        String username=unique("admin-reset");
         JsonNode created=createUser(username,institutionId);
         long id=created.path("id").asLong();
-        String code="0123456789ABCDEF0123456789ABCDEF0123";
-        String hash=HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
-            .digest(code.getBytes(StandardCharsets.UTF_8)));
-        db.update("""
-            INSERT INTO client_password_recovery(user_id,token_hash,expires_at)
-            VALUES(?,?,NOW()+INTERVAL '15 minutes')
-            """,id,hash);
-        Client guest=new Client();
-        assertStatus(guest.post("/auth/recovery/reset",
-            Map.of("username",username,"code",code,"newPassword","NuevaClaveSegura123!")),204);
-        assertStatus(guest.post("/auth/recovery/reset",
-            Map.of("username",username,"code",code,"newPassword","OtroIntentoSeguro123!")),400);
-        Client old=new Client();
-        assertStatus(old.authenticate(username,PASSWORD,"client"),401);
-        Client updated=new Client();
-        assertStatus(updated.authenticate(username,"NuevaClaveSegura123!","client"),200);
+        Client user=login(username,PASSWORD);
+        var changed=new LinkedHashMap<String,Object>(userPayload(username,institutionId,true));
+        changed.put("password","ClaveNuevaSegura123!");
+        changed.put("email","contacto@example.test");
+
+        assertStatus(user.put("/users/"+id,changed),403);
+        JsonNode updated=success(admin.put("/users/"+id,changed));
+        assertThat(updated.path("email").asText()).isEqualTo("contacto@example.test");
+        assertStatus(user.get("/auth/me"),401);
+
+        Client oldPassword=new Client();
+        assertStatus(oldPassword.authenticate(username,PASSWORD,"client"),401);
+        Client newPassword=new Client();
+        assertStatus(newPassword.authenticate(username,"ClaveNuevaSegura123!","client"),200);
     }
 
-    @Test void genericRequestDoesNotRevealUserExistenceWhenMailDisabled() throws Exception {
-        Client guest=new Client();
-        assertStatus(guest.post("/auth/recovery/request",
-            Map.of("username",unique("desconocido"),"email","desconocido@example.test")),202);
-        long institutionId=institution(20,20);
-        String username=unique("cuenta");
-        createUser(username,institutionId);
-        assertStatus(guest.post("/auth/recovery/request",
-            Map.of("username",username,"email","incorrecto@example.test")),202);
-    }
-
-    @Test void adminCanUpdateClientEmailInUserFormWithoutChangingInstitution() throws Exception {
+    @Test void adminCanUpdateClientContactEmailWithoutChangingInstitution() throws Exception {
         long institutionId=institution(30,30);
         String username=unique("correo");
         JsonNode created=createUser(username,institutionId);
@@ -112,29 +104,6 @@ class ClientAccessIntegrationIT extends ApiIntegrationSupport {
         JsonNode changed=success(admin.put("/users/"+created.path("id").asLong(),body));
         assertThat(changed.path("email").asText()).isEqualTo("nuevo-correo@example.test");
         assertThat(changed.path("institutionId").asLong()).isEqualTo(institutionId);
-    }
-
-    @Test void changingClientContactEmailInvalidatesOutstandingRecoveryCode() throws Exception {
-        long institutionId=institution(30,30);
-        String username=unique("email-revoke");
-        JsonNode created=createUser(username,institutionId);
-        long id=created.path("id").asLong();
-        String code="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
-        String hash=HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
-            .digest(code.getBytes(StandardCharsets.UTF_8)));
-        db.update("""
-            INSERT INTO client_password_recovery(user_id,token_hash,expires_at)
-            VALUES(?,?,NOW()+INTERVAL '15 minutes')
-            """,id,hash);
-        var edit=new LinkedHashMap<String,Object>(userPayload(username,institutionId,true));
-        edit.put("password","");
-        edit.put("email","nuevo@example.test");
-        success(admin.put("/users/"+id,edit));
-        assertThat(db.queryForObject(
-            "SELECT COUNT(*) FROM client_password_recovery WHERE user_id=?",Long.class,id)).isZero();
-        Client guest=new Client();
-        assertStatus(guest.post("/auth/recovery/reset",
-            Map.of("username",username,"code",code,"newPassword","NuevaClaveSegura123!")),400);
     }
 
     private ClientLoginService.Settings setting() throws Exception {
