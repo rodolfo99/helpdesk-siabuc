@@ -51,7 +51,7 @@ export class ClientGuideComponent extends PageState implements OnInit {
     if(this.api.user()?.role!=='USER')return;
     void this.perform(async()=>{
       const state=await this.api.get<GuideStatus>('/client-portal/guide');
-      this.visible.set(!state.completed);
+      this.visible.set(!state.completed || this.openRequest()>0);
     });
   }
   go(destination:'cases'|'newCase'|'clientInformation'|'knowledge'){
