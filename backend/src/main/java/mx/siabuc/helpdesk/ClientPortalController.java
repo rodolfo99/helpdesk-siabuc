@@ -16,9 +16,21 @@ public class ClientPortalController {
 
     private final HelpdeskService service;
     private final ClientInformationService information;
-    public ClientPortalController(HelpdeskService service, ClientInformationService information) {
+    private final ClientGuideService guide;
+    public ClientPortalController(HelpdeskService service, ClientInformationService information, ClientGuideService guide) {
         this.service = service;
         this.information = information;
+        this.guide = guide;
+    }
+
+    @GetMapping("/guide")
+    public ClientGuideService.Status guide() {
+        return guide.status(service.me());
+    }
+
+    @PostMapping("/guide/complete")
+    public ClientGuideService.Status completeGuide() {
+        return guide.complete(service.me());
     }
 
     @GetMapping("/my-information")
