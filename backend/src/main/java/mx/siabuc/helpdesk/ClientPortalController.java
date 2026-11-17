@@ -17,10 +17,25 @@ public class ClientPortalController {
     private final HelpdeskService service;
     private final ClientInformationService information;
     private final ClientGuideService guide;
-    public ClientPortalController(HelpdeskService service, ClientInformationService information, ClientGuideService guide) {
+    private final ClientUnreadService unread;
+    public ClientPortalController(HelpdeskService service, ClientInformationService information,
+                                  ClientGuideService guide, ClientUnreadService unread) {
         this.service = service;
         this.information = information;
         this.guide = guide;
+        this.unread = unread;
+    }
+
+    @GetMapping("/tickets/unread")
+    public java.util.List<ClientUnreadService.UnreadTicket> unreadTickets() {
+        return unread.unread();
+    }
+
+    @PostMapping("/tickets/{caseId}/read")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void markTicketRead(@PathVariable long caseId,
+                               @RequestBody ClientUnreadService.ReadRequest input) {
+        unread.markRead(caseId, input);
     }
 
     @GetMapping("/guide")
