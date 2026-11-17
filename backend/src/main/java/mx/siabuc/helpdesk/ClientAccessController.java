@@ -6,22 +6,9 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 public class ClientAccessController {
-    private final ClientRecoveryService recovery;
     private final ClientLoginService clientLogin;
-    public ClientAccessController(ClientRecoveryService recovery, ClientLoginService clientLogin) {
-        this.recovery=recovery; this.clientLogin=clientLogin;
-    }
-
-    @PostMapping("/recovery/request")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public void requestRecovery(@RequestBody ClientRecoveryService.Request request) {
-        recovery.request(request);
-    }
-
-    @PostMapping("/recovery/reset")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void resetPassword(@RequestBody ClientRecoveryService.Reset request) {
-        recovery.reset(request);
+    public ClientAccessController(ClientLoginService clientLogin) {
+        this.clientLogin=clientLogin;
     }
 
     @GetMapping("/client-login-settings")
