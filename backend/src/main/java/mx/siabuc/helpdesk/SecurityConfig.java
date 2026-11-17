@@ -60,6 +60,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/users", "/api/users/**", "/api/audit", "/api/notifications", "/api/notifications/**").hasRole("ADMIN")
                 .requestMatchers("/api/client-finance-access", "/api/client-finance-access/**", "/api/backups/**", "/api/satisfaction/reports", "/api/satisfaction/reports.csv", "/api/satisfaction/options").hasRole("ADMIN")
                 .requestMatchers("/api/client-finance", "/api/client-finance/**").hasRole("USER")
+                .requestMatchers("/api/client-portal/**").hasRole("USER")
                 .requestMatchers("/api/quotes", "/api/quotes/**", "/api/renewals", "/api/renewals/**", "/api/payment-requests", "/api/payment-requests/**").hasAnyRole("ADMIN", "BILLING")
                 .requestMatchers("/api/knowledge", "/api/knowledge/**").hasAnyRole("ADMIN", "TECH", "USER")
                 .requestMatchers("/api/satisfaction/**").hasAnyRole("ADMIN", "USER")
