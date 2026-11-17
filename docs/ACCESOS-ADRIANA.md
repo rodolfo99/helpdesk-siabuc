@@ -136,3 +136,27 @@ mvn -Ppostgres-it -Dit.test=ClientUnreadIntegrationIT verify
 ```
 
 **Pendiente antes de integrar:** compilación Spring/Angular, pruebas de integración reales, migraciones desde una base de prueba, navegador y regresión de acceso del personal. Los trabajos CI actuales de GitHub Actions continúan sin resultado confirmado.
+
+## Quinta etapa: Centro de ayuda y catálogo de recursos oficiales
+
+La base de conocimientos existente se conserva y se presenta a clientes como **Centro de ayuda**, enlazado a la sección **Descargas y recursos oficiales**.
+
+- Migración `V30__official_resources.sql`: catálogo vacío por defecto, con tipos Instalador, Actualización, Reporte, Documento y Video.
+- Sólo `ADMIN` puede crear, editar, publicar, retirar o archivar recursos; el catálogo está en modo borrador hasta que un administrador publique el enlace. `USER` y `TECH` solo ven publicaciones.
+- Los enlaces registrados deben usar **HTTPS** y un dominio `ucol.mx` o subdominio `*.ucol.mx`. Se impiden esquemas no seguros, puertos externos, credenciales embebidas y hosts que suplantan dominios institucionales.
+- El catálogo **no descarga, almacena ni valida la existencia** de archivos remotos; tampoco afirma que el recurso esté realmente alojado en un servidor SIABUC. Es responsabilidad de la administración comprobar el recurso antes de publicarlo.
+- No se añadieron instaladores, parches ni enlaces de demostración a los datos de producción. Se requieren URL institucionales verificadas para ponerlo en servicio.
+- Los clientes abren los recursos publicados directamente en la dirección institucional aprobada. No se requiere un segundo inicio de sesión en Helpdesk; las restricciones que pudiera tener el servidor destino son independientes.
+
+### Pruebas locales frente a la validación HTTPS
+
+El front y API de **desarrollo pueden seguir ejecutándose sobre HTTP en localhost**: por ejemplo `http://localhost:4200` y el puerto del backend según la instalación. La restricción HTTPS **sólo se verifica en el campo `targetUrl` de cada recurso**.
+
+`OfficialResourceIntegrationIT` crea enlaces institucionales **sintéticos y no existentes** únicamente en la base de integración, para probar las reglas sin acceder por red. Comprueba visibilidad de borradores/publicaciones, permisos de administración, filtros por tipo, rechazo de URL no autorizadas y revisiones editoriales. No comprueba la entrega de bytes del archivo ni la seguridad del contenido remoto.
+
+```bash
+cd backend
+mvn -Ppostgres-it -Dit.test=OfficialResourceIntegrationIT verify
+```
+
+**Pendiente:** ejecutar CI, validar compilación de Angular/Spring Boot, migraciones con PostgreSQL, verificar enlaces oficiales reales antes de publicarlos y probar apertura manual desde navegador. No se necesita publicar un servidor HTTPS para ejecutar las pruebas del catálogo.
