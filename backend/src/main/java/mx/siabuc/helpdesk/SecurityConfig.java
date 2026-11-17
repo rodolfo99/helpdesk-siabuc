@@ -40,17 +40,18 @@ public class SecurityConfig {
     @Bean UserDetailsService userDetailsService(JdbcTemplate db) {
         return username -> {
             var rows = db.query("""
-                SELECT u.username,u.password_hash,u.auth_version,u.role,u.active,(u.role IN ('ADMIN','BILLING','TECH') OR COALESCE(i.active,FALSE)) AS institution_active
+                SELECT u.username,u.password_hash,u.auth_version,u.role,u.active,(u.role IN ('ADMIN','BILLING','TECH') OR COALESCE(i.active,FALSE)) AS institution_active,
+                    (u.role<>'USER' OR u.login_locked_until IS NULL OR u.login_locked_until<=NOW()) AS login_unlocked
                 FROM app_users u LEFT JOIN institutions i ON i.id=u.institution_id WHERE u.username=?
                 """, (r, n) -> new AccountDetails(r.getString("username"), r.getString("password_hash"),
-                    r.getBoolean("active") && r.getBoolean("institution_active"), r.getString("role"), r.getLong("auth_version")), username);
+                    r.getBoolean("active") && r.getBoolean("institution_active") && r.getBoolean("login_unlocked"), r.getString("role"), r.getLong("auth_version")), username);
             if (rows.isEmpty()) throw new UsernameNotFoundException("Credenciales inválidas.");
             return rows.get(0);
         };
     }
 
     @Bean SecurityFilterChain security(HttpSecurity http, HelpdeskService service, ObjectMapper json,
-            @Value("${app.cookie-secure:false}") boolean secure) throws Exception {
+            @Value("${app.cookie-secure:false}") boolean secure, ClientLoginService clientLogin) throws Exception {
         CookieCsrfTokenRepository csrfRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
         csrfRepository.setCookieCustomizer(cookie -> cookie.path("/").sameSite("Strict").secure(secure));
         http
@@ -102,10 +103,14 @@ public class SecurityConfig {
                         write(json, response, 403, "La cuenta no corresponde a este portal. Utilice el acceso indicado para su perfil.");
                         return;
                     }
+                    clientLogin.successful(authentication.getName());
                     request.getSession().setAttribute("credentialVersion", ((AccountDetails) authentication.getPrincipal()).version);
                     write(json, response, 200, "Sesión iniciada.");
                 })
-                .failureHandler((request, response, exception) -> write(json, response, 401, "Usuario o contraseña incorrectos, o cuenta no disponible.")))
+                .failureHandler((request, response, exception) -> {
+                    clientLogin.failed(request.getParameter("username"));
+                    write(json, response, 401, "Usuario o contraseña incorrectos, o cuenta temporalmente no disponible.");
+                }))
             .logout(logout -> logout.logoutUrl("/api/auth/logout").invalidateHttpSession(true).clearAuthentication(true)
                 .deleteCookies("JSESSIONID").logoutSuccessHandler((request, response, auth) -> response.setStatus(204)))
             .requestCache(cache -> cache.disable())
