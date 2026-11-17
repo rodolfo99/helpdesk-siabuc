@@ -197,7 +197,7 @@ cd backend
 mvn -Ppostgres-it -Dit.test=ClientAccessIntegrationIT verify
 ```
 
-Los cambios están en la rama del PR #52, sin fusionar. Las notas de «validación pendiente» anteriores corresponden a cada entrega inicial; el estado vigente se consulta en los checks de la PR.
+Los cambios forman la entrega 1.9.0 de la [PR #52](https://github.com/rodolfo99/helpdesk-siabuc/pull/52). Las notas de «validación pendiente» anteriores corresponden a cada entrega inicial; consulte la [evidencia ejecutada](VERSION-1.9.0.md#validación-y-seguridad) y los checks de la revisión final en la PR.
 
 ## Correcciones de revisión — 17 de noviembre de 2026
 
@@ -207,4 +207,4 @@ Los cambios están en la rama del PR #52, sin fusionar. Las notas de «validaci�
 - La comprobación Nginx valida el HTTP 302 de `/` y que `/poliza`, `/poliza/admin` y `/cases` sirven el frontend. Las regresiones de navegador conservan API simulada y comprueban la redirección de cada rol a su portal.
 - Las herramientas Angular CLI/build se actualizan dentro de la rama 21.2 y `compiler-cli` se fija a la versión del compilador del proyecto. El lockfile incorpora las correcciones compatibles de dependencias disponibles.
 
-**Bloqueo de seguridad pendiente:** `picomatch` está afectado por [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf). Al revisar el 17 de noviembre, la última versión publicada es 4.0.7 y el aviso no registra una versión corregida. La auditoría completa de dependencias de desarrollo continúa siendo obligatoria: no se ha omitido el paquete, rebajado el umbral ni añadido una excepción para aprobar CI. Este pendiente debe resolverse y volver a validarse antes de integrar.
+**Advertencia de seguridad de la entrega:** `picomatch` está afectado por [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf). Al revisar el 17 de noviembre, la última versión publicada es 4.0.7 y el aviso no registra una versión corregida. La auditoría completa de dependencias de desarrollo continúa siendo obligatoria: no se ha omitido el paquete, rebajado el umbral ni añadido una excepción para aprobar CI. La entrega 1.9.0 mantiene este pendiente documentado: 13 hallazgos altos derivados de esa dependencia y 14 moderados en la auditoría completa; la auditoría de producción registra cero. Se requiere actualizar y volver a validar cuando exista una corrección oficial. Esta entrega no declara aprobada la auditoría completa.

@@ -1,8 +1,8 @@
-# Manual de uso — SIABUC Helpdesk 1.8.5
+# Manual de uso — SIABUC Helpdesk 1.9.0
 
-**Licencias incluidas en 1.8.5:** consulte [Licencias y horas predeterminadas](LICENCIAS-HORAS.md). Las pólizas pueden vincularse a una licencia y sus pagos acreditan esa bolsa; los saldos anteriores permanecen sin licencia.
+**Licencias incluidas en 1.9.0:** consulte [Licencias y horas predeterminadas](LICENCIAS-HORAS.md). Las pólizas pueden vincularse a una licencia y sus pagos acreditan esa bolsa; los saldos anteriores permanecen sin licencia.
 
-Esta guía resume la operación vigente. El [manual detallado de SIABUC Helpdesk 1.8.5](MANUAL-EXTENDIDO-LICENCIAS.md) desarrolla la instalación, los recorridos por rol, los casos de uso y la resolución de problemas. Las [notas 1.8.5](VERSION-1.8.5.md) explican la actualización y sus límites de validación.
+Esta guía resume la operación vigente. El [manual detallado de módulos, con complemento 1.9.0](MANUAL-EXTENDIDO-LICENCIAS.md) desarrolla la instalación, los recorridos por rol, los casos de uso y la resolución de problemas. Las [notas 1.9.0](VERSION-1.9.0.md) explican la actualización y sus límites de validación.
 
 El soporte utiliza cinco estados: **Recibido**, **En atención**, **Requiere respuesta del cliente**, **Resuelto** y **Cerrado**. En el detalle se cambian mediante **Cambiar estado**, seleccionando el destino y escribiendo el motivo. **Pendientes de resolver** agrupa los primeros tres; Resuelto y Cerrado se muestran separados.
 
@@ -16,7 +16,7 @@ El portal financiero de clientes y el calendario de respaldos comienzan **desact
 
 ## Acceso y cuentas
 
-La aplicación abre en la pantalla de inicio de sesión. El administrador inicial se configura mediante `.env`; las cuentas posteriores se crean desde **Usuarios**. Las contraseñas deben tener al menos 12 caracteres y no exceder 72 bytes UTF-8, límite de BCrypt. Una contraseña con caracteres acentuados o emojis puede ocupar más bytes que caracteres.
+Clientes acceden en `/poliza`; Administración, Técnico y Cobranza en `/poliza/admin`. Ambos portales usan usuario y contraseña locales y el servidor valida el rol del portal. Los clientes disponen de guía inicial, pólizas y saldos de soporte, respuestas sin leer y recursos oficiales publicados. Consulte [Accesos de Adriana](ACCESOS-ADRIANA.md) para bloqueo configurable, restablecimiento administrativo y correo de contacto; no hay recuperación automática ni federación. El administrador inicial se configura mediante `.env`; las cuentas posteriores se crean desde **Usuarios**. Las contraseñas deben tener al menos 12 caracteres y no exceder 72 bytes UTF-8, límite de BCrypt. Una contraseña con caracteres acentuados o emojis puede ocupar más bytes que caracteres.
 
 La sesión termina tras 30 minutos de inactividad del servidor o al cerrar sesión. Reiniciar Spring invalida las sesiones y obliga a identificarse de nuevo. **Mi cuenta** permite cambiar la contraseña propia introduciendo la actual: se conserva esa sesión y se revocan las demás. Si un administrador restablece la contraseña de otra cuenta, sus sesiones anteriores se revocan.
 

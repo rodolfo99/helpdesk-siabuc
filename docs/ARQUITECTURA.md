@@ -1,4 +1,4 @@
-# Arquitectura y reglas de integridad · 1.8.5
+# Arquitectura y reglas de integridad · 1.9.0
 
 ## Componentes
 
@@ -13,13 +13,13 @@
 
 En desarrollo, el servidor Angular ocupa el lugar de Nginx y su proxy toma `SERVER_PORT` del entorno. En Docker, los puertos internos son estables; sólo se configuran sus publicaciones en el anfitrión.
 
-Versiones y fuentes de construcción de 1.8.5:
+Versiones y fuentes de construcción de 1.9.0:
 
 | Componente | Configuración del repositorio |
 | --- | --- |
 | Backend | Spring Boot 4.0.9, Spring 7.0.10, Tomcat 11.0.27 y Java 17; `backend/pom.xml` y `backend/Dockerfile` |
 | Contrato JSON | Jackson 2 mediante el módulo transitorio `spring-boot-jackson2`, con propiedades `spring.jackson2` y mapper preferido `jackson2` |
-| Cliente | Angular 21.2.25, build/CLI 21.2.28 y Node 24.22.1; lockfile y `.nvmrc` |
+| Cliente | Angular 21.2.25, build/CLI 21.2.30 y Node 24.22.1; lockfile y `.nvmrc` |
 | Web final | Nginx 1.30.6; Node/npm permanecen en la etapa constructora |
 | Base | PostgreSQL 17 derivado en `db/Dockerfile`, con gosu 1.20 compilado con Go 1.27.3; entrypoint, UID y volumen conservados |
 | Backup | Derivado de PostgreSQL 17; worker Python y clientes de respaldo, sin el binario gosu que no utiliza |
@@ -31,7 +31,7 @@ Las versiones e imágenes comprobadas y los límites de cada escaneo están en [
 
 Una **institución** contiene contacto, estado, responsable predeterminado y dos presupuestos. Un **usuario** tiene correo y pertenece a una institución cuando su rol es `USER`; `ADMIN`, `TECH` y `BILLING` no tienen institución. Cada **caso** pertenece a una institución y contiene título, descripción, canal inicial, estado, responsable asignado, autor y fechas. Cada **entrada** pertenece a un caso y describe una atención o comentario. Un **pago** contiene importe, referencia, institución, acreditación y trazabilidad de anulación. Una **notificación** conserva evento, destinatario individual, contenido y estado de entrega. Un **evento de auditoría** identifica actor, acción, entidad, detalle y fecha.
 
-El esquema concreto y sus restricciones se encuentran en `backend/src/main/resources/db/migration/`: V1 original, V2 de cobranza/contactos/asignaciones, V3 de notificaciones y V4 de control persistente del envío; V5–V10 incorporan los módulos de 1.4/1.5 y V11–V16 los de 1.6. V17–V24 corresponden a 1.7, V25 amplía las categorías de conocimiento y V26 incorpora el flujo de casos de 1.8.3 y V27 añade licencias y saldos por licencia. 1.8.4 y 1.8.5 no añaden migraciones sobre V27. No cambie migraciones ya aplicadas; añada la siguiente migración versionada. Las guías anteriores conservan el contexto de cada incorporación.
+El esquema concreto y sus restricciones se encuentran en `backend/src/main/resources/db/migration/`: V1 original, V2 de cobranza/contactos/asignaciones, V3 de notificaciones y V4 de control persistente del envío; V5–V10 incorporan los módulos de 1.4/1.5 y V11–V16 los de 1.6. V17–V24 corresponden a 1.7, V25 amplía las categorías de conocimiento y V26 incorpora el flujo de casos de 1.8.3 y V27 añade licencias y saldos por licencia. 1.8.4 y 1.8.5 no añaden migraciones sobre V27. En 1.9.0, V28 guarda la guía inicial por cuenta; V29 las lecturas por cuenta/caso; V30 el catálogo de recursos oficiales y V31 el bloqueo de clientes. Consulte [Accesos](ACCESOS-ADRIANA.md) y [Versión 1.9.0](VERSION-1.9.0.md). No cambie migraciones ya aplicadas; añada la siguiente migración versionada. Las guías anteriores conservan el contexto de cada incorporación.
 
 ## Minutos e independencia de canales
 

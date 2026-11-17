@@ -1,8 +1,12 @@
-# SIABUC Helpdesk 1.8.5
+# SIABUC Helpdesk 1.9.0
 
-**Paquete conjunto Linux y Windows:** `SIABUC-Helpdesk-1.8.5.zip` incluye el proyecto completo con **ocho scripts `.sh` y ocho `.bat` en la misma carpeta**. En Linux inicie con `./iniciar.sh`; en Windows, con `.\iniciar.bat`. [Inicio rápido para Windows](LEEME-WINDOWS.md).
+**Paquete conjunto Linux y Windows:** `SIABUC-Helpdesk-1.9.0.zip` incluye el proyecto completo con **ocho scripts `.sh` y ocho `.bat` en la misma carpeta**. En Linux inicie con `./iniciar.sh`; en Windows, con `.\iniciar.bat`. [Inicio rápido para Windows](LEEME-WINDOWS.md).
 
-**Actualización de seguridad:** Node.js 24.22.1, Nginx 1.30.6, herramientas Angular 21 corregidas, backend Spring actualizado, bases PostgreSQL/SMTP corregidas, auditorías npm e imágenes en CI y Dependabot. [Cambios, política de auditoría y validación](docs/VERSION-1.8.5.md).
+**Novedades 1.9.0:** portales separados para clientes (`/poliza`) y personal interno (`/poliza/admin`), guía inicial, consulta de pólizas y saldos de soporte, respuestas sin leer, catálogo de recursos oficiales y bloqueo configurable de clientes. Se conserva el acceso local con usuario y contraseña; el restablecimiento y la edición de correo se realizan únicamente por Administración. [Actualización y límites](docs/VERSION-1.9.0.md) · [Requisitos de Adriana](docs/ACCESOS-ADRIANA.md).
+
+**Aviso de dependencias:** la auditoría de desarrollo sigue reportando 13 hallazgos altos derivados de `picomatch`, sin versión corregida al 17 de noviembre de 2026. La auditoría de producción registra cero hallazgos. No se desactivaron controles para esta entrega; consulte la [evidencia y los pendientes](docs/VERSION-1.9.0.md#validación-y-seguridad).
+
+**Base de seguridad incorporada desde 1.8.5:** Node.js 24.22.1, Nginx 1.30.6, herramientas Angular 21 corregidas, backend Spring actualizado, bases PostgreSQL/SMTP corregidas, auditorías npm e imágenes en CI y Dependabot. [Cambios, política de auditoría y validación](docs/VERSION-1.8.5.md).
 
 **Revisión de arranque — permisos de respaldos:** `iniciar.sh` verifica escritura con la identidad del contenedor. En Linux, si recibe acceso denegado, ajusta el propietario de la carpeta configurada a `BACKUP_UID:BACKUP_GID`, asegura acceso del propietario y vuelve a comprobar. Conserva los archivos existentes y el estado del calendario. [Actualización y alcance](docs/VERSION-1.8.4.md).
 
@@ -12,7 +16,7 @@ Sistema de atención técnica con servidor **Spring Boot 4.0.9 / Java 17**, clie
 
 Administración puede cambiar por separado las horas incluidas de **correo** y **escritorio remoto** desde **Configuración de soporte → Horas predeterminadas de las licencias**. Se aplican una sola vez al crear cada licencia; las existentes conservan su saldo. **Licencias** permite registrar el número institucional, agregar horas con motivo y consultar el historial. Los casos y las pólizas pueden vincularse a una licencia.
 
-La versión 1.8.5 conserva las licencias de **V27** y la preparación de permisos de respaldos de 1.8.4. No añade nuevas migraciones sobre V27. Los saldos anteriores quedan sin licencia, sin reparto ni acreditación automática. La dotación inicial debe configurarse antes del primer alta. Consulte [Licencias y horas](docs/LICENCIAS-HORAS.md), incluido el cuidado para no duplicar horas ya registradas y la restricción de retroceso a un backend anterior.
+La versión 1.9.0 conserva las licencias de **V27** y la preparación de permisos de respaldos de 1.8.4. Añade **V28–V31** para guía inicial, lecturas de respuestas, recursos oficiales y bloqueo de acceso. Los saldos anteriores quedan sin licencia, sin reparto ni acreditación automática. La dotación inicial debe configurarse antes del primer alta. Consulte [Licencias y horas](docs/LICENCIAS-HORAS.md), incluido el cuidado para no duplicar horas ya registradas y la restricción de retroceso a un backend anterior.
 
 ## Estados de casos en 1.8.3
 
@@ -29,13 +33,13 @@ Los identificadores `OPEN` y `CLOSED` existentes se conservan; `OPEN` se muestra
 como Recibido. La migración V26 conserva casos, saldos y fechas, y amplía las
 vistas guardadas antiguas de abiertos a todos los casos pendientes.
 
-**Documentación vigente:** [manual integrado 1.8.5](docs/MANUAL-EXTENDIDO-LICENCIAS.md) · [índice completo](docs/README.md) · [actualización y cambios](docs/VERSION-1.8.5.md) · [resultados verificables](docs/VALIDACION.md) · [contrato API](docs/API-CONTRACT.md).
+**Documentación vigente:** [manual integrado 1.8.5](docs/MANUAL-EXTENDIDO-LICENCIAS.md) · [índice completo](docs/README.md) · [actualización y cambios 1.9.0](docs/VERSION-1.9.0.md) · [resultados verificables](docs/VALIDACION.md) · [contrato API](docs/API-CONTRACT.md).
 
 Docker usa una sola red predeterminada del proyecto, sin `smtp_net` ni subred SMTP fija. Las instalaciones nuevas tienen el correo desactivado y Gmail directo preseleccionado. Postfix sólo se inicia al elegir `SMTP_HOST=smtp`; conserva su cola en un volumen.
 
 ## Alcance institucional pendiente
 
-El registro local de soporte por licencia no implementa validación o activación comercial de SIABUC9. Continúan pendientes las descargas oficiales de instaladores, Federación de Identidades UCOL, ingreso únicamente con número de póliza/correo, recuperación mediante clave de licencia, modificación verificada de correo de licencia, cambios a las reglas de atención sin saldo, publicación HTTPS institucional, Google Analytics ni importación automática de sistemas anteriores. Que el frontend pueda mostrar una ruta como `/poliza` no significa que exista ya una integración institucional o un sistema de autenticación distinto.
+El registro local de soporte por licencia no implementa validación o activación comercial de SIABUC9. Continúan pendientes la publicación y comprobación de enlaces oficiales reales, Federación de Identidades UCOL, vinculación de identidad con póliza/correo/licencia SIABUC9, recuperación mediante clave de licencia, modificación verificada de correo de licencia, cambios a las reglas de atención sin saldo, publicación HTTPS institucional, Google Analytics e importación automática de sistemas anteriores. El catálogo HTTPS `ucol.mx` y los portales separados sí están implementados; la autenticación sigue siendo local.
 
 **Funciones heredadas de 1.7 preservadas:** rol de técnico, vistas guardadas y alertas SLA, plantillas de respuesta, incidencias generales, catálogo de paquetes y tarifas, calendario de parcialidades, conciliación bancaria CSV y estados de cuenta institucionales.
 
@@ -46,7 +50,7 @@ El registro local de soporte por licencia no implementa validación o activació
 | Necesito… | Guía |
 | --- | --- |
 | Instalar desde cero en Ubuntu | [Guía paso a paso para instalación nueva](docs/INSTALACION-DESDE-CERO.md) |
-| Instalar o actualizar conservando mis datos | [Actualización 1.8.5](docs/VERSION-1.8.5.md) · [Windows](docs/WINDOWS.md) · [Operación Linux/Docker](docs/OPERACION.md) |
+| Instalar o actualizar conservando mis datos | [Actualización 1.9.0](docs/VERSION-1.9.0.md) · [Windows](docs/WINDOWS.md) · [Operación Linux/Docker](docs/OPERACION.md) |
 | Atender casos, usar adjuntos, cronómetro y agenda | [Manual integrado 1.8.5](docs/MANUAL-EXTENDIDO-LICENCIAS.md) · [Guía de uso](docs/MANUAL-USUARIO.md) |
 | Registrar pólizas, pagos y horas adquiridas | [Pólizas y cobranza](docs/POLIZAS-COBRANZA.md) |
 | Cotizar, renovar o validar pagos pendientes | [Cotizaciones y renovaciones](docs/COTIZACIONES-RENOVACIONES.md) · [Solicitudes de pago](docs/SOLICITUDES-PAGO.md) |
@@ -122,16 +126,16 @@ Crear paquetes, cotizar, programar parcialidades, importar o conciliar movimient
 
 Los permisos se comprueban en el servidor. Los adjuntos de soporte respetan la institución y la visibilidad de la entrada; Administración/Cobranza consultan todos los comprobantes de pago; el portal financiero habilitado permite al cliente consultar sólo los de su institución. La campana sigue funcionando con el correo pausado y muestra a Cobranza sus avisos de saldo.
 
-Para actualizar desde una versión anterior, respalde primero y conserve `.env`, `COMPOSE_PROJECT_NAME`, los volúmenes y las migraciones existentes. Siga la [guía de 1.8.5](docs/VERSION-1.8.5.md); las guías de [1.7](docs/VERSION-1.7.md), [migración 1.0/1.1](docs/MIGRACION-1.1.md) y [SMTP interno](docs/SMTP-INTERNO.md#actualizar-una-instalación-anterior) siguen disponibles para instalaciones históricas. No cambie una configuración SMTP que ya funciona sin necesidad comprobada.
+Para actualizar desde una versión anterior, respalde primero y conserve `.env`, `COMPOSE_PROJECT_NAME`, los volúmenes y las migraciones existentes. Siga la [guía de 1.9.0](docs/VERSION-1.9.0.md); las guías de [1.7](docs/VERSION-1.7.md), [migración 1.0/1.1](docs/MIGRACION-1.1.md) y [SMTP interno](docs/SMTP-INTERNO.md#actualizar-una-instalación-anterior) siguen disponibles para instalaciones históricas. No cambie una configuración SMTP que ya funciona sin necesidad comprobada.
 
-## Actualizar una instalación existente a 1.8.5
+## Actualizar una instalación existente a 1.9.0
 
 La actualización conserva usuarios, casos, pólizas y registros **únicamente si se utiliza la misma base de datos**. Copiar `.env` por sí solo no copia PostgreSQL; tampoco incluye respaldos ni colas SMTP. Para actualizar desde una instalación previa:
 
 1. **Antes de reemplazar nada**, cree y compruebe un respaldo con `./respaldar.sh`. Almacénelo fuera del servidor. Pruebe la restauración **en una instalación desechable** y no en la base en uso.
-2. Descomprima el código 1.8.5 en **otra carpeta**. Copie allí su `.env` sin compartirlo ni subirlo al repositorio. Conserve los mismos identificadores `COMPOSE_PROJECT_NAME`, `DB_NAME`, `DB_USER` y parámetros efectivos de conexión; revise `BACKUP_DIRECTORY` si usa una ruta relativa.
+2. Descomprima el código 1.9.0 en **otra carpeta**. Copie allí su `.env` sin compartirlo ni subirlo al repositorio. Conserve los mismos identificadores `COMPOSE_PROJECT_NAME`, `DB_NAME`, `DB_USER` y parámetros efectivos de conexión; revise `BACKUP_DIRECTORY` si usa una ruta relativa.
 3. Para detectar errores antes del arranque, ejecute `./compilar.sh --docker` y después `docker compose build --pull db` en la carpeta nueva, para preparar también la imagen PostgreSQL corregida. Este paso **no aplica las migraciones** a la base ni implica que las pruebas de integración hayan pasado.
-4. Después de validar en una **base de pruebas**, detenga la instalación anterior con `./detener.sh` y, desde la carpeta nueva, ejecute `./iniciar.sh`. Flyway aplicará las migraciones pendientes hasta **V27**. La entrega histórica 1.8.3 aplicaba hasta V26 y la ampliación de licencias añadió V27; 1.8.5 conserva estas migraciones. No modifique ni borre los scripts V1–V25. Los casos antiguos OPEN se muestran como Recibido; no se infiere su etapa de atención.
+4. Después de validar en una **base de pruebas**, detenga la instalación anterior con `./detener.sh` y, desde la carpeta nueva, ejecute `./iniciar.sh`. Flyway aplicará las migraciones pendientes hasta **V31**. Se conservan V1–V27 y se incorporan V28–V31 para las funciones de acceso y portal. No modifique ni borre las migraciones ya aplicadas. Los casos antiguos OPEN se muestran como Recibido; no se infiere su etapa de atención.
 5. Verifique inicio de sesión, aislamiento de instituciones, saldos, casos, pólizas, cobranza, adjuntos, correo y respaldos. **Verifique en el destino SMTP, Docker, LAN y respaldos antes de actualizar producción** y completar la validación del entorno.
 
 Después de V27, no ejecute un backend anterior sobre esa base: no respeta los saldos reservados para licencias; los anteriores a V26 tampoco reconocen los nuevos estados. Para retroceder restaure una copia compatible en una base nueva. No ejecute `docker compose down -v` ni destruya el volumen de PostgreSQL. La operación `./restaurar.sh` **reemplaza datos** y no forma parte de una actualización normal. Consulte [respaldo y restauración](docs/RESPALDO-RESTAURACION.md).
@@ -202,16 +206,16 @@ Restaurar reemplaza los datos actuales y deja la aplicación detenida. Para recu
 Desde un checkout Git del repositorio, ejecute uno de estos comandos según su sistema:
 
 ```bash
-python3 scripts/release-1.8.5.py --package --output release-output
+python3 scripts/release-1.9.0.py --package --output release-output
 ```
 
 ```powershell
-py -3 scripts/release-1.8.5.py --package --output release-output
+py -3 scripts/release-1.9.0.py --package --output release-output
 ```
 
-Se generan `SIABUC-Helpdesk-1.8.5.zip` y su suma SHA-256. El ZIP contiene los dos juegos de lanzadores, las fuentes y la documentación, con un manifiesto de integridad. El empaquetador exige los ocho pares `.sh`/`.bat` y omite la configuración privada, los respaldos y las dependencias instaladas.
+Se generan `SIABUC-Helpdesk-1.9.0.zip` y su suma SHA-256. El ZIP contiene los dos juegos de lanzadores, las fuentes y la documentación, con un manifiesto de integridad. El empaquetador exige los ocho pares `.sh`/`.bat` y omite la configuración privada, los respaldos y las dependencias instaladas.
 
-El workflow [Linux and Windows launchers](https://github.com/rodolfo99/helpdesk-siabuc/actions/workflows/verify-launchers.yml) comprueba los lanzadores y publica este ZIP como artefacto **SIABUC-Helpdesk-1.8.5-Linux-Windows** en cada ejecución satisfactoria sobre `main` o una PR. La opción `--windows` sigue disponible para generar un ZIP separado solo con `.bat`; el paquete predeterminado incluye ambos sistemas.
+El workflow [Linux and Windows launchers](https://github.com/rodolfo99/helpdesk-siabuc/actions/workflows/verify-launchers.yml) comprueba los lanzadores y publica este ZIP como artefacto **SIABUC-Helpdesk-1.9.0-Linux-Windows** en cada ejecución satisfactoria sobre `main` o una PR. La opción `--windows` sigue disponible para generar un ZIP separado solo con `.bat`; el paquete predeterminado incluye ambos sistemas.
 
 ## Gmail directo y Postfix opcional
 
@@ -297,7 +301,7 @@ Requiere JDK 17 o posterior, Maven 3.9, Node.js 24.22.1 LTS (ver `.nvmrc`), npm,
 
 `compilar.sh` ejecuta `mvn package`, `npm ci` y `npm run build`. Produce:
 
-- `backend/target/siabuc-helpdesk-1.8.5.jar`
+- `backend/target/siabuc-helpdesk-1.9.0.jar`
 - `frontend/dist/helpdesk/browser/`
 
 `iniciar-dev.sh` inicia PostgreSQL y, con `SMTP_HOST=smtp`, Postfix con Docker, compila Spring, instala las dependencias de Angular y ejecuta Spring y `ng serve` en una terminal. Lee los mismos puertos y contraseñas de `.env`; ambos procesos escuchan en `127.0.0.1`. Los registros se guardan en `.runtime/`. **Ctrl+C** detiene Spring y Angular; después `./detener.sh` detiene PostgreSQL y Postfix. No ejecute el modo Docker completo y el modo de desarrollo al mismo tiempo sobre los mismos puertos.
@@ -383,10 +387,10 @@ Las pruebas de integración contra PostgreSQL se ejecutan con `mvn -Ppostgres-it
 Desde una copia clonada de Git con los cambios versionados:
 
 ```bash
-python3 scripts/release-1.8.5.py --package --output release-output
+python3 scripts/release-1.9.0.py --package --output release-output
 ```
 
-Genera `SIABUC-Helpdesk-1.8.5.zip` y su `.zip.sha256`; comprueba CRC y contenido e incluye un manifiesto por archivo. El ZIP no contiene credenciales ni datos de la instalación y requiere compilar para ejecutarlo. Este empaquetador usa `git ls-files`: para regenerar el paquete desde una entrega ZIP, obtenga primero un checkout del repositorio; el ZIP no incluye `.git`.
+Genera `SIABUC-Helpdesk-1.9.0.zip` y su `.zip.sha256`; comprueba CRC y contenido e incluye un manifiesto por archivo. El ZIP no contiene credenciales ni datos de la instalación y requiere compilar para ejecutarlo. Este empaquetador usa `git ls-files`: para regenerar el paquete desde una entrega ZIP, obtenga primero un checkout del repositorio; el ZIP no incluye `.git`.
 
 ## Estructura
 
@@ -407,5 +411,5 @@ siabuc-helpdesk/
   compilar.sh / .bat      Compilar imágenes; .sh también permite compilación local
   respaldar.sh / .bat     Crear copia PostgreSQL
   restaurar.sh / .bat     Recuperar copia PostgreSQL
-  scripts/release-1.8.5.py Empaquetar fuentes 1.8.5 con manifiesto SHA-256
+  scripts/release-1.9.0.py Empaquetar fuentes 1.9.0 con manifiesto SHA-256
 ```
