@@ -85,7 +85,7 @@ export class AppComponent extends PageState implements OnInit {
   readonly api = inject(ApiService); readonly restoring = signal(true); readonly menuOpen = signal(false); readonly page = signal<Page>('dashboard');
   // The portal is selected by the public URL; this is presentation only.
   // The backend independently checks the role on every authenticated request.
-  readonly staffPortal = /^\\/poliza\\/admin\\/?$/.test(window.location.pathname);
+  readonly staffPortal = ['/poliza/admin', '/poliza/admin/'].includes(window.location.pathname);
   private portalPath(role: string) { return role === 'USER' ? '/poliza' : '/poliza/admin'; }
   private correctPortal(role: string) {
     const expected = this.portalPath(role);
