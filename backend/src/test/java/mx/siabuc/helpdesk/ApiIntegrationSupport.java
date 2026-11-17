@@ -196,11 +196,17 @@ abstract class ApiIntegrationSupport {
         protected String csrf;
 
         protected MvcResult authenticate(String username, String password) throws Exception {
+            return authenticate(username, password, null);
+        }
+
+        protected MvcResult authenticate(String username, String password, String portal) throws Exception {
             refreshCsrf();
+            String body = "username=" + URLEncoder.encode(username, StandardCharsets.UTF_8)
+                    + "&password=" + URLEncoder.encode(password, StandardCharsets.UTF_8);
+            if (portal != null) body += "&portal=" + URLEncoder.encode(portal, StandardCharsets.UTF_8);
             MockHttpServletRequestBuilder builder = builder("POST", "/auth/login", true)
                     .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                    .content("username=" + URLEncoder.encode(username, StandardCharsets.UTF_8)
-                            + "&password=" + URLEncoder.encode(password, StandardCharsets.UTF_8));
+                    .content(body);
             return perform(builder);
         }
 
