@@ -13,7 +13,8 @@ const {expect}=await import(moduleRoot?pathToFileURL(resolve(moduleRoot,'test.mj
 const server=createServer(async(req,res)=>{
   try {
     const pathname=new URL(req.url,'http://localhost').pathname;
-    const file=resolve(build,'.'+(pathname==='/'?'/index.html':decodeURIComponent(pathname)));
+    const portal=['/','/poliza','/poliza/admin'].includes(pathname);
+    const file=resolve(build,'.'+(portal?'/index.html':decodeURIComponent(pathname)));
     if(!file.startsWith(build+sep))throw Error('Invalid path');
     res.writeHead(200,{'Content-Type':({'.html':'text/html','.js':'application/javascript','.css':'text/css'})[extname(file)]??'application/octet-stream'});
     res.end(await readFile(file));
@@ -53,10 +54,13 @@ async function open(role='ADMIN') {
         return reply({...item,entries:entries.get(item.id)});
       }
       if(path==='/api/saved-views') {const view={id:1,...body,revision:1};saved=[view];return reply(view);}
+      if(/^\/api\/client-portal\/tickets\/\d+\/read$/.test(path))return route.fulfill({status:204});
       errors.push('Unexpected write '+path);return reply({},400);
     }
     if(path==='/api/auth/csrf')return reply({token:'qa'});
     if(path==='/api/auth/me')return reply({id:1,username:'qa',displayName:'Soporte',role,institutionId:role==='USER'?1:null,active:true});
+    if(path==='/api/client-portal/guide')return reply({completed:true,completedAt:now});
+    if(path==='/api/client-portal/tickets/unread')return reply([]);
     if(path==='/api/licenses')return reply([]);
     if(path==='/api/institutions')return reply([institution]);
     if(path==='/api/cases')return reply(items);
@@ -72,6 +76,7 @@ async function open(role='ADMIN') {
     errors.push('Unexpected GET '+path);return reply({},404);
   });
   await page.goto(`http://127.0.0.1:${server.address().port}`);
+  await expect(page).toHaveURL(new RegExp(role==='USER'?'/poliza$':'/poliza/admin$'));
   await page.getByRole('navigation').getByRole('button',{name:'Casos de soporte',exact:true}).click();
   await expect(page.locator('.case-title-button')).toHaveCount(5);
   return {context,page,writes};

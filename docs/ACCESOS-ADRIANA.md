@@ -13,7 +13,7 @@ La raíz `/` redirige a `/poliza` mediante Nginx. Las rutas sirven el mismo fron
 
 ## Alcance y compatibilidad
 
-- Se mantienen **usuario y contraseña** con las cuentas y roles existentes. La separación inicial no modificó credenciales, pero las etapas posteriores incorporan migraciones V28–V32 para guía, avisos, recursos, bloqueo y recuperación de clientes.
+- Se mantienen **usuario y contraseña** con las cuentas y roles existentes. La separación inicial no modificó credenciales, pero las etapas posteriores incorporan migraciones V28–V31 para guía, avisos, recursos y bloqueo de clientes. La recuperación continúa siendo exclusivamente administrativa, sin migración V32.
 - La Federación de Identidades UCOL (`RF-LOG-004`) **no** está implementada.
 - El acceso por número de póliza y correo registrado (`RF-LOG-003`) **no** está implementado. No se aceptan esos valores como sustitutos de contraseña.
 - El endpoint previo `POST /api/auth/login` sin parámetro `portal` sigue disponible para clientes anteriores y suites de pruebas. Los nuevos formularios envían `portal=client` o `portal=staff`.
@@ -197,4 +197,14 @@ cd backend
 mvn -Ppostgres-it -Dit.test=ClientAccessIntegrationIT verify
 ```
 
-Los cambios están en la rama del PR #52, sin fusionar. Aún se necesitan compilación, ejecución satisfactoria de pruebas y revisión antes de integrar a `main`.
+Los cambios están en la rama del PR #52, sin fusionar. Las notas de «validación pendiente» anteriores corresponden a cada entrega inicial; el estado vigente se consulta en los checks de la PR.
+
+## Correcciones de revisión — 17 de noviembre de 2026
+
+- El decorador de `UsersComponent` vuelve a estar unido a su clase, para permitir la compilación Angular.
+- El contador de intentos fallidos normaliza el usuario con el mismo `trim()` del formulario de Spring Security. Una prueba de integración comprueba espacios iniciales/finales, tabulaciones, bloqueo y desbloqueo administrativo.
+- La prueba Docker compara los nombres de todas las migraciones SQL aplicadas con los archivos de esta revisión, en lugar de esperar siempre 27.
+- La comprobación Nginx valida el HTTP 302 de `/` y que `/poliza`, `/poliza/admin` y `/cases` sirven el frontend. Las regresiones de navegador conservan API simulada y comprueban la redirección de cada rol a su portal.
+- Las herramientas Angular CLI/build se actualizan dentro de la rama 21.2 y `compiler-cli` se fija a la versión del compilador del proyecto. El lockfile incorpora las correcciones compatibles de dependencias disponibles.
+
+**Bloqueo de seguridad pendiente:** `picomatch` está afectado por [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf). Al revisar el 17 de noviembre, la última versión publicada es 4.0.7 y el aviso no registra una versión corregida. La auditoría completa de dependencias de desarrollo continúa siendo obligatoria: no se ha omitido el paquete, rebajado el umbral ni añadido una excepción para aprobar CI. Este pendiente debe resolverse y volver a validarse antes de integrar.

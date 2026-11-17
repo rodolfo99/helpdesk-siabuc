@@ -11,7 +11,8 @@ const build=resolve(dirname(fileURLToPath(import.meta.url)),'../../frontend/dist
 const server=createServer(async(req,res)=>{
   try {
     const name=new URL(req.url,'http://localhost').pathname;
-    const file=resolve(build,'.'+(name==='/'?'/index.html':decodeURIComponent(name)));
+    const portal=['/','/poliza','/poliza/admin'].includes(name);
+    const file=resolve(build,'.'+(portal?'/index.html':decodeURIComponent(name)));
     if(!file.startsWith(build+sep))throw Error('Invalid path');
     res.writeHead(200,{'Content-Type':({'.html':'text/html','.js':'application/javascript','.css':'text/css'})[extname(file)]??'application/octet-stream'});
     res.end(await readFile(file));
@@ -60,6 +61,8 @@ async function setup(role='ADMIN',viewport={width:1366,height:1000}){
     }
     if(path==='/api/auth/csrf')return reply({token:'qa'});
     if(path==='/api/auth/me')return reply({id:1,username:'qa',displayName:'Soporte',role,institutionId:role==='USER'?1:null,active:true});
+    if(path==='/api/client-portal/guide')return reply({completed:true,completedAt:now});
+    if(path==='/api/client-portal/tickets/unread')return reply([]);
     if(path==='/api/license-support-defaults')return reply(defaults);
     if(path==='/api/licenses')return reply(licenses);
     if(path==='/api/licenses/1/history')return reply(history);
@@ -76,6 +79,7 @@ async function setup(role='ADMIN',viewport={width:1366,height:1000}){
     errors.push('Unexpected GET '+path);return reply({},404);
   });
   await page.goto(`http://127.0.0.1:${server.address().port}`);
+  await expect(page).toHaveURL(new RegExp(role==='USER'?'/poliza$':'/poliza/admin$'));
   await expect(page.getByRole('navigation')).toBeVisible();return {context,page};
 }
 try{

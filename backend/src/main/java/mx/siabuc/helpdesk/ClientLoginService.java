@@ -43,7 +43,11 @@ public class ClientLoginService {
     /** Failure handler is triggered only on rejected form authentication. Lock the row for atomic accounting. */
     @Transactional
     public void failed(String username) {
-        if(username==null || username.isBlank())return;
+        // Match UsernamePasswordAuthenticationFilter's normalization exactly.
+        // Otherwise a padded username authenticates the account but escapes its counter.
+        if(username==null)return;
+        username=username.trim();
+        if(username.isEmpty())return;
         List<LockState> users=db.query("""
             SELECT id,failed_login_attempts,login_locked_until FROM app_users
             WHERE username=? AND role='USER' FOR UPDATE

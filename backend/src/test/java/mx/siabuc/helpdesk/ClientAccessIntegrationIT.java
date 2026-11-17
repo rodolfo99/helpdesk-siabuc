@@ -50,6 +50,28 @@ class ClientAccessIntegrationIT extends ApiIntegrationSupport {
         }
     }
 
+    @Test void paddedUsernamesCannotBypassFailedAttemptCounting() throws Exception {
+        String username=unique("bloqueo-espacios");
+        long userId=createUser(username,institution(60,60)).path("id").asLong();
+        String[] variants={" "+username,username+" ","\t"+username+"\t"};
+
+        // Verify these are aliases of the same account in Spring's form login.
+        assertStatus(new Client().authenticate(variants[0],PASSWORD,"client"),200);
+        int attempts=setting().maxAttempts();
+        for(int i=0;i<attempts;i++) {
+            assertStatus(new Client().authenticate(variants[i%variants.length],"clave-incorrecta","client"),401);
+        }
+        assertThat(db.queryForObject("SELECT login_locked_until>NOW() FROM app_users WHERE id=?",
+            Boolean.class,userId)).isTrue();
+        assertStatus(new Client().authenticate(username,PASSWORD,"client"),401);
+        assertStatus(new Client().authenticate(variants[2],PASSWORD,"client"),401);
+
+        assertStatus(admin.post("/auth/client-login-locks/"+userId+"/unlock",Map.of()),204);
+        assertStatus(new Client().authenticate(variants[1],PASSWORD,"client"),200);
+        assertThat(db.queryForObject("SELECT failed_login_attempts FROM app_users WHERE id=?",
+            Integer.class,userId)).isZero();
+    }
+
     @Test void settingsAreValidatedAndOnlyAdminCanChangeThem() throws Exception {
         Client client=institutionUser(institution(60,60));
         assertStatus(client.get("/auth/client-login-settings"),403);
