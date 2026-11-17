@@ -42,12 +42,27 @@ type Page = 'licenses'|'statements'|'reconciliation'|'installments'|'packages'|'
 @if (restoring()) { <main class="boot"><div class="brand-mark">S</div><p>Conectando con tu centro de soporte…</p><span class="spinner"></span></main> }
 @else if (!api.user()) {
   <main class="login-layout">
-    <section class="login-story"><div class="brand"><span class="brand-mark">S</span><span>SIABUC <small>Centro de soporte</small></span></div><div class="story-content"><div class="eyebrow light">SIEMPRE CERCA DE TU INSTITUCIÓN</div><h1>La atención que<br>da continuidad.</h1><p>Un solo espacio para tus solicitudes, el seguimiento de cada caso y el tiempo disponible de soporte.</p><div class="story-items"><div><b>01</b><span>Solicitudes con seguimiento</span></div><div><b>02</b><span>Historial de cada atención</span></div><div><b>03</b><span>Tiempo claro, minuto a minuto</span></div></div></div><div class="story-footer">Gestión de soporte técnico · SIABUC</div></section>
-    <section class="login-area"><form class="login-card" (ngSubmit)="login()"><div class="eyebrow">BIENVENIDO</div><h2>Inicia sesión</h2><p class="muted">Ingresa con la cuenta SIABUC asignada. No se ha habilitado el acceso federado ni el inicio por número de póliza.</p>
+    <section class="login-story">
+      <div class="brand"><span class="brand-mark">S</span><span>SIABUC <small>{{staffPortal ? 'Centro de soporte · Personal interno' : 'Portal de clientes'}}</small></span></div>
+      <div class="story-content">
+        <div class="eyebrow light">{{staffPortal ? 'CENTRO SIABUC · ACCESO INTERNO' : 'BIENVENIDO A TU INSTITUCIÓN'}}</div>
+        <h1>{{staffPortal ? 'Gestión y atención de soporte.' : 'Tu soporte SIABUC, en un solo lugar.'}}</h1>
+        <p>{{staffPortal ? 'Acceso exclusivo para personal técnico, cobranza y administración del Centro SIABUC.' : 'Consulta las solicitudes, el seguimiento de tus casos y el tiempo disponible de soporte.'}}</p>
+        <div class="story-items"><div><b>01</b><span>Solicitudes con seguimiento</span></div><div><b>02</b><span>Historial de atención</span></div><div><b>03</b><span>{{staffPortal ? 'Administración según tu rol' : 'Información de tu institución'}}</span></div></div>
+      </div>
+      <div class="story-footer">Universidad de Colima · Centro SIABUC</div>
+    </section>
+    <section class="login-area"><form class="login-card" (ngSubmit)="login()">
+      <div class="eyebrow">{{staffPortal ? 'ACCESO DE PERSONAL' : 'ACCESO DE CLIENTES'}}</div>
+      <h2>{{staffPortal ? 'Iniciar sesión de personal' : 'Iniciar sesión de cliente'}}</h2>
+      <p class="muted">{{staffPortal ? 'Ingresa con tu cuenta interna SIABUC. La Federación de Identidades UCOL todavía no está integrada.' : 'Ingresa con tu cuenta SIABUC actual. El acceso por número de póliza y correo electrónico se habilitará en otra etapa.'}}</p>
       @if (error()) {<div class="notice error" role="alert">{{error()}}</div>}
-      <label>Usuario<input name="username" [(ngModel)]="username" required autocomplete="username" maxlength="100" placeholder="Tu nombre de usuario"></label>
+      <label>Usuario<input name="username" [(ngModel)]="username" required autocomplete="username" maxlength="100" placeholder="Tu usuario SIABUC"></label>
       <label>Contraseña<input name="password" [(ngModel)]="password" type="password" required autocomplete="current-password" placeholder="Tu contraseña"></label>
-      <button class="btn primary full" [disabled]="busy() || !username.trim() || !password">{{busy() ? 'Verificando…' : 'Entrar al centro de soporte'}} <span aria-hidden="true">→</span></button><p class="login-help">¿Necesitas acceso? Solicita una cuenta al administrador de soporte SIABUC.</p></form></section>
+      <button class="btn primary full" [disabled]="busy() || !username.trim() || !password">{{busy() ? 'Verificando…' : 'Iniciar sesión'}} <span aria-hidden="true">→</span></button>
+      <p class="login-help">¿Necesitas acceso? Comunícate con el administrador de soporte SIABUC.</p>
+      <p class="login-help">@if(staffPortal){¿Eres cliente? <a href="/poliza">Ir al portal de clientes</a>}@else{¿Atiendes o administras el sistema? <a href="/poliza/admin">Acceso para personal SIABUC</a>}</p>
+    </form></section>
   </main>
 } @else {
   <div class="app-shell"><aside class="sidebar" [class.mobile-open]="menuOpen()"><div class="brand"><span class="brand-mark">S</span><span>SIABUC<small>Centro de soporte</small></span></div><div class="workspace-label">{{api.user()?.role === 'ADMIN' ? 'ADMINISTRACIÓN' : api.user()?.role === 'BILLING' ? 'COBRANZA' : api.user()?.role === 'TECH' ? 'SOPORTE TÉCNICO' : 'MI INSTITUCIÓN'}}</div><nav aria-label="Navegación principal"><button [class.selected]="page() === 'licenses'" (click)="navigate('licenses')"><span aria-hidden="true">▧</span> Licencias</button>
@@ -68,16 +83,28 @@ type Page = 'licenses'|'statements'|'reconciliation'|'installments'|'packages'|'
 }`,styles:[`.support-settings-stack{display:grid;gap:24px}.sidebar{overflow-y:auto}.sidebar nav{flex-shrink:0}`]})
 export class AppComponent extends PageState implements OnInit {
   readonly api = inject(ApiService); readonly restoring = signal(true); readonly menuOpen = signal(false); readonly page = signal<Page>('dashboard');
+  // The portal is selected by the public URL; this is presentation only.
+  // The backend independently checks the role on every authenticated request.
+  readonly staffPortal = /^\\/poliza\\/admin\\/?$/.test(window.location.pathname);
+  private portalPath(role: string) { return role === 'USER' ? '/poliza' : '/poliza/admin'; }
+  private correctPortal(role: string) {
+    const expected = this.portalPath(role);
+    if (window.location.pathname !== expected) {
+      window.location.replace(expected);
+      return false;
+    }
+    return true;
+  }
   readonly caseOpenRequest=signal<CaseOpenRequest|null>(null);
   private caseRequestSequence=0;
   readonly paymentOpenRequest=signal<PaymentOpenRequest|null>(null);
   private paymentRequestSequence=0;
   username=''; password='';
-  async ngOnInit() { try {await this.api.restore();} catch(e) {if (!(e instanceof HttpErrorResponse && e.status === 401)) this.error.set(errorMessage(e));} finally {this.restoring.set(false);} }
+  async ngOnInit() { try {await this.api.restore(); const role=this.api.user()?.role; if(role)this.correctPortal(role);} catch(e) {if (!(e instanceof HttpErrorResponse && e.status === 401)) this.error.set(errorMessage(e));} finally {this.restoring.set(false);} }
   navigate(page:Page) {const role=this.api.user()?.role;if(role==='BILLING'&&!['licenses','dashboard','payments','policies','billingReports','quotes','renewals','paymentRequests','packages','installments','reconciliation','statements','account'].includes(page))return;if(role==='TECH'&&!['licenses','dashboard','cases','knowledge','incidents','replyTemplates','account'].includes(page))return;if(role==='USER'&&!['licenses','dashboard','cases','knowledge','clientFinance','account'].includes(page))return;this.caseOpenRequest.set(null);this.paymentOpenRequest.set(null);this.page.set(page);this.menuOpen.set(false);this.error.set('');}
   openNotificationCase(caseId:number){if(this.api.user()?.role==='BILLING'||!Number.isSafeInteger(caseId)||caseId<=0)return;this.navigate('cases');this.caseOpenRequest.set({caseId,sequence:++this.caseRequestSequence});}
   openPolicyPayment(policyId:number){if(!['ADMIN','BILLING'].includes(this.api.user()?.role??'')||!Number.isSafeInteger(policyId)||policyId<=0)return;this.navigate('payments');this.paymentOpenRequest.set({policyId,sequence:++this.paymentRequestSequence});}
   pageTitle() {return {licenses:'Licencias',statements:'Estados de cuenta',reconciliation:'Conciliación bancaria',installments:'Parcialidades',packages:'Paquetes y tarifas',replyTemplates:'Plantillas',incidents:'Incidencias generales',dashboard:'Resumen',cases:'Casos de soporte',institutions:'Instituciones',users:'Usuarios',audit:'Auditoría',account:'Mi cuenta',payments:'Pagos',notifications:'Correo y notificaciones',settings:'Configuración de soporte',reports:'Reportes',policies:'Pólizas',billingReports:'Reportes de cobranza',quotes:'Cotizaciones',renewals:'Renovaciones',paymentRequests:'Validar pagos',clientFinance:'Finanzas institucionales',knowledge:'Base de conocimientos',satisfaction:'Satisfacción',backups:'Respaldos'}[this.page()];}
-  login() {void this.perform(async()=>{await this.api.login(this.username.trim(),this.password);this.password='';this.navigate('dashboard');});}
+  login() {void this.perform(async()=>{await this.api.login(this.username.trim(),this.password,this.staffPortal?'staff':'client');this.password='';const role=this.api.user()?.role;if(role&&!this.correctPortal(role))return;this.navigate('dashboard');});}
   logout() {void this.perform(async()=>{await this.api.logout();this.password='';this.caseOpenRequest.set(null);this.paymentOpenRequest.set(null);this.page.set('dashboard');});}
 }
