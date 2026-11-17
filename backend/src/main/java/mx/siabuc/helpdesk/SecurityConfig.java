@@ -57,7 +57,10 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.csrfTokenRepository(csrfRepository).csrfTokenRequestHandler(new SpaCsrfHandler()))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/csrf", "/api/auth/login", "/api/health", "/error").permitAll()
+                .requestMatchers("/api/auth/csrf", "/api/auth/login",
+                    "/api/auth/recovery/request", "/api/auth/recovery/reset", "/api/health", "/error").permitAll()
+                .requestMatchers("/api/auth/client-login-settings", "/api/auth/client-login-locks",
+                    "/api/auth/client-login-locks/**").hasRole("ADMIN")
                 .requestMatchers("/api/users", "/api/users/**", "/api/audit", "/api/notifications", "/api/notifications/**").hasRole("ADMIN")
                 .requestMatchers("/api/client-finance-access", "/api/client-finance-access/**", "/api/backups/**", "/api/satisfaction/reports", "/api/satisfaction/reports.csv", "/api/satisfaction/options").hasRole("ADMIN")
                 .requestMatchers("/api/client-finance", "/api/client-finance/**").hasRole("USER")
