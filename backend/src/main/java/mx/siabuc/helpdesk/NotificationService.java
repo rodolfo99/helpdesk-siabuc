@@ -146,10 +146,7 @@ public class NotificationService {
                 r.getString("subject"), r.getString("status"), r.getInt("attempts"), r.getString("last_error"),
                 r.getTimestamp("created_at").toInstant(),
                 r.getTimestamp("sent_at") == null ? null : r.getTimestamp("sent_at").toInstant(),
-                "CLIENT_PASSWORD_RECOVERY".equals(r.getString("event_type"))
-                    ? "Contenido confidencial de recuperación; no se muestra en el historial."
-                    : r.getString("body"),
-                r.getBoolean("internal"), r.getString("recipient_type"),
+                r.getString("body"), r.getBoolean("internal"), r.getString("recipient_type"),
                 r.getObject("recipient_entity_id", Long.class)), id);
         if (rows.isEmpty()) throw ApiException.missing();
         return rows.get(0);
@@ -201,20 +198,16 @@ public class NotificationService {
         if (rows.isEmpty()) throw ApiException.missing();
         return rows.get(0);
     }
-    private record RetryInfo(UUID key, String type, Long entityId, String recipient, String status,
-                             boolean internal, Long caseId, String eventType) {}
+    private record RetryInfo(UUID key, String type, Long entityId, String recipient, String status, boolean internal, Long caseId) {}
     @Transactional
     public Notification retry(long id, String actor) {
         if (deliveryPausedForUpdate())
             throw ApiException.conflict("El envío de correos está desactivado. No pueden reintentarse avisos durante la pausa.");
         List<RetryInfo> rows = db.query("SELECT * FROM notification_outbox WHERE id=? FOR UPDATE", (r, n) -> new RetryInfo(
             r.getObject("event_key", UUID.class), r.getString("recipient_type"), r.getObject("recipient_entity_id", Long.class),
-            r.getString("recipient"), r.getString("status"), r.getBoolean("internal"), r.getObject("case_id", Long.class),
-            r.getString("event_type")), id);
+            r.getString("recipient"), r.getString("status"), r.getBoolean("internal"), r.getObject("case_id", Long.class)), id);
         if (rows.isEmpty()) throw ApiException.missing();
         RetryInfo row = rows.get(0);
-        if ("CLIENT_PASSWORD_RECOVERY".equals(row.eventType()))
-            throw ApiException.conflict("Los códigos de recuperación caducados no pueden reintentarse desde notificaciones. Solicite uno nuevo.");
         if (!Set.of("FAILED", "SKIPPED").contains(row.status()))
             throw ApiException.conflict("Sólo pueden reintentarse avisos fallidos u omitidos. Un aviso enviado no se reenvía.");
         String address = MailConfig.email(row.recipient());
