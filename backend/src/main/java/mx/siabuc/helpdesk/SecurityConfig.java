@@ -86,6 +86,20 @@ public class SecurityConfig {
                 .anyRequest().denyAll())
             .formLogin(form -> form.loginProcessingUrl("/api/auth/login")
                 .successHandler((request, response, authentication) -> {
+                    // Transitional portals: keep current credentials until UCOL federation and
+                    // policy/email authentication are designed and approved independently.
+                    // The legacy endpoint without a portal parameter remains compatible.
+                    String portal = request.getParameter("portal");
+                    boolean customer = authentication.getAuthorities().stream()
+                        .anyMatch(authority -> "ROLE_USER".equals(authority.getAuthority()));
+                    if (("client".equals(portal) && !customer)
+                            || ("staff".equals(portal) && customer)
+                            || (portal != null && !"client".equals(portal) && !"staff".equals(portal))) {
+                        if (request.getSession(false) != null) request.getSession(false).invalidate();
+                        SecurityContextHolder.clearContext();
+                        write(json, response, 403, "La cuenta no corresponde a este portal. Utilice el acceso indicado para su perfil.");
+                        return;
+                    }
                     request.getSession().setAttribute("credentialVersion", ((AccountDetails) authentication.getPrincipal()).version);
                     write(json, response, 200, "Sesión iniciada.");
                 })
