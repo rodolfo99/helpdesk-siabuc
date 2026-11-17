@@ -50,3 +50,35 @@ mvn -Ppostgres-it -Dit.test=PortalLoginIntegrationIT verify
 ```
 
 Esta guía no afirma que las pruebas nuevas ya se hayan ejecutado. La integración con proveedores institucionales requiere diseño de identidad, verificación adicional y pruebas de aceptación independientes.
+
+## Segunda etapa: consulta de información del cliente
+
+Se agregó `GET /api/client-portal/my-information` y la vista **Mi información SIABUC**, visible sólo para `USER`.
+
+- El backend obtiene la institución directamente de la sesión autenticada, sin aceptar un ID de institución o póliza por parámetro.
+- La respuesta contiene las pólizas de soporte registradas (folio, descripción, vigencia, estado, licencia relacionada) y las licencias locales (número y tiempo restante por canal).
+- No expone importes, pagos, justificantes, usuarios internos ni motivos de cancelación.
+- Una institución sin registros recibe listas vacías, sin inventar licencias comerciales.
+- El personal interno recibe HTTP 403 al consultar esta ruta. El acceso sin sesión recibe HTTP 401.
+- La interfaz cliente muestra expresamente que estos registros pertenecen al Helpdesk y **no** representan verificación comercial del sistema SIABUC9.
+- La portada pública de clientes incluye contacto de Soporte Técnico, Comercialización, correo y enlace institucional proporcionados en el documento de requisitos. Los logotipos oficiales siguen pendientes de recibir como activos aprobados.
+
+### Alcance pendiente para RF-CLI-004 y RF-CLI-005
+
+El acceso actual de clientes sigue asociado a una **institución**, no a una póliza. Por ello esta etapa muestra todas las pólizas y licencias de soporte registradas a nombre de esa institución, no únicamente una póliza con la que se inició sesión. La limitación por póliza individual debe implementarse junto con el flujo de autenticación y recuperación aprobado; no sería correcto presentarla como completada.
+
+### Pruebas agregadas
+
+`ClientInformationIntegrationIT` incluye casos para:
+- Aislamiento entre dos instituciones con pólizas y licencias diferentes.
+- Exclusión de información financiera y privada de la respuesta.
+- Denegación de acceso al endpoint para personal interno y sesiones anónimas.
+- Respuestas vacías en instituciones sin registros.
+
+Ejecutar con una base PostgreSQL de pruebas aislada:
+```bash
+cd backend
+mvn -Ppostgres-it -Dit.test=PortalLoginIntegrationIT,ClientInformationIntegrationIT verify
+```
+
+**Validación pendiente:** en esta sesión no se ejecutaron Java, PostgreSQL, compilación Angular ni pruebas reales de navegador. El código requiere revisión por CI y prueba manual antes de fusionar a `main`.
