@@ -50,7 +50,7 @@ interface ClientInformation {
       @for(p of info.policies;track p.id){
         <article class="information-row">
           <div><strong>{{p.folio}}</strong> · <span>{{p.description}}</span>
-            <p class="muted">Vigencia: {{p.validFrom | date:'dd/MM/yyyy':'':'es-MX'}} al {{p.validUntil | date:'dd/MM/yyyy':'':'es-MX'}}</p>
+            <p class="muted">Vigencia: {{p.validFrom | date:'dd/MM/yyyy'}} al {{p.validUntil | date:'dd/MM/yyyy'}}</p>
             <p class="muted">Licencia vinculada: {{p.licenseNumber || 'Sin licencia vinculada'}}</p>
           </div>
           <span class="badge" [class.closed]="p.status==='CANCELLED'||p.validity==='EXPIRED'">{{policyStatus(p)}}</span>
