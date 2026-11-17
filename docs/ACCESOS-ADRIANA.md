@@ -111,3 +111,28 @@ mvn -Ppostgres-it -Dit.test=PortalLoginIntegrationIT,ClientInformationIntegratio
 ```
 
 **Estado de validación:** los cambios se han confirmado en la rama de revisión; falta compilación y ejecución de pruebas para declarar esta tercera etapa verificada.
+
+## Cuarta etapa: respuestas de soporte sin leer
+
+Se amplía el resumen de solicitudes `RF-CLI-003` con indicadores por cliente y caso:
+
+- La migración `V29__client_case_reads.sql` conserva en PostgreSQL la última entrada visible por cuenta y caso. No depende de `localStorage` ni de cookies.
+- `GET /api/client-portal/tickets/unread` devuelve únicamente casos de la institución de la sesión autenticada con sus cantidades de respuestas pendientes.
+- Se contabilizan solo entradas públicas, no anuladas y creadas por cuentas internas. **No** cuentan comentarios del propio cliente ni notas internas.
+- `POST /api/client-portal/tickets/{caseId}/read` recibe `{"lastVisibleEntryId":123}`. El servidor valida institución, caso y pertenencia de la entrada al historial público; no permite marcar como leído un mensaje privado ni una entrada ajena.
+- Los marcadores solo avanzan (`GREATEST`) para que una petición atrasada no deshaga el progreso.
+- El frontend muestra insignias de respuestas nuevas en el resumen y en la tabla de casos. Solo tras cargar el expediente se marca como visto el último registro realmente recibido en la respuesta; un mensaje generado después permanece sin leer.
+- La funcionalidad no cambia cuentas, contraseñas, roles ni el acceso interno. No envía notificaciones push ni correo: las insignias se actualizan al cargar o actualizar las vistas.
+
+### Pruebas agregadas
+
+`ClientUnreadIntegrationIT` contiene pruebas para: aislamiento por cuenta e institución, exclusión de notas internas y respuestas propias, rechazo de marcadores internos o ajenos, idempotencia, marcador que nunca retrocede, persistencia entre sesiones y rechazo de roles no autorizados.
+
+Validar en ambiente PostgreSQL aislado:
+
+```bash
+cd backend
+mvn -Ppostgres-it -Dit.test=ClientUnreadIntegrationIT verify
+```
+
+**Pendiente antes de integrar:** compilación Spring/Angular, pruebas de integración reales, migraciones desde una base de prueba, navegador y regresión de acceso del personal. Los trabajos CI actuales de GitHub Actions continúan sin resultado confirmado.
