@@ -77,7 +77,7 @@ export class CasesComponent extends PageState implements OnInit,OnDestroy {
     super();
     effect(()=>{const request=this.openRequest();if(!request)return;untracked(()=>{
       if(request.create===true){this.requestedNewCase.set(true);this.requestedCaseId.set(null);}
-      else if(Number.isSafeInteger(request.caseId)&&request.caseId!>0){this.requestedCaseId.set(request.caseId!);this.requestedNewCase.set(false);}
+      else if(typeof request.caseId==='number'&&Number.isSafeInteger(request.caseId)&&request.caseId>0){this.requestedCaseId.set(request.caseId!);this.requestedNewCase.set(false);}
     });});
     effect(()=>{const id=this.requestedCaseId(),newCase=this.requestedNewCase(),ready=this.initialized(),busy=this.busy(),refresh=this.refreshRequested();if(!ready||busy)return;untracked(()=>{if(newCase){this.requestedNewCase.set(false);this.requestedCaseId.set(null);this.refreshRequested.set(false);this.create();}else if(id!==null){this.requestedCaseId.set(null);this.refreshRequested.set(false);this.selectId(id);}else if(refresh){this.refreshRequested.set(false);void this.perform(async()=>{const c=this.detail();if(c)this.detail.set(await this.api.get<CaseDetail>(`/cases/${c.id}`));await this.refresh();});}});});
   }
