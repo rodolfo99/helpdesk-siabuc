@@ -82,3 +82,32 @@ mvn -Ppostgres-it -Dit.test=PortalLoginIntegrationIT,ClientInformationIntegratio
 ```
 
 **Validación pendiente:** en esta sesión no se ejecutaron Java, PostgreSQL, compilación Angular ni pruebas reales de navegador. El código requiere revisión por CI y prueba manual antes de fusionar a `main`.
+
+## Tercera etapa: bienvenida y acceso a solicitudes (RF-AYU-002, RF-CLI-002, RF-CLI-003)
+
+- Se añadió `ClientGuideComponent` al panel del rol `USER`: la guía muestra acciones hacia **Mis solicitudes**, **Nueva solicitud**, **Mi información SIABUC** y **Centro de ayuda**.
+- La migración `V28__client_guide_completed.sql` registra la finalización **por cuenta de usuario**, con fecha en PostgreSQL. No depende de localStorage ni del navegador.
+- `GET /api/client-portal/guide` permite consultar si ya se terminó; `POST /api/client-portal/guide/complete` marca la finalización de forma idempotente. Ambas operaciones requieren rol `USER`.
+- La guía aparece automáticamente si la cuenta nunca la completó. Después se puede abrir manualmente con **Primeros pasos** en la barra superior sin borrar el estado persistido.
+- El resumen de actividad del cliente muestra las últimas cinco solicitudes disponibles a su cuenta/institución y enlaza directamente al expediente de cada caso.
+- **Nueva solicitud** lleva al formulario actual de casos, que continúa aplicando sus controles existentes de canal, saldo, validación y licencia; no se duplicó la creación de tickets.
+- Se añadió un estado vacío con botón de nueva solicitud cuando el cliente no tiene casos.
+- El portal del personal interno conserva sus credenciales locales, su navegación y sus funcionalidades.
+
+**Alcance preciso:** la guía se guarda por **cuenta**, todavía no por póliza (la identidad por póliza sigue pendiente). El resumen de solicitudes no marca respuestas no leídas: ese indicador requiere un registro de lectura y notificación específico que aún no se ha implementado. No se han modificado estados, consumos ni reglas comerciales.
+
+### Pruebas
+
+`ClientGuideIntegrationIT` incluye:
+1. Finalización persistida entre dos sesiones independientes.
+2. Idempotencia al finalizar varias veces.
+3. Aislamiento entre cuentas, incluso dentro de una misma institución.
+4. Acceso prohibido para `ADMIN` y sesiones anónimas.
+
+Ejecución propuesta en base PostgreSQL de pruebas:
+```bash
+cd backend
+mvn -Ppostgres-it -Dit.test=PortalLoginIntegrationIT,ClientInformationIntegrationIT,ClientGuideIntegrationIT verify
+```
+
+**Estado de validación:** los cambios se han confirmado en la rama de revisión; falta compilación y ejecución de pruebas para declarar esta tercera etapa verificada.
