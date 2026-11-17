@@ -17,7 +17,7 @@ import { RemoteSessionsComponent } from './remote-sessions.component';
 import { CaseKnowledgeComponent } from './case-knowledge.component';
 import { SatisfactionSurveyComponent } from './satisfaction-survey.component';
 interface CaseProfileSummary {caseId:number;category:CaseCategory;priority:CasePriority;}
-export interface CaseOpenRequest {caseId:number;sequence:number;}
+export interface CaseOpenRequest {caseId?:number;create?:boolean;sequence:number;}
 
 @Component({selector:'app-cases',standalone:true,imports:[SavedViewsComponent,ReplyTemplatePickerComponent,CaseIncidentsComponent,CommonModule,FormsModule,CaseProfileComponent,AttachmentsComponent,CaseTimerComponent,RemoteSessionsComponent,CaseKnowledgeComponent,SatisfactionSurveyComponent],templateUrl:'./cases.component.html',styles:[`
   .history-entry-clickable{cursor:pointer;border-radius:0 8px 8px 0;transition:background .15s}
@@ -65,6 +65,7 @@ export class CasesComponent extends PageState implements OnInit,OnDestroy {
   categoryFilter='all';priorityFilter='all';
   private readonly initialized=signal(false);
   private readonly requestedCaseId=signal<number|null>(null);
+  private readonly requestedNewCase=signal(false);
   private readonly refreshRequested=signal(false);
   private readonly element=inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly selectedEntryId=signal<number|null>(null);
@@ -74,8 +75,11 @@ export class CasesComponent extends PageState implements OnInit,OnDestroy {
   search='';fromDate='';toDate='';statusFilter='all';assignmentFilter='all';institutionFilter:number|null=null;newForm={licenseId:null as number|null,institutionId:null as number|null,title:'',description:'',channel:'EMAIL' as Channel,assignedAdminId:null as number|null,profile:emptyCaseProfile()};editForm={title:'',description:'',channel:'EMAIL' as Channel,assignedAdminId:null as number|null};entryDescription='';entryKind:'COMMENT'|'EMAIL'|'REMOTE'='COMMENT';entryHours:number|null=0;entryMinutes:number|null=0;entryInternal=false;statusReason='';voidReason='';
   constructor(){
     super();
-    effect(()=>{const request=this.openRequest();if(request&&Number.isSafeInteger(request.caseId)&&request.caseId>0)untracked(()=>this.requestedCaseId.set(request.caseId));});
-    effect(()=>{const id=this.requestedCaseId(),ready=this.initialized(),busy=this.busy(),refresh=this.refreshRequested();if(!ready||busy)return;untracked(()=>{if(id!==null){this.requestedCaseId.set(null);this.refreshRequested.set(false);this.selectId(id);}else if(refresh){this.refreshRequested.set(false);void this.perform(async()=>{const c=this.detail();if(c)this.detail.set(await this.api.get<CaseDetail>(`/cases/${c.id}`));await this.refresh();});}});});
+    effect(()=>{const request=this.openRequest();if(!request)return;untracked(()=>{
+      if(request.create===true){this.requestedNewCase.set(true);this.requestedCaseId.set(null);}
+      else if(Number.isSafeInteger(request.caseId)&&request.caseId!>0){this.requestedCaseId.set(request.caseId!);this.requestedNewCase.set(false);}
+    });});
+    effect(()=>{const id=this.requestedCaseId(),newCase=this.requestedNewCase(),ready=this.initialized(),busy=this.busy(),refresh=this.refreshRequested();if(!ready||busy)return;untracked(()=>{if(newCase){this.requestedNewCase.set(false);this.requestedCaseId.set(null);this.refreshRequested.set(false);this.create();}else if(id!==null){this.requestedCaseId.set(null);this.refreshRequested.set(false);this.selectId(id);}else if(refresh){this.refreshRequested.set(false);void this.perform(async()=>{const c=this.detail();if(c)this.detail.set(await this.api.get<CaseDetail>(`/cases/${c.id}`));await this.refresh();});}});});
   }
   ngOnInit(){void this.perform(async()=>{await this.refresh();this.initialized.set(true);});}ngOnDestroy(){this.cancelNavigation();}isAdmin(){return this.api.user()?.role==='ADMIN';}isSupportStaff(){return ['ADMIN','TECH'].includes(this.api.user()?.role??'');}
   private cancelNavigation(){if(this.navigationFrame!==null){cancelAnimationFrame(this.navigationFrame);this.navigationFrame=null;}}
