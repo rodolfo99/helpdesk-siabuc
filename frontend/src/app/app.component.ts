@@ -74,9 +74,29 @@ type Page = 'licenses'|'statements'|'reconciliation'|'installments'|'packages'|'
           <p><a href="https://siabuc.ucol.mx" target="_blank" rel="noopener noreferrer">Sitio oficial SIABUC ↗</a></p>
         </div>
       }
+      @if(!staffPortal){
+        <p class="login-help"><button type="button" class="text-button" (click)="recoveryOpen.set(!recoveryOpen())">¿Olvidaste tu contraseña?</button></p>
+      }
       <p class="login-help">¿Necesitas acceso? Comunícate con el administrador de soporte SIABUC.</p>
       <p class="login-help">@if(staffPortal){¿Eres cliente? <a href="/poliza">Ir al portal de clientes</a>}@else{¿Atiendes o administras el sistema? <a href="/poliza/admin">Acceso para personal SIABUC</a>}</p>
-    </form></section>
+    </form>
+    @if(!staffPortal && recoveryOpen()){
+      <form class="login-card recovery-form" (ngSubmit)="recoveryRequested()?confirmRecovery():requestRecovery()" #recoveryForm="ngForm">
+        <h2>Recuperar acceso</h2>
+        <p class="muted">Indica tu usuario y el correo registrado en tu cuenta. Si los datos coinciden y el envío de correo está habilitado, recibirás un código temporal.</p>
+        @if(recoveryMessage()){<div class="notice info" role="status">{{recoveryMessage()}}</div>}
+        <label>Usuario<input name="recoveryUsername" [(ngModel)]="recoveryUsername" maxlength="80" required autocomplete="username"></label>
+        @if(!recoveryRequested()){
+          <label>Correo registrado<input name="recoveryEmail" [(ngModel)]="recoveryEmail" type="email" email maxlength="254" required autocomplete="email"></label>
+        } @else {
+          <label>Código de recuperación<input name="recoveryCode" [(ngModel)]="recoveryCode" required minlength="36" maxlength="36" autocomplete="one-time-code"></label>
+          <label>Contraseña nueva<input name="recoveryNewPassword" [(ngModel)]="recoveryNewPassword" type="password" required minlength="12" autocomplete="new-password"></label>
+        }
+        <button type="submit" class="btn primary full" [disabled]="busy()||recoveryForm.invalid">{{busy()?'Procesando…':recoveryRequested()?'Cambiar contraseña':'Solicitar código'}}</button>
+        <button type="button" class="btn secondary full" (click)="recoveryOpen.set(false);recoveryRequested.set(false);recoveryMessage.set('')" [disabled]="busy()">Volver al acceso</button>
+      </form>
+    }
+    </section>
   </main>
 } @else {
   <div class="app-shell"><aside class="sidebar" [class.mobile-open]="menuOpen()"><div class="brand"><span class="brand-mark">S</span><span>SIABUC<small>Centro de soporte</small></span></div><div class="workspace-label">{{api.user()?.role === 'ADMIN' ? 'ADMINISTRACIÓN' : api.user()?.role === 'BILLING' ? 'COBRANZA' : api.user()?.role === 'TECH' ? 'SOPORTE TÉCNICO' : 'MI INSTITUCIÓN'}}</div><nav aria-label="Navegación principal">@if(api.user()?.role === 'USER'){<button [class.selected]="page() === 'clientInformation'" (click)="navigate('clientInformation')"><span aria-hidden="true">▧</span> Mi información SIABUC</button>}<button [class.selected]="page() === 'licenses'" (click)="navigate('licenses')"><span aria-hidden="true">▧</span> Licencias</button>
@@ -115,6 +135,20 @@ export class AppComponent extends PageState implements OnInit {
   readonly paymentOpenRequest=signal<PaymentOpenRequest|null>(null);
   private paymentRequestSequence=0;
   username=''; password='';
+  readonly recoveryOpen=signal(false);readonly recoveryRequested=signal(false);readonly recoveryMessage=signal('');
+  recoveryUsername='';recoveryEmail='';recoveryCode='';recoveryNewPassword='';
+  requestRecovery(){void this.perform(async()=>{
+    await this.api.post('/auth/recovery/request',{username:this.recoveryUsername.trim(),email:this.recoveryEmail.trim()});
+    this.recoveryMessage.set('Si existe una cuenta cliente con esos datos y el correo está habilitado, se enviará un código de recuperación.');
+    this.recoveryRequested.set(true);
+  });}
+  confirmRecovery(){void this.perform(async()=>{
+    await this.api.post('/auth/recovery/reset',{
+      username:this.recoveryUsername.trim(),code:this.recoveryCode.trim(),newPassword:this.recoveryNewPassword
+    });
+    this.recoveryNewPassword='';this.recoveryCode='';this.recoveryRequested.set(false);
+    this.recoveryMessage.set('Contraseña actualizada. Ya puedes iniciar sesión.');
+  });}
   async ngOnInit() { try {await this.api.restore(); const role=this.api.user()?.role; if(role)this.correctPortal(role);} catch(e) {if (!(e instanceof HttpErrorResponse && e.status === 401)) this.error.set(errorMessage(e));} finally {this.restoring.set(false);} }
   navigate(page:Page) {const role=this.api.user()?.role;if(role==='BILLING'&&!['licenses','dashboard','payments','policies','billingReports','quotes','renewals','paymentRequests','packages','installments','reconciliation','statements','account'].includes(page))return;if(role==='TECH'&&!['licenses','dashboard','cases','knowledge','incidents','replyTemplates','officialResources','account'].includes(page))return;if(role==='USER'&&!['licenses','dashboard','cases','knowledge','clientFinance','clientInformation','officialResources','account'].includes(page))return;this.caseOpenRequest.set(null);this.paymentOpenRequest.set(null);if(page!=='dashboard')this.guideOpenRequest.set(0);this.page.set(page);this.menuOpen.set(false);this.error.set('');}
   showGuide(){if(this.api.user()?.role!=='USER')return;this.navigate('dashboard');this.guideOpenRequest.update(n=>n+1);}
