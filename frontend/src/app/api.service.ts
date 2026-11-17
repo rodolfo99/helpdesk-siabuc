@@ -12,9 +12,11 @@ export class ApiService {
   delete<T>(path:string) { return firstValueFrom(this.http.delete<T>('/api'+path)); }
   csrf() { return this.get<{token:string}>('/auth/csrf'); }
   async restore() { await this.csrf(); this.user.set(await this.get<User>('/auth/me')); }
-  async login(username:string,password:string) {
+  async login(username:string,password:string,portal?:'client'|'staff') {
     await this.csrf();
-    await firstValueFrom(this.http.post('/api/auth/login',new HttpParams().set('username',username).set('password',password)));
+    let form = new HttpParams().set('username',username).set('password',password);
+    if(portal)form = form.set('portal',portal);
+    await firstValueFrom(this.http.post('/api/auth/login',form));
     await this.csrf(); this.user.set(await this.get<User>('/auth/me'));
   }
   async logout() { await this.post('/auth/logout',{}); this.user.set(null); await this.csrf(); }

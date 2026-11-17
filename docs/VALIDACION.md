@@ -1,6 +1,10 @@
 # Validación de SIABUC Helpdesk
 
-## Verificación de seguridad 1.8.5
+## Entrega 1.9.0
+
+La [PR #52](https://github.com/rodolfo99/helpdesk-siabuc/pull/52) reúne requisitos de Adriana, correcciones de revisión y empaquetado 1.9.0. La evidencia funcional de la revisión `1f8cee4`, el alcance de las pruebas y la alerta abierta de `picomatch` se detallan en [Versión 1.9.0](VERSION-1.9.0.md#validación-y-seguridad). Consulte los checks de la PR para el resultado de la revisión final de versión. La auditoría npm de desarrollo no está aprobada; los resultados históricos con cero hallazgos no describen esta entrega.
+
+## Evidencia histórica: seguridad 1.8.5
 
 La revisión final de la PR #21, `2c4ca8e`, aprobó sus 11 controles: las cinco imágenes sin alertas altas/críticas,
 ambas auditorías npm con cero hallazgos, 242 pruebas Java, las regresiones

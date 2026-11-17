@@ -1,4 +1,6 @@
-# Instalación, compilación y operación · 1.8.5
+# Instalación, compilación y operación · 1.9.0
+
+**Portales de acceso:** clientes en `/poliza`; la cuenta inicial y el personal interno ingresan en `/poliza/admin`, con el usuario y la contraseña configurados en el sistema. La raíz `/` redirige al portal de clientes.
 
 En Linux se usan los scripts Bash `.sh`. En Windows se usan los `.bat` desde CMD o PowerShell con Docker Desktop y contenedores Linux; consulte [WINDOWS.md](WINDOWS.md). El desarrollo nativo se ejecuta en Linux o dentro de WSL2. Utilice JDK 17, Maven 3.9 y Node.js 24.22.1 (ver `.nvmrc`) con su npm; los scripts comprueban Java 17 o posterior y Node 24 o posterior, mientras que las imágenes Docker fijan Java 17 y Node 24.22.1. El despliegue Docker sólo requiere Python 3.10+, el motor Docker y Docker Compose con soporte para `up --wait` en el anfitrión.
 
@@ -15,7 +17,7 @@ Para elegir la contraseña PostgreSQL antes del primer arranque, ejecute `./conf
 
 La cuenta administrativa se inicializa cuando no existe un administrador activo. Durante la operación normal siempre debe conservar al menos uno. No existe un usuario invitado ni una contraseña fija para la instalación. Las contraseñas de demostraciones o pruebas automatizadas no se usan en este flujo.
 
-Para actualizar a 1.8.5, conserve `.env`, el nombre del proyecto y los volúmenes, y cree primero un respaldo. Flyway aplica las migraciones pendientes hasta V27; V1–V27 se conservan sin cambios respecto de la ampliación de licencias. V26 añade los cinco estados de casos sin eliminar datos ni cambiar saldos. Consulte [VERSION-1.8.5.md](VERSION-1.8.5.md) y [Licencias](LICENCIAS-HORAS.md) para compatibilidad y retroceso. La [migración a 1.1](MIGRACION-1.1.md) se conserva como referencia histórica de V2/V3, no como lista completa de la versión actual.
+Para actualizar a 1.9.0, conserve `.env`, el nombre del proyecto y los volúmenes, y cree primero un respaldo. Flyway aplica las migraciones pendientes hasta V31; V1–V27 se conservan y V28–V31 incorporan guía inicial, lecturas de respuestas, recursos oficiales y bloqueo de clientes. V26 añade los cinco estados de casos sin eliminar datos ni cambiar saldos. Consulte [VERSION-1.9.0.md](VERSION-1.9.0.md) y [Licencias](LICENCIAS-HORAS.md) para compatibilidad y retroceso. La [migración a 1.1](MIGRACION-1.1.md) se conserva como referencia histórica de V2/V3, no como lista completa de la versión actual.
 
 Una configuración nueva preselecciona Gmail directo con `MAIL_ENABLED=false`, sin usuario, contraseña ni remitente. Un `.env` anterior conserva su proveedor y activación; si no incluía correo, sigue desactivado. `./configurar.sh --gmail-directo` configura Gmail sin Postfix; no prueba autenticación ni envía mensajes. Al reactivar se respetará también la pausa administrativa guardada en PostgreSQL.
 
@@ -59,7 +61,7 @@ npm run build
 npm test
 ```
 
-Artefactos: `backend/target/siabuc-helpdesk-1.8.5.jar` y `frontend/dist/helpdesk/browser/`. `npm ci` utiliza el archivo `package-lock.json` entregado. No sustituya `npm ci` por actualizaciones de dependencias durante una instalación reproducible.
+Artefactos: `backend/target/siabuc-helpdesk-1.9.0.jar` y `frontend/dist/helpdesk/browser/`. `npm ci` utiliza el archivo `package-lock.json` entregado. No sustituya `npm ci` por actualizaciones de dependencias durante una instalación reproducible.
 
 `mvn package` compila también las clases de prueba y ejecuta pruebas unitarias si existen. Los archivos `*IT.java` se ejecutan únicamente con el perfil `postgres-it`. Una compilación satisfactoria no significa por sí sola que se ejecutaron esas pruebas de integración.
 
@@ -114,7 +116,7 @@ from scripts.manage import ROOT, config
 env = os.environ.copy()
 env.update(config())
 env.update(DB_HOST="127.0.0.1", SERVER_ADDRESS="127.0.0.1")
-subprocess.run(["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.8.5.jar")], env=env, check=True)
+subprocess.run(["java", "-jar", str(ROOT / "backend/target/siabuc-helpdesk-1.9.0.jar")], env=env, check=True)
 PY
 ```
 

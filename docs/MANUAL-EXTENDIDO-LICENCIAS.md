@@ -1,5 +1,7 @@
 # Manual extendido de SIABUC Helpdesk 1.8.5 con licencias
 
+> **Complemento vigente 1.9.0:** este manual conserva la base de módulos de 1.8.5. Para instalar o actualizar use [Versión 1.9.0](VERSION-1.9.0.md), [Operación](OPERACION.md) o [Windows](WINDOWS.md). El JAR actual es `siabuc-helpdesk-1.9.0.jar` y las migraciones llegan a V31. Los portales `/poliza` y `/poliza/admin`, bloqueo y recuperación administrativa se rigen por [Accesos de Adriana](ACCESOS-ADRIANA.md); estas indicaciones sustituyen las referencias anteriores de acceso y actualización.
+
 **Cliente institucional · Soporte técnico · Cobranza · Administración · Operación**
 Edición documental: 28 de octubre de 2026. Licencias, horas de soporte, permisos de respaldos y actualización de seguridad.
 Versión de aplicación: **1.8.5**, con licencias y migraciones **V1-V27**. Incluye la ampliación integrada mediante la [PR #19](https://github.com/rodolfo99/helpdesk-siabuc/pull/19) y la [preparación de permisos durante el arranque de 1.8.4](VERSION-1.8.4.md) y la [actualización de seguridad 1.8.5](VERSION-1.8.5.md). Los resultados de CI no acreditan despliegue en producción.

@@ -1,4 +1,6 @@
-# Instalación y operación en Windows · 1.8.5
+# Instalación y operación en Windows · 1.9.0
+
+**Portales de acceso:** clientes en `/poliza`; la cuenta inicial y el personal interno ingresan en `/poliza/admin`, con el usuario y la contraseña configurados en el sistema. La raíz `/` redirige al portal de clientes.
 
 ## Alcance
 
@@ -6,7 +8,7 @@ Los `.bat` permiten operar desde CMD o PowerShell con Python en Windows. Docker 
 
 El desarrollo nativo (`iniciar-dev.sh`, Java/Angular fuera de Docker) se mantiene para Linux/WSL2 en la distribución multiplataforma. En Windows, `iniciar-dev.bat` muestra un aviso y ejecuta el mismo arranque Docker que `iniciar.bat`, sin recarga automática; `compilar.bat` compila dentro de Docker. Los comandos Docker siguen usando la misma configuración y volúmenes del proyecto.
 
-El paquete conjunto `SIABUC-Helpdesk-1.8.5.zip` contiene los fuentes completos y los ocho pares `.sh`/`.bat`; use los `.bat` en Windows. La distribución opcional `SIABUC-Helpdesk-1.8.5-Windows.zip` conserva los fuentes completos, los ocho lanzadores `.bat` y [LEEME-WINDOWS.md](../LEEME-WINDOWS.md), sin archivos `.sh`. Para operar desde Windows siga los comandos de esta guía.
+El paquete conjunto `SIABUC-Helpdesk-1.9.0.zip` contiene los fuentes completos y los ocho pares `.sh`/`.bat`; use los `.bat` en Windows. La distribución opcional `SIABUC-Helpdesk-1.9.0-Windows.zip` conserva los fuentes completos, los ocho lanzadores `.bat` y [LEEME-WINDOWS.md](../LEEME-WINDOWS.md), sin archivos `.sh`. Para operar desde Windows siga los comandos de esta guía.
 
 ## Instalación en orden
 
@@ -107,24 +109,24 @@ Las pruebas de Python comprueban la conservación de datos binarios de respaldo,
 - Docker Desktop Windows: https://docs.docker.com/desktop/setup/install/windows-install/
 - Integración WSL2: https://docs.docker.com/desktop/features/wsl/
 
-## Actualizar a 1.8.5
+## Actualizar a 1.9.0
 
-Conserve `.env`, `COMPOSE_PROJECT_NAME`, los volúmenes y un respaldo reciente. Descomprima el conjunto completo 1.8.5 en otra carpeta, copie la configuración privada y revise `BACKUP_DIRECTORY` si es relativo. Compile con `.\compilar.bat` y `docker compose build --pull db` antes de detener la instalación anterior. Después de ensayar con una copia aislada, detenga la anterior con `.\detener.bat` e inicie desde la carpeta nueva con `.\iniciar.bat`.
+Conserve `.env`, `COMPOSE_PROJECT_NAME`, los volúmenes y un respaldo reciente. Descomprima el conjunto completo 1.9.0 en otra carpeta, copie la configuración privada y revise `BACKUP_DIRECTORY` si es relativo. Compile con `.\compilar.bat` y `docker compose build --pull db` antes de detener la instalación anterior. Después de ensayar con una copia aislada, detenga la anterior con `.\detener.bat` e inicie desde la carpeta nueva con `.\iniciar.bat`.
 
-Flyway aplica las migraciones faltantes hasta **V27**; de 1.8.4 a 1.8.5 no hay migraciones nuevas. Los casos y pólizas anteriores conservan sus datos sin licencia asignada. Siga [Actualización 1.8.5](VERSION-1.8.5.md) y [Licencias y saldos](LICENCIAS-HORAS.md); no ejecute un backend anterior a V27 sobre esa base. El ZIP no reemplaza un respaldo de los datos.
+Flyway aplica las migraciones faltantes hasta **V31**; al actualizar desde 1.8.5 se incorporan V28–V31. Los casos y pólizas anteriores conservan sus datos sin licencia asignada. Siga [Actualización 1.9.0](VERSION-1.9.0.md) y [Licencias y saldos](LICENCIAS-HORAS.md); no ejecute un backend anterior sobre la base ya migrada; para retroceder restaure una copia compatible en una base aislada. El ZIP no reemplaza un respaldo de los datos.
 
 ## Generar el ZIP Windows desde los fuentes
 
 Para el paquete conjunto con `.sh` y `.bat`, omita `--windows`. Desde un checkout Git con los cambios guardados en una rama, ejecute:
 
 ```powershell
-py -3 scripts/release-1.8.5.py --package --output release-output
+py -3 scripts/release-1.9.0.py --package --output release-output
 ```
 
 Para la edición opcional solo con lanzadores Windows:
 
 ```powershell
-py -3 scripts/release-1.8.5.py --package --windows --output release-output
+py -3 scripts/release-1.9.0.py --package --windows --output release-output
 ```
 
 Se genera el ZIP Windows y su suma SHA-256; el manifiesto interno verifica los archivos incluidos. El empaquetador omite `.env`, respaldos, datos de ejecución, dependencias instaladas y archivos `.sh`. Sin `--windows` conserva la distribución multiplataforma.

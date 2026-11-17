@@ -15,7 +15,43 @@ public class ClientPortalController {
                               CaseProfileService.ProfileInput profile, Long licenseId) {}
 
     private final HelpdeskService service;
-    public ClientPortalController(HelpdeskService service) { this.service = service; }
+    private final ClientInformationService information;
+    private final ClientGuideService guide;
+    private final ClientUnreadService unread;
+    public ClientPortalController(HelpdeskService service, ClientInformationService information,
+                                  ClientGuideService guide, ClientUnreadService unread) {
+        this.service = service;
+        this.information = information;
+        this.guide = guide;
+        this.unread = unread;
+    }
+
+    @GetMapping("/tickets/unread")
+    public java.util.List<ClientUnreadService.UnreadTicket> unreadTickets() {
+        return unread.unread();
+    }
+
+    @PostMapping("/tickets/{caseId}/read")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void markTicketRead(@PathVariable long caseId,
+                               @RequestBody ClientUnreadService.ReadRequest input) {
+        unread.markRead(caseId, input);
+    }
+
+    @GetMapping("/guide")
+    public ClientGuideService.Status guide() {
+        return guide.status(service.me());
+    }
+
+    @PostMapping("/guide/complete")
+    public ClientGuideService.Status completeGuide() {
+        return guide.complete(service.me());
+    }
+
+    @GetMapping("/my-information")
+    public ClientInformationService.Summary information() {
+        return information.summary(service.me());
+    }
 
     @PostMapping("/tickets")
     @ResponseStatus(HttpStatus.CREATED)

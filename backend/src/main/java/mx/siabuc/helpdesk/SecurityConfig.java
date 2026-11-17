@@ -40,28 +40,34 @@ public class SecurityConfig {
     @Bean UserDetailsService userDetailsService(JdbcTemplate db) {
         return username -> {
             var rows = db.query("""
-                SELECT u.username,u.password_hash,u.auth_version,u.role,u.active,(u.role IN ('ADMIN','BILLING','TECH') OR COALESCE(i.active,FALSE)) AS institution_active
+                SELECT u.username,u.password_hash,u.auth_version,u.role,u.active,(u.role IN ('ADMIN','BILLING','TECH') OR COALESCE(i.active,FALSE)) AS institution_active,
+                    (u.role<>'USER' OR u.login_locked_until IS NULL OR u.login_locked_until<=NOW()) AS login_unlocked
                 FROM app_users u LEFT JOIN institutions i ON i.id=u.institution_id WHERE u.username=?
                 """, (r, n) -> new AccountDetails(r.getString("username"), r.getString("password_hash"),
-                    r.getBoolean("active") && r.getBoolean("institution_active"), r.getString("role"), r.getLong("auth_version")), username);
+                    r.getBoolean("active") && r.getBoolean("institution_active") && r.getBoolean("login_unlocked"), r.getString("role"), r.getLong("auth_version")), username);
             if (rows.isEmpty()) throw new UsernameNotFoundException("Credenciales inválidas.");
             return rows.get(0);
         };
     }
 
     @Bean SecurityFilterChain security(HttpSecurity http, HelpdeskService service, ObjectMapper json,
-            @Value("${app.cookie-secure:false}") boolean secure) throws Exception {
+            @Value("${app.cookie-secure:false}") boolean secure, ClientLoginService clientLogin) throws Exception {
         CookieCsrfTokenRepository csrfRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
         csrfRepository.setCookieCustomizer(cookie -> cookie.path("/").sameSite("Strict").secure(secure));
         http
             .csrf(csrf -> csrf.csrfTokenRepository(csrfRepository).csrfTokenRequestHandler(new SpaCsrfHandler()))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/csrf", "/api/auth/login", "/api/health", "/error").permitAll()
+                .requestMatchers("/api/auth/recovery/**").denyAll()
+                .requestMatchers("/api/auth/client-login-settings", "/api/auth/client-login-locks",
+                    "/api/auth/client-login-locks/**").hasRole("ADMIN")
                 .requestMatchers("/api/users", "/api/users/**", "/api/audit", "/api/notifications", "/api/notifications/**").hasRole("ADMIN")
                 .requestMatchers("/api/client-finance-access", "/api/client-finance-access/**", "/api/backups/**", "/api/satisfaction/reports", "/api/satisfaction/reports.csv", "/api/satisfaction/options").hasRole("ADMIN")
                 .requestMatchers("/api/client-finance", "/api/client-finance/**").hasRole("USER")
+                .requestMatchers("/api/client-portal/**").hasRole("USER")
                 .requestMatchers("/api/quotes", "/api/quotes/**", "/api/renewals", "/api/renewals/**", "/api/payment-requests", "/api/payment-requests/**").hasAnyRole("ADMIN", "BILLING")
                 .requestMatchers("/api/knowledge", "/api/knowledge/**").hasAnyRole("ADMIN", "TECH", "USER")
+                .requestMatchers("/api/official-resources", "/api/official-resources/**").hasAnyRole("ADMIN", "TECH", "USER")
                 .requestMatchers("/api/satisfaction/**").hasAnyRole("ADMIN", "USER")
                 .requestMatchers("/api/support-staff", "/api/timers/**").hasAnyRole("ADMIN", "TECH")
                 .requestMatchers("/api/saved-views", "/api/saved-views/**").hasAnyRole("ADMIN", "TECH", "USER")
@@ -86,10 +92,28 @@ public class SecurityConfig {
                 .anyRequest().denyAll())
             .formLogin(form -> form.loginProcessingUrl("/api/auth/login")
                 .successHandler((request, response, authentication) -> {
+                    // Transitional portals: keep current credentials until UCOL federation and
+                    // policy/email authentication are designed and approved independently.
+                    // The legacy endpoint without a portal parameter remains compatible.
+                    String portal = request.getParameter("portal");
+                    boolean customer = authentication.getAuthorities().stream()
+                        .anyMatch(authority -> "ROLE_USER".equals(authority.getAuthority()));
+                    if (("client".equals(portal) && !customer)
+                            || ("staff".equals(portal) && customer)
+                            || (portal != null && !"client".equals(portal) && !"staff".equals(portal))) {
+                        if (request.getSession(false) != null) request.getSession(false).invalidate();
+                        SecurityContextHolder.clearContext();
+                        write(json, response, 403, "La cuenta no corresponde a este portal. Utilice el acceso indicado para su perfil.");
+                        return;
+                    }
+                    clientLogin.successful(authentication.getName());
                     request.getSession().setAttribute("credentialVersion", ((AccountDetails) authentication.getPrincipal()).version);
                     write(json, response, 200, "Sesión iniciada.");
                 })
-                .failureHandler((request, response, exception) -> write(json, response, 401, "Usuario o contraseña incorrectos, o cuenta no disponible.")))
+                .failureHandler((request, response, exception) -> {
+                    clientLogin.failed(request.getParameter("username"));
+                    write(json, response, 401, "Usuario o contraseña incorrectos, o cuenta temporalmente no disponible.");
+                }))
             .logout(logout -> logout.logoutUrl("/api/auth/logout").invalidateHttpSession(true).clearAuthentication(true)
                 .deleteCookies("JSESSIONID").logoutSuccessHandler((request, response, auth) -> response.setStatus(204)))
             .requestCache(cache -> cache.disable())

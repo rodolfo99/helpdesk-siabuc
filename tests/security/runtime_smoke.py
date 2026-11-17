@@ -95,7 +95,11 @@ def main() -> None:
         assert sql(db, "SELECT label FROM upgrade_fixture WHERE id=185", "restored") == "conservado-áéí"
         print("PASS: PostgreSQL 17 volume upgrade and backup/restore", flush=True)
 
-        # Start the final non-root, read-only backend image and run Flyway V1–V27.
+        # Compare every applied migration with the SQL files in this source revision.
+        migration_dir = Path(__file__).resolve().parents[2] / "backend/src/main/resources/db/migration"
+        expected_migrations = sorted(path.name for path in migration_dir.glob("V*__*.sql"))
+        assert expected_migrations, "No versioned Flyway migrations found in the source tree"
+        # Start the final non-root, read-only backend image and run all Flyway migrations.
         sql(db, "CREATE DATABASE application")
         backend = start("backend", images["backend"], "--network-alias", "backend",
                         "--read-only", "--tmpfs", "/tmp", "--security-opt", "no-new-privileges:true",
@@ -104,7 +108,9 @@ def main() -> None:
                         "-e", "MAIL_ENABLED=false")
         wait_for(lambda: run("docker", "exec", backend, "wget", "-qO-",
                              "http://127.0.0.1:8080/api/health"), "final backend health")
-        assert sql(db, "SELECT count(*) FROM flyway_schema_history WHERE success", "application") == "27"
+        applied_migrations = sql(db, "SELECT script FROM flyway_schema_history WHERE success AND type='SQL'", "application").splitlines()
+        assert sorted(applied_migrations) == expected_migrations, (applied_migrations, expected_migrations)
+        assert sql(db, "SELECT count(*) FROM flyway_schema_history WHERE NOT success", "application") == "0"
         print("PASS: final backend image startup and Flyway migrations", flush=True)
 
         smtp_options = ("-v", volumes[1] + ":/var/spool/postfix", "-e", "SMTP_RELAY_HOST=delivery.invalid",

@@ -192,9 +192,20 @@ public class HelpdeskService {
         if (old.active() && old.role() == Role.ADMIN && (!input.active() || input.role() != Role.ADMIN)
             && db.queryForObject("SELECT COUNT(*) FROM app_users WHERE role='ADMIN' AND active", Long.class) <= 1)
             throw ApiException.conflict("Debe conservar al menos un administrador activo.");
-        db.update("UPDATE app_users SET display_name=?,role=?,institution_id=?,active=?,email=? WHERE id=?", clean(input.displayName()), input.role().name(), input.institutionId(), input.active(), input.email() == null ? old.email() : optional(input.email()), id);
-        if (input.password() != null && !input.password().isEmpty())
-            db.update("UPDATE app_users SET password_hash=?,auth_version=auth_version+1 WHERE id=?", passwords.encode(input.password()), id);
+        String nextEmail = input.email() == null ? old.email() : optional(input.email());
+        boolean emailChanged = !Objects.equals(old.email(), nextEmail);
+        db.update("UPDATE app_users SET display_name=?,role=?,institution_id=?,active=?,email=? WHERE id=?",
+            clean(input.displayName()), input.role().name(), input.institutionId(), input.active(), nextEmail, id);
+        // Editing a client contact email or deactivating a client invalidates old sessions.
+        // Password resets remain exclusively available in the administrative user form.
+        if (old.role() == Role.USER && (emailChanged || !input.active()))
+            db.update("UPDATE app_users SET auth_version=auth_version+1 WHERE id=?", id);
+        if (input.password() != null && !input.password().isEmpty()) {
+            db.update("UPDATE app_users SET password_hash=?,auth_version=auth_version+1 WHERE id=?",
+                passwords.encode(input.password()), id);
+            if (old.role() == Role.USER)
+                db.update("UPDATE app_users SET failed_login_attempts=0,login_locked_until=NULL WHERE id=?",id);
+        }
         audit(actor.username(), "UPDATE_USER", "USER", id, "Antes: " + old + "; después: " + user(id) + "; contraseña restablecida=" + (input.password() != null && !input.password().isEmpty()));
         return user(id);
     }
