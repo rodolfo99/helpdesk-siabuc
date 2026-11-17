@@ -46,7 +46,7 @@ Ejecutar en una **base de datos de pruebas aislada** con los requisitos document
 
 ```bash
 cd backend
-mvn -Ppostgres-it -Dtest=PortalLoginIntegrationIT verify
+mvn -Ppostgres-it -Dit.test=PortalLoginIntegrationIT verify
 ```
 
 Esta guía no afirma que las pruebas nuevas ya se hayan ejecutado. La integración con proveedores institucionales requiere diseño de identidad, verificación adicional y pruebas de aceptación independientes.
