@@ -94,7 +94,7 @@ mvn -Ppostgres-it -Dit.test=PortalLoginIntegrationIT,ClientInformationIntegratio
 - Se añadió un estado vacío con botón de nueva solicitud cuando el cliente no tiene casos.
 - El portal del personal interno conserva sus credenciales locales, su navegación y sus funcionalidades.
 
-**Alcance preciso:** la guía se guarda por **cuenta**, todavía no por póliza (la identidad por póliza sigue pendiente). El resumen de solicitudes no marca respuestas no leídas: ese indicador requiere un registro de lectura y notificación específico que aún no se ha implementado. No se han modificado estados, consumos ni reglas comerciales.
+**Alcance preciso:** la guía se guarda por **cuenta**, todavía no por póliza (la identidad por póliza sigue pendiente). El resumen de solicitudes incorpora ya el indicador de respuestas públicas sin leer, descrito en la cuarta etapa. Los avisos por correo o notificaciones en tiempo real siguen fuera del alcance de esa mejora. No se han modificado estados, consumos ni reglas comerciales.
 
 ### Pruebas
 
