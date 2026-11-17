@@ -161,52 +161,40 @@ mvn -Ppostgres-it -Dit.test=OfficialResourceIntegrationIT verify
 
 **Pendiente:** ejecutar CI, validar compilación de Angular/Spring Boot, migraciones con PostgreSQL, verificar enlaces oficiales reales antes de publicarlos y probar apertura manual desde navegador. No se necesita publicar un servidor HTTPS para ejecutar las pruebas del catálogo.
 
-## Sexta etapa: acceso local de clientes, bloqueo y recuperación (RF-LOG-005 a RF-LOG-008)
+## Sexta etapa revisada: acceso local, bloqueo y recuperación exclusivamente administrativa
 
-**Decisión funcional vigente:** el cliente inicia sesión mediante usuario y contraseña de Helpdesk; **no** se exige vincular número de póliza, correo y licencia SIABUC9. El personal interno (`ADMIN`, `TECH`, `BILLING`) conserva usuario/contraseña local y su ruta separada `/poliza/admin`; no se ha integrado Federación UCOL.
+**Criterio confirmado:** clientes y personal interno siguen usando **usuario y contraseña** del sistema, con pantallas de acceso separadas. No se vincula aún la identidad con póliza, correo ni licencia SIABUC9; tampoco se incorpora Federación UCOL.
 
-### RF-LOG-005 y RF-LOG-006 — bloqueo temporal de cuentas USER
+### RF-LOG-005 y RF-LOG-006 — bloqueo configurable de cuentas clientes
 
-- La migración `V31__client_login_lockout.sql` añade un contador de errores y fecha de desbloqueo por cuenta `USER` y los parámetros globales revisables `max_attempts` y `lock_minutes`.
-- Configuración inicial: **5 errores** y **15 minutos** de bloqueo. El administrador puede escoger entre 3–10 errores y 1–1440 minutos.
-- Spring Security deniega nuevas autenticaciones cuando el bloqueo está vigente; el handler registra las fallas atómicamente mediante bloqueos de fila PostgreSQL. El éxito limpia el contador y el bloqueo. Al terminar el periodo se permite iniciar sesión de nuevo.
-- Un intento durante el bloqueo no extiende su duración.
-- `GET/PUT /api/auth/client-login-settings` permite consultar/editar los límites sólo a `ADMIN`; `GET /api/auth/client-login-locks` muestra los contadores; `POST /api/auth/client-login-locks/{userId}/unlock` permite desbloquear manualmente, con auditoría. Las opciones están en **Administración → Usuarios**.
-- Para no permitir enumerar cuentas existentes, los errores de inicio de sesión del cliente son genéricos. El bloqueo por cuenta no reemplaza futuras medidas de protección por IP, proxy o infraestructura institucional.
-- La política se aplica únicamente a cuentas `USER`. Los roles internos conservan el inicio de sesión local sin el nuevo bloqueo.
+- La migración `V31__client_login_lockout.sql` añade contador por cuenta `USER` y parámetros globales de bloqueo.
+- Inicialmente se permiten cinco intentos fallidos y se bloquea la cuenta durante 15 minutos; el administrador puede ajustar el umbral de 3 a 10 y la duración de 1 a 1440 minutos.
+- La configuración y el desbloqueo manual están disponibles exclusivamente a `ADMIN` desde **Administración → Usuarios**. El acceso interno local no se somete a esta nueva política.
+- La API evita enumerar cuentas mediante mensajes de error específicos. Se requiere probar concurrencia, expiración de bloqueos y límites en un entorno aislado.
 
-### RF-LOG-007 — recuperación transitoria por correo (PARCIAL)
+### RF-LOG-007 — recuperación exclusivamente mediante administrador interno
 
-El requisito original describe recuperar número de póliza/correo mediante la clave `MX-XXXX-XXX`. **Eso sigue pendiente** de la integración de póliza, licencia y correo SIABUC9, que expresamente se pospuso.
+**No se ofrece ninguna recuperación automática o autoservicio.** Los clientes deben contactar al personal interno del Centro SIABUC para solicitar el restablecimiento. Únicamente una cuenta con rol `ADMIN` puede cambiar la contraseña de otra cuenta mediante **Administración → Usuarios → Editar acceso → Restablecer contraseña por administrador**. Los técnicos y cobranza no cuentan con permisos de gestión de usuarios.
 
-Se implementó, en su lugar, recuperación segura de la **contraseña de la cuenta local de cliente**:
-1. Desde `/poliza`, el cliente pulsa **¿Olvidaste tu contraseña?** y facilita usuario y correo guardado en `app_users.email`.
-2. `POST /api/auth/recovery/request` responde siempre 202, exista o no la cuenta. Sólo cuando existe una cuenta `USER` activa con ese correo, el envío SMTP está habilitado y la cola no está pausada se genera un código aleatorio. Se emite como aviso por el sistema de correo existente.
-3. El código se conserva como hash SHA-256 en `client_password_recovery` (`V32`), caduca en **15 minutos** y se limita la solicitud a una por cuenta cada cinco minutos. Los correos de recuperación contienen el código, pero los detalles de notificaciones administrativas lo ocultan y no permiten reintentos manuales.
-4. `POST /api/auth/recovery/reset` valida usuario, código y contraseña nueva; el código se consume en una única operación transaccional, se cambia la contraseña cifrada con BCrypt, se incrementa `auth_version` para invalidar sesiones y se reinicia el bloqueo.
+El administrador debe comprobar la identidad y la autorización del solicitante por el procedimiento interno aplicable antes de realizar el cambio. La contraseña nueva se almacena con el algoritmo de hash habitual de Helpdesk y se invalida la sesión anterior mediante `auth_version`. Para cuentas cliente, el restablecimiento también reinicia el contador de errores y el bloqueo temporal.
 
-**Condición de uso:** mientras `MAIL_ENABLED=false` o el envío esté pausado, no se emiten códigos. El administrador puede utilizar el formulario existente de usuarios para restablecer la contraseña y corregir el correo. Debe activarse SMTP y comprobarse la entrega real antes de dar por disponible la recuperación al público.
+- Se retiraron los endpoints públicos `/api/auth/recovery/request` y `/api/auth/recovery/reset` y se añadió una regla explícita de denegación.
+- Se eliminó el servicio de envío de códigos de recuperación, su tabla y la migración V32. No se envían correos de recuperación, ni se generan códigos, ni se solicitan claves `MX-XXXX-XXX`.
+- **La recuperación de número de póliza/correo mediante clave de licencia, planteada en el documento original de Adriana, sigue pendiente** por decisión de alcance.
 
-### RF-LOG-008 — gestión del correo desde Administración → Usuarios (PARCIAL)
+### RF-LOG-008 — correo de contacto desde formulario de usuarios
 
-El formulario de usuarios permite cambiar el **correo de contacto y recuperación de la cuenta local** de cliente; su actualización queda bajo permisos de `ADMIN`. Cambiar correo, contraseña o desactivar una cuenta cliente revoca cualquier código de recuperación pendiente; un cambio de correo invalida sesiones anteriores.
+Sólo `ADMIN` puede actualizar `app_users.email`, el correo de contacto de una cuenta de Helpdesk, mediante el formulario administrativo de usuarios. La edición de correo de cuentas cliente invalida la sesión anterior para requerir nueva autenticación; no inicia verificaciones automáticas ni envía mensajes.
 
-**No** cambia el correo registrado en una licencia SIABUC9, ni verifica automáticamente que el nuevo buzón pertenezca al cliente. Es una adaptación administrativa temporal conforme al alcance solicitado; la verificación de correo nuevo y la vinculación comercial quedan pendientes.
+**Terminología:** cualquier dirección registrada como asociada a una licencia SIABUC9 es un **correo asociado a la licencia**, no necesariamente un «correo comercial». Actualmente ese dato no está vinculado automáticamente a `app_users.email`, por lo que cambiar el correo de la cuenta de Helpdesk **no actualiza ni verifica el correo asociado a la licencia**. Esa vinculación sigue pendiente.
 
-### Pruebas de integración
+### Pruebas que deben ejecutarse
 
-`ClientAccessIntegrationIT` incluye escenarios para:
-- Bloqueo después de tres errores cuando el umbral se configura a tres, rechazo durante el bloqueo y desbloqueo administrativo.
-- Independencia del inicio de sesión de personal interno.
-- Autorización y rangos de parámetros globales.
-- Uso único de un código temporal de recuperación (registro preparado en la base de pruebas).
-- Respuesta genérica 202 de solicitud y edición administrativa del correo.
-- Revocación de códigos antiguos cuando un administrador modifica el correo.
+`ClientAccessIntegrationIT` verifica el bloqueo configurado, el desbloqueo administrativo, permisos de configuración, ausencia de endpoints de recuperación pública, restablecimiento de contraseña por administrador, invalidación de sesiones y edición de correo de contacto.
 
-Para ejecutar en PostgreSQL aislado:
 ```bash
 cd backend
 mvn -Ppostgres-it -Dit.test=ClientAccessIntegrationIT verify
 ```
 
-**Estado:** cambios guardados en la rama del PR #52; aún faltan compilación, CI y pruebas reales de correo SMTP. No deben fusionarse ni considerarse completados hasta revisar resultados, migraciones y flujo de navegador.
+Los cambios están en la rama del PR #52, sin fusionar. Aún se necesitan compilación, ejecución satisfactoria de pruebas y revisión antes de integrar a `main`.
