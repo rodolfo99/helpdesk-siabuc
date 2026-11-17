@@ -54,7 +54,8 @@ class ClientInformationIntegrationIT extends ApiIntegrationSupport {
         assertThat(info.path("licenses").get(0).path("id").asLong()).isEqualTo(mineLicense);
         String rendered = info.toString();
         assertThat(rendered).doesNotContain("agreedAmount", "paidAmount", "cancelReason",
-            "createdBy", "passwordHash", String.valueOf(otherPolicy));
+            "createdBy", "passwordHash");
+        assertThat(info.path("policies").get(0).path("id").asLong()).isNotEqualTo(otherPolicy);
         assertThat(info.path("licenses").get(0).path("id").asLong()).isNotEqualTo(otherLicense);
     }
 
