@@ -13,7 +13,7 @@ La raíz `/` redirige a `/poliza` mediante Nginx. Las rutas sirven el mismo fron
 
 ## Alcance y compatibilidad
 
-- Esta **primera etapa mantiene usuario y contraseña** con las cuentas y roles existentes. No se cambia el esquema PostgreSQL ni las credenciales guardadas.
+- Se mantienen **usuario y contraseña** con las cuentas y roles existentes. La separación inicial no modificó credenciales, pero las etapas posteriores incorporan migraciones V28–V32 para guía, avisos, recursos, bloqueo y recuperación de clientes.
 - La Federación de Identidades UCOL (`RF-LOG-004`) **no** está implementada.
 - El acceso por número de póliza y correo registrado (`RF-LOG-003`) **no** está implementado. No se aceptan esos valores como sustitutos de contraseña.
 - El endpoint previo `POST /api/auth/login` sin parámetro `portal` sigue disponible para clientes anteriores y suites de pruebas. Los nuevos formularios envían `portal=client` o `portal=staff`.
