@@ -67,10 +67,13 @@ class ClientAccessIntegrationIT extends ApiIntegrationSupport {
 
     @Test void noPublicPasswordRecoveryEndpointsAreAvailable() throws Exception {
         Client guest=new Client();
-        assertStatus(guest.post("/auth/recovery/request",
+        // For anonymous callers Spring Security can return 401 (entry point) or 403.
+        assertThat(guest.post("/auth/recovery/request",
+            Map.of("username","cualquiera","email","persona@example.test")).getResponse().getStatus()).isIn(401,403);
+        assertThat(guest.post("/auth/recovery/reset",
+            Map.of("username","cualquiera","code","codigo","newPassword","NuevaClaveSegura123!")).getResponse().getStatus()).isIn(401,403);
+        assertStatus(admin.post("/auth/recovery/request",
             Map.of("username","cualquiera","email","persona@example.test")),403);
-        assertStatus(guest.post("/auth/recovery/reset",
-            Map.of("username","cualquiera","code","codigo","newPassword","NuevaClaveSegura123!")),403);
     }
 
     @Test void onlyAdminCanResetPasswordUsingUserForm() throws Exception {
