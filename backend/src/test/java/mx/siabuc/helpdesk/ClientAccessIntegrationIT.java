@@ -114,6 +114,29 @@ class ClientAccessIntegrationIT extends ApiIntegrationSupport {
         assertThat(changed.path("institutionId").asLong()).isEqualTo(institutionId);
     }
 
+    @Test void changingClientContactEmailInvalidatesOutstandingRecoveryCode() throws Exception {
+        long institutionId=institution(30,30);
+        String username=unique("email-revoke");
+        JsonNode created=createUser(username,institutionId);
+        long id=created.path("id").asLong();
+        String code="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        String hash=HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+            .digest(code.getBytes(StandardCharsets.UTF_8)));
+        db.update("""
+            INSERT INTO client_password_recovery(user_id,token_hash,expires_at)
+            VALUES(?,?,NOW()+INTERVAL '15 minutes')
+            """,id,hash);
+        var edit=new LinkedHashMap<String,Object>(userPayload(username,institutionId,true));
+        edit.put("password","");
+        edit.put("email","nuevo@example.test");
+        success(admin.put("/users/"+id,edit));
+        assertThat(db.queryForObject(
+            "SELECT COUNT(*) FROM client_password_recovery WHERE user_id=?",Long.class,id)).isZero();
+        Client guest=new Client();
+        assertStatus(guest.post("/auth/recovery/reset",
+            Map.of("username",username,"code",code,"newPassword","NuevaClaveSegura123!")),400);
+    }
+
     private ClientLoginService.Settings setting() throws Exception {
         JsonNode s=success(admin.get("/auth/client-login-settings"));
         return new ClientLoginService.Settings(s.path("maxAttempts").asInt(),
