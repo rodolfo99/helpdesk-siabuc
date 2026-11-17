@@ -15,7 +15,16 @@ public class ClientPortalController {
                               CaseProfileService.ProfileInput profile, Long licenseId) {}
 
     private final HelpdeskService service;
-    public ClientPortalController(HelpdeskService service) { this.service = service; }
+    private final ClientInformationService information;
+    public ClientPortalController(HelpdeskService service, ClientInformationService information) {
+        this.service = service;
+        this.information = information;
+    }
+
+    @GetMapping("/my-information")
+    public ClientInformationService.Summary information() {
+        return information.summary(service.me());
+    }
 
     @PostMapping("/tickets")
     @ResponseStatus(HttpStatus.CREATED)
