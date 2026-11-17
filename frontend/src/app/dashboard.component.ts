@@ -1,5 +1,5 @@
 import { caseStatusLabel, isActiveCase } from './case-status';
-import { Component, inject, signal, output, OnInit } from '@angular/core';
+import { Component, inject, signal, output, input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService, PageState } from './api.service';
 import { Institution, SupportCase } from './models';
