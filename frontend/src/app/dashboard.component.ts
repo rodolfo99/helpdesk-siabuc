@@ -3,6 +3,7 @@ import { Component, inject, signal, output, input, OnInit } from '@angular/core'
 import { CommonModule } from '@angular/common';
 import { ApiService, PageState } from './api.service';
 import { Institution, SupportCase } from './models';
+interface UnreadTicket { caseId:number; unreadCount:number; }
 import { formatTime } from './time';
 import { ClientGuideComponent } from './client-guide.component';
 @Component({selector:'app-dashboard',standalone:true,imports:[CommonModule,ClientGuideComponent],template:`
@@ -17,15 +18,25 @@ import { ClientGuideComponent } from './client-guide.component';
   <div class="balance-overview"><div class="balance-channel"><span class="channel-icon">✉</span><div><div class="muted">Atención por correo</div><strong>{{time(remaining('email'))}}</strong><small>disponibles · {{remaining('email')}} minutos</small></div></div><div class="balance-channel"><span class="channel-icon remote">▣</span><div><div class="muted">Escritorio remoto</div><strong>{{time(remaining('remote'))}}</strong><small>disponibles · {{remaining('remote')}} minutos</small></div></div></div>
   @if(institutions().length){<div class="institution-balances">@for (item of institutions(); track item.id) {<div class="institution-balance"><div class="balance-title"><b>{{item.name}}</b>@if(!item.active){<span class="badge closed">Inactiva</span>}</div><div class="mini-balances"><div><span>Correo</span><b [class.danger-text]="item.emailRemainingMinutes <= 0">{{time(item.emailRemainingMinutes)}}</b><div class="progress"><i [style.width.%]="usage(item.emailUsedMinutes,item.emailAllocatedMinutes)"></i></div><small>{{time(item.emailUsedMinutes)}} utilizados / {{time(item.emailAllocatedMinutes)}} asignados</small></div><div><span>Remoto</span><b [class.danger-text]="item.remoteRemainingMinutes <= 0">{{time(item.remoteRemainingMinutes)}}</b><div class="progress remote"><i [style.width.%]="usage(item.remoteUsedMinutes,item.remoteAllocatedMinutes)"></i></div><small>{{time(item.remoteUsedMinutes)}} utilizados / {{time(item.remoteAllocatedMinutes)}} asignados</small></div></div></div>}</div>}
   @else {<div class="empty-state"><span>▦</span><h3>Aún no hay instituciones</h3><p>Registra una institución y configura sus horas de soporte.</p></div>}
-</section><section class="panel"><div class="panel-heading"><div><h2>{{isClient()?'Mis solicitudes recientes':'Actividad reciente'}}</h2><p>{{isClient()?'Selecciona una solicitud para abrir su seguimiento.':'Últimos casos actualizados.'}}</p></div></div><div class="recent-list">@for(item of recent();track item.id){<button class="recent-item" (click)="openCase.emit(item.id)"><div class="recent-top"><span class="case-number">#{{item.id}}</span><span class="badge" [attr.data-case-status]="item.status" [class.open]="isActiveCase(item.status)" [class.closed]="item.status === 'CLOSED'">{{statusLabel(item.status)}}</span></div><h3>{{item.title}}</h3><p>{{item.institutionName}}</p><small>{{item.updatedAt | date:'dd MMM yyyy, HH:mm'}} · {{item.channel === 'EMAIL' ? 'Correo' : 'Remoto'}}</small></button>}@empty{<div class="empty-state"><span>▤</span><h3>{{isClient()?'Aún no tienes solicitudes':'Todo comienza con un caso'}}</h3><p>{{isClient()?'Crea una solicitud para comenzar el seguimiento.':'Las solicitudes aparecerán aquí.'}}</p>@if(isClient()){<button class="btn primary" type="button" (click)="newCase.emit()">Nueva solicitud</button>}</div>}</div></section></div>
+</section><section class="panel"><div class="panel-heading"><div><h2>{{isClient()?'Mis solicitudes recientes':'Actividad reciente'}}</h2>@if(isClient() && unreadTotal()>0){<span class="subtle-tag" role="status">{{unreadTotal()}} respuestas sin leer</span>}<p>{{isClient()?'Selecciona una solicitud para abrir su seguimiento.':'Últimos casos actualizados.'}}</p></div></div><div class="recent-list">@for(item of recent();track item.id){<button class="recent-item" (click)="openCase.emit(item.id)"><div class="recent-top"><span class="case-number">#{{item.id}}</span>@if(isClient() && unreadFor(item.id)>0){<span class="badge open" aria-label="Respuestas nuevas">{{unreadFor(item.id)}} nueva{{unreadFor(item.id)===1?'':'s'}}</span>}<span class="badge" [attr.data-case-status]="item.status" [class.open]="isActiveCase(item.status)" [class.closed]="item.status === 'CLOSED'">{{statusLabel(item.status)}}</span></div><h3>{{item.title}}</h3><p>{{item.institutionName}}</p><small>{{item.updatedAt | date:'dd MMM yyyy, HH:mm'}} · {{item.channel === 'EMAIL' ? 'Correo' : 'Remoto'}}</small></button>}@empty{<div class="empty-state"><span>▤</span><h3>{{isClient()?'Aún no tienes solicitudes':'Todo comienza con un caso'}}</h3><p>{{isClient()?'Crea una solicitud para comenzar el seguimiento.':'Las solicitudes aparecerán aquí.'}}</p>@if(isClient()){<button class="btn primary" type="button" (click)="newCase.emit()">Nueva solicitud</button>}</div>}</div></section></div>
 }`})
 export class DashboardComponent extends PageState implements OnInit {
   readonly statusLabel=caseStatusLabel;readonly isActiveCase=isActiveCase;
   private api=inject(ApiService);readonly openCases=output<void>();readonly openCase=output<number>();readonly newCase=output<void>();
   readonly guideDestination=output<'cases'|'newCase'|'clientInformation'|'knowledge'>();readonly guideOpenRequest=input(0);
-  readonly institutions=signal<Institution[]>([]);readonly cases=signal<SupportCase[]>([]);readonly time=formatTime;
+  readonly institutions=signal<Institution[]>([]);readonly cases=signal<SupportCase[]>([]);readonly unread=signal<Record<number,number>>({});readonly time=formatTime;
   ngOnInit(){this.load();} isClient(){return this.api.user()?.role==='USER';} isAdmin(){return ['ADMIN','TECH'].includes(this.api.user()?.role??'');}
-  load(){void this.perform(async()=>{const [institutions,cases]=await Promise.all([this.api.get<Institution[]>('/institutions'),this.api.get<SupportCase[]>('/cases')]);this.institutions.set(institutions);this.cases.set(cases);});}
+  load(){void this.perform(async()=>{
+    const [institutions,cases,unread]=await Promise.all([
+      this.api.get<Institution[]>('/institutions'),
+      this.api.get<SupportCase[]>('/cases'),
+      this.isClient()?this.api.get<UnreadTicket[]>('/client-portal/tickets/unread'):Promise.resolve([])
+    ]);
+    this.institutions.set(institutions);this.cases.set(cases);
+    this.unread.set(Object.fromEntries(unread.map(row=>[row.caseId,row.unreadCount])));
+  });}
+  unreadFor(caseId:number){return this.unread()[caseId]??0;}
+  unreadTotal(){return Object.values(this.unread()).reduce((sum,n)=>sum+n,0);}
   openCount(){return this.cases().filter(c=>isActiveCase(c.status)).length;} resolvedCount(){return this.cases().filter(c=>c.status==='RESOLVED').length;} closedCount(){return this.cases().filter(c=>c.status==='CLOSED').length;} activeCount(){return this.institutions().filter(i=>i.active).length;}
   usedTotal(){return this.institutions().reduce((sum,i)=>sum+i.emailUsedMinutes+i.remoteUsedMinutes,0);}
   remaining(channel:'email'|'remote'){return this.institutions().filter(i=>i.active).reduce((sum,i)=>sum+(channel==='email'?i.emailRemainingMinutes:i.remoteRemainingMinutes),0);}
