@@ -1,4 +1,4 @@
-FROM postgres:17-alpine
+FROM postgres:18-alpine
 # The worker invokes pg_dump/pg_restore directly and never uses gosu or the
 # database-server entrypoint. Remove the unused Go binary from this runtime.
 RUN apk upgrade --no-cache \
