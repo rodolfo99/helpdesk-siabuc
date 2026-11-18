@@ -176,11 +176,23 @@ Requisitos en Linux: Docker Engine funcionando, complemento `docker compose` con
    ./iniciar.sh
    ```
 
-5. Abra **http://127.0.0.1:4200** o el puerto `FRONTEND_PORT` que haya configurado. Acceda con la cuenta indicada en `.env`, cambie su contraseña en **Mi cuenta** y comience creando una institución y sus usuarios.
+5. Abra **http://127.0.0.1:4200/poliza/admin** para el personal interno o **http://127.0.0.1:4200/poliza** para clientes, usando el puerto `FRONTEND_PORT` que haya configurado. Acceda con la cuenta indicada en `.env`, cambie su contraseña en **Mi cuenta** y comience creando una institución y sus usuarios.
 
 El primer inicio descarga dependencias. El script espera a PostgreSQL, Spring, Nginx y el servicio de respaldo. Postfix solo arranca con SMTP_HOST=smtp. El servicio de respaldo permanece esperando: su calendario empieza desactivado. Si algún puerto está ocupado, cambie su valor en `.env` y vuelva a iniciar.
 
 Si omite `configurar.sh`, `iniciar.sh` genera `.env` automáticamente. Nunca publique ni comparta ese archivo. Los scripts resuelven su propia carpeta y pueden invocarse desde cualquier directorio.
+
+### El navegador pierde el puerto o muestra un error SSL
+
+El acceso local de Docker utiliza **HTTP**. Escriba la URL completa con `http://`; el puerto `4200` no ofrece HTTPS por sí mismo. Si Firefox intenta convertir esa dirección a HTTPS, configure una excepción de su modo «Solo HTTPS» únicamente para este sitio local. Para acceso desde otro equipo use la IP LAN real del servidor; `0.0.0.0` es una dirección de escucha, no la dirección que se recomienda abrir en el navegador.
+
+El ZIP original 1.9.0 puede redirigir la raíz `/` a `/poliza` perdiendo el puerto externo. Entrar directamente a una de las URL anteriores evita esa redirección. La corrección en `frontend/nginx.conf` añade `absolute_redirect off;` dentro de `server { ... }`, de modo que Nginx devuelve `Location: /poliza` y el navegador conserva su origen. Después de actualizar ese archivo, reconstruya únicamente el frontend desde la carpeta de su instalación:
+
+```bash
+docker compose up -d --build --no-deps frontend
+```
+
+Este comando usa el `.env` existente y recrea solo el servicio web. Para comprobar la corrección, `curl -I http://127.0.0.1:4200/` debe mostrar `302` y `Location: /poliza`. El HTTPS institucional requiere el proxy y certificado descritos en la sección de red.
 
 ### Comandos equivalentes en Linux y Windows
 

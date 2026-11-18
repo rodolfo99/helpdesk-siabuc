@@ -81,8 +81,18 @@ jobs:
           port=$(docker port "$container" 80/tcp | cut -d: -f2)
           status=$(curl --fail --retry 10 --retry-all-errors --retry-delay 1 -D nginx-headers.txt -w '%{http_code}' "http://127.0.0.1:$port/" -o /dev/null)
           test "$status" = 302
-          tr -d '\r' < nginx-headers.txt | grep -Eq '^Location: (https?://[^/]+)?/poliza$'
+          tr -d '\r' < nginx-headers.txt | grep -Fx 'Location: /poliza'
           curl --fail "http://127.0.0.1:$port/index.html" -o nginx-index.html
+          # Follow the redirect through Docker's published port, as a browser does.
+          effective_url=$(curl --fail --location --max-redirs 3 -w '%{url_effective}' "http://127.0.0.1:$port/" -o nginx-redirect.html)
+          test "$effective_url" = "http://127.0.0.1:$port/poliza"
+          cmp nginx-index.html nginx-redirect.html
+          # Relative redirects also retain custom ports, LAN hosts and proxy HTTPS.
+          for authority in '127.0.0.1:4200' 'localhost:4200' '0.0.0.0:4200' '192.0.2.10:8420' 'siabuc.ucol.mx'; do
+            status=$(curl --fail -H "Host: $authority" -H 'X-Forwarded-Proto: https' -D nginx-authority-headers.txt -w '%{http_code}' "http://127.0.0.1:$port/" -o /dev/null)
+            test "$status" = 302
+            tr -d '\r' < nginx-authority-headers.txt | grep -Fx 'Location: /poliza'
+          done
           for route in poliza poliza/admin cases; do
             curl --fail "http://127.0.0.1:$port/$route" -o nginx-route.html
             cmp nginx-index.html nginx-route.html
