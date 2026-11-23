@@ -11,7 +11,7 @@ RUN git init . \
 ENV CGO_ENABLED=0 GOTOOLCHAIN=local
 RUN go build -trimpath -ldflags='-w' -o /out/gosu .
 
-FROM postgres:17-alpine
+FROM postgres:18-alpine
 RUN apk upgrade --no-cache
 COPY --from=gosu-build /out/gosu /usr/local/bin/gosu
 RUN gosu nobody id && gosu postgres sh -c 'test "$(id -u)" = 70'
