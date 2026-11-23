@@ -142,7 +142,7 @@ try{
   await check('Clients can see their balances but cannot manage defaults or topups',async()=>{
     const {context,page}=await setup('USER',{width:390,height:844});
     await page.getByRole('button',{name:'Abrir navegación'}).click();
-    if(process.env.E2E_SCREENSHOT_DIR)await page.screenshot({path:resolve(process.env.E2E_SCREENSHOT_DIR,'siabuc-menu-cliente-movil.png'),fullPage:true});
+    if(process.env.E2E_SCREENSHOT_DIR)await page.locator('.sidebar').screenshot({path:resolve(process.env.E2E_SCREENSHOT_DIR,'siabuc-menu-cliente-movil.png'),animations:'disabled'});
     await page.getByRole('navigation').getByRole('button',{name:'Licencias',exact:true}).click();
     await expect(page.getByRole('heading',{name:'Licencias',exact:true})).toBeVisible();
     await expect(page.getByRole('button',{name:'Nueva licencia',exact:true})).toHaveCount(0);
