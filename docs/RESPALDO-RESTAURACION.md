@@ -1,6 +1,6 @@
 # Respaldo y restauración de SIABUC Helpdesk · 1.8.5
 
-En Windows utilice `respaldar.bat` y `restaurar.bat` con los mismos argumentos; consulte [WINDOWS.md](WINDOWS.md). Los scripts `respaldar.sh` y `restaurar.sh` operan sobre la base PostgreSQL del servicio Docker `db`, utilizando los valores de conexión de `.env`. La versión 1.9.0 usa PostgreSQL 17 y migraciones hasta V31; consulte la [actualización 1.9.0](VERSION-1.9.0.md). Las evidencias anteriores conservan su alcance histórico.
+En Windows utilice `respaldar.bat` y `restaurar.bat` con los mismos argumentos; consulte [WINDOWS.md](WINDOWS.md). Los scripts `respaldar.sh` y `restaurar.sh` operan sobre la base PostgreSQL del servicio Docker `db`, utilizando los valores de conexión de `.env`. La versión 1.9.1 usa PostgreSQL 17 y migraciones hasta V31; consulte la [actualización 1.9.1](VERSION-1.9.1.md). Las evidencias anteriores conservan su alcance histórico.
 
 Desde 1.6 existe también un calendario de respaldos **desactivado por defecto**, administrable en **Respaldos**. El servicio `backup` puede permanecer iniciado sin producir copias programadas. Activarlo requiere configurar y confirmar el destino; desactivarlo conserva copias e historial y no impide respaldar manualmente. La programación, retención y prueba de restauración en un proyecto aislado se documentan en [RESPALDOS-AUTOMATICOS.md](RESPALDOS-AUTOMATICOS.md). Los comandos de esta guía siguen siendo respaldos **manuales**, fuera de la limpieza automática.
 

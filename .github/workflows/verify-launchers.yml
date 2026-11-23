@@ -20,18 +20,18 @@ jobs:
       - name: Operational Python checks and Linux launchers
         run: |
           python3 -m unittest discover -s tests/ops
-          python3 -m py_compile scripts/manage.py scripts/release-1.9.0.py
+          python3 -m py_compile scripts/manage.py scripts/release-1.9.1.py
           for script in ./*.sh; do
             bash "$script" --help
           done
           test ! -e .env
       - name: Package both systems and check launcher integrity
         run: |
-          python3 scripts/release-1.9.0.py --package --output release-output
+          python3 scripts/release-1.9.1.py --package --output release-output
           python3 - <<'PY'
           import hashlib, stat, zipfile
           from pathlib import Path
-          with zipfile.ZipFile('release-output/SIABUC-Helpdesk-1.9.0.zip') as archive:
+          with zipfile.ZipFile('release-output/SIABUC-Helpdesk-1.9.1.zip') as archive:
               names = set(archive.namelist())
               shell = {Path(name).stem for name in names if name.endswith('.sh')}
               batch = {Path(name).stem for name in names if name.endswith('.bat')}
@@ -49,7 +49,7 @@ jobs:
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: SIABUC-Helpdesk-1.9.0-Linux-Windows
+          name: SIABUC-Helpdesk-1.9.1-Linux-Windows
           path: release-output/*
           if-no-files-found: error
           retention-days: 14

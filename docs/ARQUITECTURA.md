@@ -1,4 +1,4 @@
-# Arquitectura y reglas de integridad · 1.9.0
+# Arquitectura y reglas de integridad · 1.9.1
 
 ## Componentes
 
@@ -13,7 +13,7 @@
 
 En desarrollo, el servidor Angular ocupa el lugar de Nginx y su proxy toma `SERVER_PORT` del entorno. En Docker, los puertos internos son estables; sólo se configuran sus publicaciones en el anfitrión.
 
-Versiones y fuentes de construcción de 1.9.0:
+Versiones y fuentes de construcción de 1.9.1 (sin cambios de dependencias respecto de 1.9.0):
 
 | Componente | Configuración del repositorio |
 | --- | --- |

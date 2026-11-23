@@ -9,7 +9,7 @@ FROM eclipse-temurin:17-jre-alpine
 RUN apk upgrade --no-cache
 RUN addgroup -S -g 10001 app && adduser -S -u 10001 -G app app
 WORKDIR /app
-COPY --from=build --chown=app:app /build/target/siabuc-helpdesk-1.9.0.jar app.jar
+COPY --from=build --chown=app:app /build/target/siabuc-helpdesk-1.9.1.jar app.jar
 USER app
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

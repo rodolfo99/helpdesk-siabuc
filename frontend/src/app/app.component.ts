@@ -80,16 +80,85 @@ type Page = 'licenses'|'statements'|'reconciliation'|'installments'|'packages'|'
     </section>
   </main>
 } @else {
-  <div class="app-shell"><aside class="sidebar" [class.mobile-open]="menuOpen()"><div class="brand"><span class="brand-mark">S</span><span>SIABUC<small>Centro de soporte</small></span></div><div class="workspace-label">{{api.user()?.role === 'ADMIN' ? 'ADMINISTRACIÓN' : api.user()?.role === 'BILLING' ? 'COBRANZA' : api.user()?.role === 'TECH' ? 'SOPORTE TÉCNICO' : 'MI INSTITUCIÓN'}}</div><nav aria-label="Navegación principal">@if(api.user()?.role === 'USER'){<button [class.selected]="page() === 'clientInformation'" (click)="navigate('clientInformation')"><span aria-hidden="true">▧</span> Mi información SIABUC</button>}<button [class.selected]="page() === 'licenses'" (click)="navigate('licenses')"><span aria-hidden="true">▧</span> Licencias</button>
+  <div class="app-shell"><aside class="sidebar" [class.mobile-open]="menuOpen()"><div class="brand"><span class="brand-mark">S</span><span>SIABUC<small>Centro de soporte</small></span></div><div class="workspace-label">{{api.user()?.role === 'ADMIN' ? 'ADMINISTRACIÓN' : api.user()?.role === 'BILLING' ? 'COBRANZA' : api.user()?.role === 'TECH' ? 'SOPORTE TÉCNICO' : 'MI INSTITUCIÓN'}}</div><nav aria-label="Navegación principal">
+    @if (api.user()?.role === 'ADMIN') {
+      <button [class.selected]="page() === 'settings'" (click)="navigate('settings')"><span aria-hidden="true">⚙</span> Configuración de soporte</button>
+    }
+    @if (api.user()?.role === 'ADMIN') {
+      <button [class.selected]="page() === 'users'" (click)="navigate('users')"><span aria-hidden="true">♙</span> Usuarios</button>
+    }
+    @if (api.user()?.role === 'ADMIN') {
+      <button [class.selected]="page() === 'institutions'" (click)="navigate('institutions')"><span aria-hidden="true">▦</span> Instituciones</button>
+    }
+    @if (api.user()?.role === 'USER') {
+      <button [class.selected]="page() === 'clientInformation'" (click)="navigate('clientInformation')"><span aria-hidden="true">▧</span> Mi información SIABUC</button>
+    }
+    <button [class.selected]="page() === 'licenses'" (click)="navigate('licenses')"><span aria-hidden="true">▧</span> Licencias</button>
+    @if (api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING') {
+      <button [class.selected]="page() === 'policies'" (click)="navigate('policies')"><span aria-hidden="true">▧</span> Pólizas</button>
+    }
+    @if (api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING') {
+      <button [class.selected]="page() === 'payments'" (click)="navigate('payments')"><span aria-hidden="true">▣</span> Pagos</button>
+    }
+    @if (api.user()?.role !== 'BILLING') {
+      <button [class.selected]="page() === 'cases'" (click)="navigate('cases')"><span aria-hidden="true">▤</span> Casos de soporte</button>
+    }
     <button [class.selected]="page() === 'dashboard'" (click)="navigate('dashboard')"><span aria-hidden="true">◫</span> {{api.user()?.role === 'BILLING' ? 'Resumen financiero' : 'Resumen'}}</button>
-    @if(api.user()?.role !== 'BILLING'){<button [class.selected]="page() === 'cases'" (click)="navigate('cases')"><span aria-hidden="true">▤</span> Casos de soporte</button>}
-    @if(api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING'){<button [class.selected]="page() === 'payments'" (click)="navigate('payments')"><span aria-hidden="true">▣</span> Pagos</button><button [class.selected]="page() === 'policies'" (click)="navigate('policies')"><span aria-hidden="true">▧</span> Pólizas</button><button [class.selected]="page() === 'billingReports'" (click)="navigate('billingReports')"><span aria-hidden="true">▥</span> Reportes de cobranza</button>}
-    @if(api.user()?.role !== 'BILLING'){<button [class.selected]="page() === 'knowledge'" (click)="navigate('knowledge')"><span aria-hidden="true">▤</span> Base de conocimientos</button><button [class.selected]="page() === 'officialResources'" (click)="navigate('officialResources')"><span aria-hidden="true">⇩</span> Descargas y recursos</button>}
-    @if(api.user()?.role === 'USER'){<button [class.selected]="page() === 'clientFinance'" (click)="navigate('clientFinance')"><span aria-hidden="true">▣</span> Finanzas institucionales</button>}
-    @if(api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING'){<button [class.selected]="page() === 'quotes'" (click)="navigate('quotes')"><span aria-hidden="true">▧</span> Cotizaciones</button><button [class.selected]="page() === 'paymentRequests'" (click)="navigate('paymentRequests')"><span aria-hidden="true">✓</span> Validar pagos</button><button [class.selected]="page() === 'renewals'" (click)="navigate('renewals')"><span aria-hidden="true">◷</span> Renovaciones</button>}
-    @if(api.user()?.role === 'ADMIN'){<button [class.selected]="page() === 'satisfaction'" (click)="navigate('satisfaction')"><span aria-hidden="true">☆</span> Satisfacción</button><button [class.selected]="page() === 'backups'" (click)="navigate('backups')"><span aria-hidden="true">▣</span> Respaldos</button>}
-    @if (api.user()?.role === 'ADMIN') {<button [class.selected]="page() === 'institutions'" (click)="navigate('institutions')"><span aria-hidden="true">▦</span> Instituciones</button><button [class.selected]="page() === 'users'" (click)="navigate('users')"><span aria-hidden="true">♙</span> Usuarios</button><button [class.selected]="page() === 'audit'" (click)="navigate('audit')"><span aria-hidden="true">◷</span> Auditoría</button><button [class.selected]="page() === 'notifications'" (click)="navigate('notifications')"><span aria-hidden="true">✉</span> Notificaciones</button><button [class.selected]="page() === 'reports'" (click)="navigate('reports')"><span aria-hidden="true">▥</span> Reportes</button><button [class.selected]="page() === 'settings'" (click)="navigate('settings')"><span aria-hidden="true">⚙</span> Configuración de soporte</button>}
-  @if(api.user()?.role === 'ADMIN' || api.user()?.role === 'TECH'){<button [class.selected]="page() === 'incidents'" (click)="navigate('incidents')"><span aria-hidden="true">▤</span> Incidencias generales</button>}@if(api.user()?.role === 'ADMIN' || api.user()?.role === 'TECH'){<button [class.selected]="page() === 'replyTemplates'" (click)="navigate('replyTemplates')"><span aria-hidden="true">▤</span> Plantillas</button>}@if(api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING'){<button [class.selected]="page() === 'packages'" (click)="navigate('packages')"><span aria-hidden="true">▤</span> Paquetes y tarifas</button>}@if(api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING'){<button [class.selected]="page() === 'installments'" (click)="navigate('installments')"><span aria-hidden="true">▤</span> Parcialidades</button>}@if(api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING'){<button [class.selected]="page() === 'reconciliation'" (click)="navigate('reconciliation')"><span aria-hidden="true">▤</span> Conciliación bancaria</button>}@if(api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING'){<button [class.selected]="page() === 'statements'" (click)="navigate('statements')"><span aria-hidden="true">▤</span> Estados de cuenta</button>}</nav><div class="sidebar-bottom"><div class="side-note"><span class="status-dot"></span> Cada minuto cuenta<p>Correo y escritorio remoto tienen saldos independientes.</p></div><button class="profile" (click)="navigate('account')"><span class="avatar">{{api.user()?.displayName?.slice(0,1)?.toUpperCase()}}</span><span><b>{{api.user()?.displayName}}</b><small>{{api.user()?.role === 'ADMIN' ? 'Administrador' : api.user()?.role === 'BILLING' ? 'Cobranza' : api.user()?.role === 'TECH' ? 'Técnico de soporte' : 'Usuario de soporte'}}</small></span></button><button class="logout" [disabled]="busy()" (click)="logout()">Cerrar sesión ↗</button></div></aside>
+    @if (api.user()?.role === 'USER') {
+      <button [class.selected]="page() === 'clientFinance'" (click)="navigate('clientFinance')"><span aria-hidden="true">▣</span> Finanzas institucionales</button>
+    }
+    @if (api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING') {
+      <button [class.selected]="page() === 'packages'" (click)="navigate('packages')"><span aria-hidden="true">▤</span> Paquetes y tarifas</button>
+    }
+    @if (api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING') {
+      <button [class.selected]="page() === 'quotes'" (click)="navigate('quotes')"><span aria-hidden="true">▧</span> Cotizaciones</button>
+    }
+    @if (api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING') {
+      <button [class.selected]="page() === 'paymentRequests'" (click)="navigate('paymentRequests')"><span aria-hidden="true">✓</span> Validar pagos</button>
+    }
+    @if (api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING') {
+      <button [class.selected]="page() === 'installments'" (click)="navigate('installments')"><span aria-hidden="true">▤</span> Parcialidades</button>
+    }
+    @if (api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING') {
+      <button [class.selected]="page() === 'reconciliation'" (click)="navigate('reconciliation')"><span aria-hidden="true">▤</span> Conciliación bancaria</button>
+    }
+    @if (api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING') {
+      <button [class.selected]="page() === 'statements'" (click)="navigate('statements')"><span aria-hidden="true">▤</span> Estados de cuenta</button>
+    }
+    @if (api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING') {
+      <button [class.selected]="page() === 'renewals'" (click)="navigate('renewals')"><span aria-hidden="true">◷</span> Renovaciones</button>
+    }
+    @if (api.user()?.role !== 'BILLING') {
+      <button [class.selected]="page() === 'knowledge'" (click)="navigate('knowledge')"><span aria-hidden="true">▤</span> Base de conocimientos</button>
+    }
+    @if (api.user()?.role !== 'BILLING') {
+      <button [class.selected]="page() === 'officialResources'" (click)="navigate('officialResources')"><span aria-hidden="true">⇩</span> Descargas y recursos</button>
+    }
+    @if (api.user()?.role === 'ADMIN' || api.user()?.role === 'TECH') {
+      <button [class.selected]="page() === 'incidents'" (click)="navigate('incidents')"><span aria-hidden="true">▤</span> Incidencias generales</button>
+    }
+    @if (api.user()?.role === 'ADMIN' || api.user()?.role === 'TECH') {
+      <button [class.selected]="page() === 'replyTemplates'" (click)="navigate('replyTemplates')"><span aria-hidden="true">▤</span> Plantillas</button>
+    }
+    @if (api.user()?.role === 'ADMIN') {
+      <button [class.selected]="page() === 'reports'" (click)="navigate('reports')"><span aria-hidden="true">▥</span> Reportes</button>
+    }
+    @if (api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING') {
+      <button [class.selected]="page() === 'billingReports'" (click)="navigate('billingReports')"><span aria-hidden="true">▥</span> Reportes de cobranza</button>
+    }
+    @if (api.user()?.role === 'ADMIN') {
+      <button [class.selected]="page() === 'satisfaction'" (click)="navigate('satisfaction')"><span aria-hidden="true">☆</span> Satisfacción</button>
+    }
+    @if (api.user()?.role === 'ADMIN') {
+      <button [class.selected]="page() === 'notifications'" (click)="navigate('notifications')"><span aria-hidden="true">✉</span> Notificaciones</button>
+    }
+    @if (api.user()?.role === 'ADMIN') {
+      <button [class.selected]="page() === 'audit'" (click)="navigate('audit')"><span aria-hidden="true">◷</span> Auditoría</button>
+    }
+    @if (api.user()?.role === 'ADMIN') {
+      <button [class.selected]="page() === 'backups'" (click)="navigate('backups')"><span aria-hidden="true">▣</span> Respaldos</button>
+    }
+  </nav><div class="sidebar-bottom"><div class="side-note"><span class="status-dot"></span> Cada minuto cuenta<p>Correo y escritorio remoto tienen saldos independientes.</p></div><button class="profile" (click)="navigate('account')"><span class="avatar">{{api.user()?.displayName?.slice(0,1)?.toUpperCase()}}</span><span><b>{{api.user()?.displayName}}</b><small>{{api.user()?.role === 'ADMIN' ? 'Administrador' : api.user()?.role === 'BILLING' ? 'Cobranza' : api.user()?.role === 'TECH' ? 'Técnico de soporte' : 'Usuario de soporte'}}</small></span></button><button class="logout" [disabled]="busy()" (click)="logout()">Cerrar sesión ↗</button></div></aside>
   <div class="workspace"><header class="topbar"><button class="mobile-menu" (click)="menuOpen.set(!menuOpen())" aria-label="Abrir navegación" [attr.aria-expanded]="menuOpen()">☰</button><div class="breadcrumb">Centro de soporte <span>/</span> <b>{{pageTitle()}}</b></div>@if(api.user()?.role === 'USER'){<button type="button" class="btn secondary" (click)="showGuide()">Primeros pasos</button><button type="button" class="btn secondary" (click)="navigate('knowledge')">Centro de ayuda</button>}<app-notification-bell [user]="api.user()" (openCase)="openNotificationCase($event)"/><span class="role-pill">{{api.user()?.role === 'ADMIN' ? 'Administración' : api.user()?.role === 'BILLING' ? 'Portal de cobranza' : api.user()?.role === 'TECH' ? 'Soporte técnico' : 'Portal de atención'}}</span></header>
     <main class="main-content">@if(api.user()?.role === 'ADMIN'){<app-backup-alert-banner (openBackups)="navigate('backups')"/>}@if (error()) {<div class="notice error" role="alert">{{error()}}</div>}
       @switch(page()) { @case('licenses'){<app-licenses/>} @case('statements'){@if(api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING'){<app-institution-statement/>}} @case('reconciliation'){@if(api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING'){<app-bank-reconciliation/>}} @case('installments'){@if(api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING'){<app-installments/>}} @case('packages'){@if(api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING'){<app-support-packages/>}} @case('replyTemplates'){@if(api.user()?.role === 'ADMIN' || api.user()?.role === 'TECH'){<app-reply-templates/>}} @case('incidents'){@if(api.user()?.role === 'ADMIN' || api.user()?.role === 'TECH'){<app-incidents (openCase)="openNotificationCase($event)"/>}} @case('dashboard'){@if(api.user()?.role === 'BILLING'){<app-billing-dashboard (openPayments)="navigate('payments')" (openPolicies)="navigate('policies')" (openReports)="navigate('billingReports')"/>}@else{<app-dashboard [guideOpenRequest]="guideOpenRequest()" (openCases)="navigate('cases')" (openCase)="openNotificationCase($event)" (newCase)="openNewCase()" (guideDestination)="guideNavigate($event)"/>}} @case('institutions'){<app-institutions/>} @case('users'){<app-users/>} @case('cases'){@if(api.user()?.role !== 'BILLING'){<app-cases [openRequest]="caseOpenRequest()"/>}} @case('audit'){<app-audit/>} @case('account'){<app-account/>} @case('payments'){@if(api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING'){<app-payments [openRequest]="paymentOpenRequest()"/>}} @case('policies'){@if(api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING'){<app-policies (openPayment)="openPolicyPayment($event)"/>}} @case('billingReports'){@if(api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING'){<app-billing-reports/>}} @case('quotes'){@if(api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING'){<app-quotes/>}} @case('renewals'){@if(api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING'){<app-renewals (openQuotes)="navigate('quotes')"/>}} @case('paymentRequests'){@if(api.user()?.role === 'ADMIN' || api.user()?.role === 'BILLING'){<app-payment-requests/>}} @case('clientFinance'){@if(api.user()?.role === 'USER'){<app-client-finance/>}} @case('clientInformation'){@if(api.user()?.role === 'USER'){<app-client-information/>}} @case('knowledge'){@if(api.user()?.role !== 'BILLING'){<app-knowledge-base (openOfficialResources)="navigate('officialResources')"/>}} @case('officialResources'){@if(api.user()?.role !== 'BILLING'){<app-official-resources/>}} @case('satisfaction'){@if(api.user()?.role === 'ADMIN'){<app-satisfaction-reports/>}} @case('backups'){@if(api.user()?.role === 'ADMIN'){<app-backup-status/>}} @case('notifications'){@if(api.user()?.role === 'ADMIN'){<app-notifications/>}} @case('reports'){@if(api.user()?.role === 'ADMIN'){<app-reports/>}} @case('settings'){@if(api.user()?.role === 'ADMIN'){<div class="page-heading"><div><div class="eyebrow">ADMINISTRACIÓN</div><h1>Configuración de soporte</h1><p>Horas incluidas de licencias, horario laboral, plazos de atención y avisos de saldo disponible.</p></div></div><div class="support-settings-stack"><app-license-defaults/><app-support-settings/><app-sla-alert-settings/><app-balance-alert-settings/><app-finance-access/></div>}} }

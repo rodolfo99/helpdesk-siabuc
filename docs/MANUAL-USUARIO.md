@@ -1,8 +1,30 @@
-# Manual de uso — SIABUC Helpdesk 1.9.0
+# Manual de uso — SIABUC Helpdesk 1.9.1
 
-**Licencias incluidas en 1.9.0:** consulte [Licencias y horas predeterminadas](LICENCIAS-HORAS.md). Las pólizas pueden vincularse a una licencia y sus pagos acreditan esa bolsa; los saldos anteriores permanecen sin licencia.
+**Licencias incluidas en 1.9.1:** consulte [Licencias y horas predeterminadas](LICENCIAS-HORAS.md). Las pólizas pueden vincularse a una licencia y sus pagos acreditan esa bolsa; los saldos anteriores permanecen sin licencia.
 
-Esta guía resume la operación vigente. El [manual detallado de módulos, con complemento 1.9.0](MANUAL-EXTENDIDO-LICENCIAS.md) desarrolla la instalación, los recorridos por rol, los casos de uso y la resolución de problemas. Las [notas 1.9.0](VERSION-1.9.0.md) explican la actualización y sus límites de validación.
+Esta guía resume la operación vigente. El [manual detallado de módulos, con complemento 1.9.1](MANUAL-EXTENDIDO-LICENCIAS.md) desarrolla la instalación, los recorridos por rol, los casos de uso y la resolución de problemas. Las [notas 1.9.1](VERSION-1.9.1.md) explican la actualización y sus límites de validación.
+
+## Orden del menú y recorrido inicial
+
+Desde 1.9.1, el menú de Administración sigue este orden de arriba abajo:
+
+| Orden | Menú | Uso en el recorrido |
+| --- | --- | --- |
+| 1 | Configuración de soporte | Guardar las horas predeterminadas antes de crear licencias; revisar horario y plazos. |
+| 2 | Usuarios | Crear al personal interno. Volver después de crear la institución para registrar sus cuentas cliente. |
+| 3 | Instituciones | Registrar al cliente y, si procede, asignarle un responsable de soporte activo. |
+| 4 | Licencias | Elegir la institución y guardar su licencia con las horas incluidas. |
+| 5 | Pólizas | Cuando corresponda, registrar el contrato y seleccionar su licencia. El alta no acredita horas. |
+| 6 | Pagos | Registrar el cobro y la acreditación autorizada de horas, sin duplicar horas ya otorgadas. |
+| 7 | Casos de soporte | Revisar el saldo de la licencia/canal y usar Nuevo caso → Revisar solicitud → Confirmar y crear caso. |
+
+Usuarios y Licencias aparecen una sola vez: se vuelve a ellos cuando se necesita crear al cliente o consultar el saldo. Pólizas y Pagos se usan cuando corresponde contratar o ampliar soporte; una licencia con saldo puede utilizarse directamente en un caso.
+
+Después aparecen Resumen, Paquetes y tarifas, Cotizaciones, Validar pagos, Parcialidades, Conciliación bancaria, Estados de cuenta, Renovaciones, Base de conocimientos, Descargas y recursos, Incidencias generales, Plantillas, Reportes, Reportes de cobranza, Satisfacción, Notificaciones, Auditoría y Respaldos. Cada rol conserva únicamente sus menús autorizados. El cliente empieza por Mi información SIABUC, Licencias y Casos de soporte; conserva Resumen y Finanzas institucionales, además de ayuda y recursos.
+
+La sesión sigue abriendo Resumen: reordenar el menú no ejecuta configuración ni movimientos de dinero o tiempo. Una cotización nueva sin antecedente genera una póliza sin licencia; para una contratación ligada a una licencia usa Pólizas → Nueva póliza. Una renovación conserva la licencia de la póliza anterior.
+
+## Estados de soporte
 
 El soporte utiliza cinco estados: **Recibido**, **En atención**, **Requiere respuesta del cliente**, **Resuelto** y **Cerrado**. En el detalle se cambian mediante **Cambiar estado**, seleccionando el destino y escribiendo el motivo. **Pendientes de resolver** agrupa los primeros tres; Resuelto y Cerrado se muestran separados.
 
