@@ -1,10 +1,10 @@
-# Instalación de SIABUC Helpdesk 1.9.0 desde cero en Ubuntu
+# Instalación de SIABUC Helpdesk 1.9.1 desde cero en Ubuntu
 
 **Portales de acceso:** clientes en `/poliza`; la cuenta inicial y el personal interno ingresan en `/poliza/admin`, con el usuario y la contraseña configurados en el sistema. La raíz `/` redirige al portal de clientes.
 
-Guía para una **instalación nueva** de SIABUC Helpdesk con Docker Compose en **Ubuntu 24.04 o 26.04 LTS**. Se basa en los scripts y el `docker-compose.yml` de la versión 1.9.0 (entrega de la [PR #52](https://github.com/rodolfo99/helpdesk-siabuc/pull/52)); no describe una migración de datos.
+Guía para una **instalación nueva** de SIABUC Helpdesk con Docker Compose en **Ubuntu 24.04 o 26.04 LTS**. Se basa en los scripts y el `docker-compose.yml` de la [versión 1.9.1](VERSION-1.9.1.md); no describe una migración de datos.
 
-> **¿Ya tienes una instalación con información?** No sigas estos pasos como si fuera nueva: realiza un respaldo y consulta [actualización a 1.9.0](VERSION-1.9.0.md) y [respaldo y restauración](RESPALDO-RESTAURACION.md). Reutilizar `COMPOSE_PROJECT_NAME` puede conectar con volúmenes existentes; cambiarlo crea un proyecto independiente, pero no migra datos.
+> **¿Ya tienes una instalación con información?** No sigas estos pasos como si fuera nueva: realiza un respaldo y consulta [actualización a 1.9.1](VERSION-1.9.1.md) y [respaldo y restauración](RESPALDO-RESTAURACION.md). Reutilizar `COMPOSE_PROJECT_NAME` puede conectar con volúmenes existentes; cambiarlo crea un proyecto independiente, pero no migra datos.
 
 ## 1. Requisitos y comprobaciones previas
 
@@ -69,7 +69,7 @@ cd helpdesk-siabuc
 head -n 1 README.md
 ~~~
 
-La primera línea para esta entrega debe indicar `SIABUC Helpdesk 1.9.0`. Para una versión posterior, revisa los cambios de esa versión antes de seguir esta guía. No es necesario usar una rama de una PR antigua: la revisión 1.8.4 de permisos de respaldos ya está integrada en `main`.
+La primera línea para esta entrega debe indicar `SIABUC Helpdesk 1.9.1`. Para una versión posterior, revisa los cambios de esa versión antes de seguir esta guía. No es necesario usar una rama de una PR antigua: la revisión 1.8.4 de permisos de respaldos ya está integrada en `main`.
 
 Si la carpeta `helpdesk-siabuc` ya existe, no sobrescribas su contenido; identifica primero si contiene una instalación con datos o configuración.
 
@@ -222,7 +222,7 @@ sudo bash compilar.sh --docker
 | No responde el navegador | Revisa `sudo docker compose ps` y `logs backend`/`logs frontend`; verifica `WEB_BIND_HOST` y el puerto. |
 | No inicia `backup` | Usa `sudo bash iniciar.sh` para ejecutar la verificación/reparación 1.8.4. Revisa el diagnóstico, la ruta `BACKUP_DIRECTORY`, espacio, permisos y ACL del montaje. |
 | Credenciales iniciales desconocidas | Revisa `ADMIN_USERNAME` y `ADMIN_PASSWORD` en tu `.env` local, sin compartirlo. Si ya existe una cuenta, cambiar `.env` no cambia su clave. |
-| Quiero conservar datos de otra versión | **No** repitas la instalación sobre un proyecto existente: lee [Actualización a 1.9.0](VERSION-1.9.0.md). |
+| Quiero conservar datos de otra versión | **No** repitas la instalación sobre un proyecto existente: lee [Actualización a 1.9.1](VERSION-1.9.1.md). |
 
 ## Comandos mínimos para un equipo que ya tiene Docker
 
@@ -239,4 +239,4 @@ sudo docker compose ps
 curl http://127.0.0.1:4200/api/health
 ~~~
 
-**Alcance de esta guía:** comandos revisados contra los scripts y la configuración de la versión 1.9.0; **no** representan una ejecución certificada en el equipo de quien la lea. Antes del uso institucional, valida red, permisos, HTTPS, credenciales, notificaciones, respaldos y una restauración aislada. Para Windows consulta [Windows](WINDOWS.md); para desarrollo nativo y diagnóstico avanzado, [Operación](OPERACION.md).
+**Alcance de esta guía:** comandos revisados contra los scripts y la configuración de la versión 1.9.1; **no** representan una ejecución certificada en el equipo de quien la lea. Antes del uso institucional, valida red, permisos, HTTPS, credenciales, notificaciones, respaldos y una restauración aislada. Para Windows consulta [Windows](WINDOWS.md); para desarrollo nativo y diagnóstico avanzado, [Operación](OPERACION.md).

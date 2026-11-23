@@ -1,6 +1,6 @@
-# Documentación de SIABUC Helpdesk 1.9.0
+# Documentación de SIABUC Helpdesk 1.9.1
 
-**Entrega actual:** [Versión 1.9.0: actualización, pruebas y advertencia de dependencias](VERSION-1.9.0.md). Los nuevos recorridos y permisos se describen en [Accesos de Adriana](ACCESOS-ADRIANA.md) y en el [manual breve actualizado](MANUAL-USUARIO.md). El manual extendido de módulos conserva la base 1.8.5 y se complementa con estas guías.
+**Entrega actual:** [Versión 1.9.1: orden del menú, redirección y actualización](VERSION-1.9.1.md). El recorrido desde configuración hasta tickets se describe en el [manual breve actualizado](MANUAL-USUARIO.md#orden-del-menú-y-recorrido-inicial); los permisos y portales se conservan según [Accesos de Adriana](ACCESOS-ADRIANA.md). El manual extendido de módulos conserva la base 1.8.5 y se complementa con estas guías.
 
 **Manual integrado de 1.8.5:** [Manual extendido con licencias](MANUAL-EXTENDIDO-LICENCIAS.md).
 
@@ -16,7 +16,7 @@ se haya ejecutado en el servidor de destino.
 
 | Necesidad | Documento vigente |
 | --- | --- |
-| Actualizar a 1.9.0 y conocer los cambios de acceso | [Versión 1.9.0](VERSION-1.9.0.md) · [Accesos](ACCESOS-ADRIANA.md) |
+| Actualizar a 1.9.1 y conocer los cambios de acceso | [Versión 1.9.1](VERSION-1.9.1.md) · [Accesos](ACCESOS-ADRIANA.md) |
 | Instalación limpia en Ubuntu con Docker Compose | [Instalación desde cero](INSTALACION-DESDE-CERO.md) |
 | Recorrido completo por rol | [Manual integrado 1.8.5](MANUAL-EXTENDIDO-LICENCIAS.md) |
 | Actualización de seguridad y verificaciones automáticas | [Versión 1.8.5](VERSION-1.8.5.md) |

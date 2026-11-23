@@ -1,4 +1,4 @@
-name: SIABUC 1.9.0 verify
+name: SIABUC 1.9.1 verify
 on:
   pull_request:
   workflow_dispatch:
@@ -108,25 +108,35 @@ jobs:
           exit 1
       - name: Case workflow and license browser regression (simulated API)
         working-directory: tests/e2e
+        env:
+          E2E_SCREENSHOT_DIR: ${{ runner.temp }}/siabuc-navigation
         run: |
+          mkdir -p "$E2E_SCREENSHOT_DIR"
           npm ci
           npx playwright install --with-deps chromium
           node case-workflow-v183.ui.mjs
           node licenses.ui.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: SIABUC-Helpdesk-1.9.1-navigation
+          path: ${{ runner.temp }}/siabuc-navigation/*.png
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Confirm version and source package
         run: |
           python3 - <<'PY'
           import json,pathlib
-          assert pathlib.Path('VERSION').read_text().strip() == '1.9.0'
-          assert json.loads(pathlib.Path('frontend/package.json').read_text())['version']=='1.9.0'
-          assert json.loads(pathlib.Path('frontend/package-lock.json').read_text())['version']=='1.9.0'
-          assert '1.9.0' in pathlib.Path('backend/pom.xml').read_text()
-          assert 'siabuc-helpdesk-1.9.0.jar' in pathlib.Path('backend/Dockerfile').read_text()
+          assert pathlib.Path('VERSION').read_text().strip() == '1.9.1'
+          assert json.loads(pathlib.Path('frontend/package.json').read_text())['version']=='1.9.1'
+          assert json.loads(pathlib.Path('frontend/package-lock.json').read_text())['version']=='1.9.1'
+          assert '1.9.1' in pathlib.Path('backend/pom.xml').read_text()
+          assert 'siabuc-helpdesk-1.9.1.jar' in pathlib.Path('backend/Dockerfile').read_text()
           assert not pathlib.Path('.env').exists()
           PY
-          python3 scripts/release-1.9.0.py --package --output release-output
+          python3 scripts/release-1.9.1.py --package --output release-output
       - uses: actions/upload-artifact@v4
         with:
-          name: SIABUC-Helpdesk-1.9.0-source
+          name: SIABUC-Helpdesk-1.9.1-source
           path: release-output/*
           retention-days: 14

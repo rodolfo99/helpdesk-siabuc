@@ -1,8 +1,8 @@
-# SIABUC Helpdesk 1.9.0 para Windows
+# SIABUC Helpdesk 1.9.1 para Windows
 
 **Portales de acceso:** clientes en `/poliza`; la cuenta inicial y el personal interno ingresan en `/poliza/admin`, con el usuario y la contraseña configurados en el sistema. La raíz `/` redirige al portal de clientes.
 
-El paquete conjunto `SIABUC-Helpdesk-1.9.0.zip` incluye el proyecto completo con archivos `.sh` para Linux y `.bat` para CMD y PowerShell en la misma carpeta. En Windows use los `.bat`; no necesita ejecutar los `.sh` ni instalar Git Bash. Requiere **Python 3.10 o posterior** y **Docker Desktop iniciado con contenedores Linux**. Java, Maven y Node se ejecutan dentro de Docker. La edición opcional `SIABUC-Helpdesk-1.9.0-Windows.zip` conserva solo los lanzadores `.bat`.
+El paquete conjunto `SIABUC-Helpdesk-1.9.1.zip` incluye el proyecto completo con archivos `.sh` para Linux y `.bat` para CMD y PowerShell en la misma carpeta. En Windows use los `.bat`; no necesita ejecutar los `.sh` ni instalar Git Bash. Requiere **Python 3.10 o posterior** y **Docker Desktop iniciado con contenedores Linux**. Java, Maven y Node se ejecutan dentro de Docker. La edición opcional `SIABUC-Helpdesk-1.9.1-Windows.zip` conserva solo los lanzadores `.bat`.
 
 ## Primer inicio
 

@@ -1,5 +1,9 @@
 # Validación de SIABUC Helpdesk
 
+## Entrega 1.9.1
+
+El alcance es el orden de navegación, la versión del paquete, la corrección de la redirección inicial y el parche de Nginx a 1.30.7. Consulte [Versión 1.9.1](VERSION-1.9.1.md#validación) y los checks de su PR para los resultados asociados a esa revisión. La comprobación Nginx exige `Location: /poliza` y sigue el salto a través del puerto publicado. Las suites de interfaz conservan API simulada; las comprobaciones Docker y Java/PostgreSQL son independientes.
+
 ## Entrega 1.9.0
 
 La [PR #52](https://github.com/rodolfo99/helpdesk-siabuc/pull/52) reúne requisitos de Adriana, correcciones de revisión y empaquetado 1.9.0. La evidencia funcional de la revisión `1f8cee4`, el alcance de las pruebas y la alerta abierta de `picomatch` se detallan en [Versión 1.9.0](VERSION-1.9.0.md#validación-y-seguridad). Consulte los checks de la PR para el resultado de la revisión final de versión. La auditoría npm de desarrollo no está aprobada; los resultados históricos con cero hallazgos no describen esta entrega.
