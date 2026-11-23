@@ -8,8 +8,9 @@ Revisión del 23 de noviembre de 2026. El paquete conjunto `SIABUC-Helpdesk-1.9.
 - Usuarios conserva una sola entrada: se utiliza para crear personal y se vuelve después de registrar la institución para dar de alta al cliente. Lo mismo ocurre con Licencias al consultar el saldo. La pantalla inicial sigue siendo Resumen.
 - Se incorpora la corrección de la [PR #55](https://github.com/rodolfo99/helpdesk-siabuc/pull/55): Nginx devuelve una redirección relativa a `/poliza`, conservando el host, puerto externo y esquema del navegador. Corrige el salto que perdía `4200` en el ZIP original 1.9.0.
 - Se sincronizan VERSION, Maven/JAR, npm, iniciadores de desarrollo, empaquetador, documentación y comprobaciones CI en 1.9.1.
+- La imagen web pasa de Nginx 1.30.6 a **1.30.8-alpine**, con los parches de seguridad publicados el 18 y 23 de noviembre. Se mantiene la comprobación exacta de versión, redirecciones, rutas Angular y cabeceras en CI.
 
-No se modifican permisos de API, credenciales, saldos ni reglas de pólizas/pagos. El esquema permanece en **V31**, sin nuevas migraciones ni cambios de dependencias. La identidad por póliza/correo/licencia y la Federación UCOL siguen aplazadas conforme al [alcance de Adriana](ACCESOS-ADRIANA.md).
+No se modifican permisos de API, credenciales, saldos ni reglas de pólizas/pagos. El esquema permanece en **V31**, sin nuevas migraciones; las dependencias npm y Maven se conservan. La identidad por póliza/correo/licencia y la Federación UCOL siguen aplazadas conforme al [alcance de Adriana](ACCESOS-ADRIANA.md).
 
 El [manual de usuario](MANUAL-USUARIO.md#orden-del-menú-y-recorrido-inicial) describe la secuencia. Una licencia con saldo permite crear casos sin recorrer cobranza. Una póliza nueva no acredita horas; cada pago debe indicar las horas autorizadas y no duplicar una dotación ya registrada.
 
@@ -30,6 +31,8 @@ La entrega se comprueba con los workflows [verificación integral](https://githu
 La regresión Nginx sigue la redirección desde un puerto Docker distinto de 80, comprueba el destino y el contenido Angular, y exige cabeceras relativas con distintos Host. Las suites de navegador de licencias y casos utilizan API simulada; no acreditan una sesión institucional con datos reales. Java se verifica aparte con PostgreSQL en CI.
 
 Se mantienen las auditorías completas y sus umbrales. El aviso de `picomatch` del 17 de noviembre sigue conservado como evidencia histórica en [1.9.0](VERSION-1.9.0.md#validación-y-seguridad). El [workflow de seguridad de la corrección de redirección](https://github.com/rodolfo99/helpdesk-siabuc/actions/runs/44413210056) pasó el 18 de noviembre; esta revisión requiere su propia ejecución, sin atribuirle de antemano ese resultado.
+
+El [primer escaneo de 1.9.1](https://github.com/rodolfo99/helpdesk-siabuc/actions/runs/45255875149), sobre `66627fe`, aprobó ambas auditorías npm y detectó **cuatro avisos críticos y dos altos en Nginx 1.30.6**. Los seis figuran como corregidos desde 1.30.7 en los [avisos oficiales](https://nginx.org/en/security_advisories.html). Se adopta 1.30.8, publicada el 23 de noviembre, que también corrige CVE-2026-132779. Se repiten las comprobaciones sobre la imagen nueva, sin exclusiones ni cambios de umbral; los checks de la [PR #56](https://github.com/rodolfo99/helpdesk-siabuc/pull/56) muestran el resultado del commit final.
 
 ## Paquete reproducible
 

@@ -8,6 +8,8 @@
 
 **Base de seguridad incorporada desde 1.8.5:** Node.js 24.22.1, Nginx 1.30.6, herramientas Angular 21 corregidas, backend Spring actualizado, bases PostgreSQL/SMTP corregidas, auditorías npm e imágenes en CI y Dependabot. [Cambios, política de auditoría y validación](docs/VERSION-1.8.5.md).
 
+**Parche de seguridad 1.9.1:** la imagen web pasa a **Nginx 1.30.8-alpine** para corregir los avisos publicados en noviembre. El escaneo inicial de esta entrega detectó seis hallazgos altos/críticos en 1.30.6; se conservan los umbrales de auditoría y se reconstruye la imagen corregida. [Evidencia y alcance](docs/VERSION-1.9.1.md#validación).
+
 **Revisión de arranque — permisos de respaldos:** `iniciar.sh` verifica escritura con la identidad del contenedor. En Linux, si recibe acceso denegado, ajusta el propietario de la carpeta configurada a `BACKUP_UID:BACKUP_GID`, asegura acceso del propietario y vuelve a comprobar. Conserva los archivos existentes y el estado del calendario. [Actualización y alcance](docs/VERSION-1.8.4.md).
 
 Sistema de atención técnica con servidor **Spring Boot 4.0.9 / Java 17**, cliente **Angular 21.2.25** y base de datos **PostgreSQL 17**. Conserva instituciones, usuarios, casos, pagos, actualizaciones descriptivas y auditoría. El tiempo por correo y por escritorio remoto se administra en **dos bolsas independientes de minutos enteros**.

@@ -68,7 +68,7 @@ jobs:
           docker build --target build --tag siabuc-security-node frontend
           test "$(docker run --rm --entrypoint node siabuc-security-node -p process.versions.node)" = "$(cat .nvmrc)"
           docker run --rm --entrypoint sh "$IMAGE" -ec '
-            nginx -v 2>&1 | grep -Fx "nginx version: nginx/1.30.6"
+            nginx -v 2>&1 | grep -Fx "nginx version: nginx/1.30.8"
             nginx -t
             if command -v node || command -v npm; then
               echo "Unexpected build tools in the runtime image" >&2

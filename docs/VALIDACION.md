@@ -2,7 +2,7 @@
 
 ## Entrega 1.9.1
 
-El alcance es el orden de navegación, la versión del paquete y la corrección de la redirección inicial. Consulte [Versión 1.9.1](VERSION-1.9.1.md#validación) y los checks de su PR para los resultados asociados a esa revisión. La comprobación Nginx exige `Location: /poliza` y sigue el salto a través del puerto publicado. Las suites de interfaz conservan API simulada; las comprobaciones Docker y Java/PostgreSQL son independientes.
+El alcance es el orden de navegación, la versión del paquete, la corrección de la redirección inicial y el parche de Nginx a 1.30.8. Consulte [Versión 1.9.1](VERSION-1.9.1.md#validación) y los checks de su PR para los resultados asociados a esa revisión. La comprobación Nginx exige `Location: /poliza` y sigue el salto a través del puerto publicado. Las suites de interfaz conservan API simulada; las comprobaciones Docker y Java/PostgreSQL son independientes.
 
 ## Entrega 1.9.0
 

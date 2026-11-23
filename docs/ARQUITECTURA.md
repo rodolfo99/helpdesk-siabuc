@@ -13,14 +13,14 @@
 
 En desarrollo, el servidor Angular ocupa el lugar de Nginx y su proxy toma `SERVER_PORT` del entorno. En Docker, los puertos internos son estables; sólo se configuran sus publicaciones en el anfitrión.
 
-Versiones y fuentes de construcción de 1.9.1 (sin cambios de dependencias respecto de 1.9.0):
+Versiones y fuentes de construcción de 1.9.1 (se actualiza Nginx; las dependencias npm y Maven se conservan respecto de 1.9.0):
 
 | Componente | Configuración del repositorio |
 | --- | --- |
 | Backend | Spring Boot 4.0.9, Spring 7.0.10, Tomcat 11.0.27 y Java 17; `backend/pom.xml` y `backend/Dockerfile` |
 | Contrato JSON | Jackson 2 mediante el módulo transitorio `spring-boot-jackson2`, con propiedades `spring.jackson2` y mapper preferido `jackson2` |
 | Cliente | Angular 21.2.25, build/CLI 21.2.30 y Node 24.22.1; lockfile y `.nvmrc` |
-| Web final | Nginx 1.30.6; Node/npm permanecen en la etapa constructora |
+| Web final | Nginx 1.30.8; Node/npm permanecen en la etapa constructora |
 | Base | PostgreSQL 17 derivado en `db/Dockerfile`, con gosu 1.20 compilado con Go 1.27.3; entrypoint, UID y volumen conservados |
 | Backup | Derivado de PostgreSQL 17; worker Python y clientes de respaldo, sin el binario gosu que no utiliza |
 | Postfix opcional | Alpine 3.24.3, mapas LMDB y Cyrus SASL; cola persistente conservada |
