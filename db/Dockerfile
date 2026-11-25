@@ -1,6 +1,6 @@
 # Rebuild gosu 1.20 with the patched Go standard library; keep PostgreSQL 17's
 # official entrypoint, data directory, UID and volume layout.
-FROM golang:1.27.3-alpine AS gosu-build
+FROM golang:1.27.4-alpine AS gosu-build
 RUN apk add --no-cache git
 WORKDIR /src
 RUN git init . \
